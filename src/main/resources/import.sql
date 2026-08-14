@@ -1,0 +1,2 @@
+-- Flyway gerencia as migrations. Este arquivo é usado apenas em modo dev/test sem Flyway.
+-- Com Flyway ativo, este arquivo é ignorado.
