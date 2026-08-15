@@ -30,6 +30,7 @@ public class JwtTokenProvider implements TokenProvider {
             .subject(user.getLogin())
             .groups(Set.of(user.getRole().name()))
             .claim("userId", user.getId() != null ? user.getId().toString() : "")
+            .claim("storeId", user.getStoreId() != null ? user.getStoreId().toString() : "")
             .claim("name", user.getName())
             .claim("permissions", permissions)
             .expiresIn(Duration.ofSeconds(TOKEN_LIFESPAN_SECONDS))

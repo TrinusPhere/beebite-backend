@@ -1,0 +1,37 @@
+package com.fidecode.biteflow.application.catalog;
+
+import com.fidecode.biteflow.application.catalog.dto.IngredientRequest;
+import com.fidecode.biteflow.application.catalog.dto.IngredientResponse;
+import com.fidecode.biteflow.domain.catalog.entity.Ingredient;
+import com.fidecode.biteflow.domain.catalog.exception.IngredientNotFoundException;
+import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
+import com.fidecode.biteflow.domain.catalog.valueobject.Unit;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+import java.util.UUID;
+
+@ApplicationScoped
+public class UpdateIngredientUseCase {
+
+    private final IngredientRepository repository;
+
+    @Inject
+    public UpdateIngredientUseCase(IngredientRepository repository) {
+        this.repository = repository;
+    }
+
+    public IngredientResponse execute(UUID id, IngredientRequest request) {
+        Ingredient ingredient = repository.findById(id)
+            .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
+
+        ingredient.setName(request.name());
+        if (request.stock() != null) ingredient.setStock(request.stock());
+        if (request.unit() != null) ingredient.setUnit(Unit.valueOf(request.unit()));
+        if (request.costPrice() != null) ingredient.setCostPrice(request.costPrice());
+        if (request.minStock() != null) ingredient.setMinStock(request.minStock());
+
+        Ingredient saved = repository.save(ingredient);
+        return CreateIngredientUseCase.toResponse(saved);
+    }
+}
