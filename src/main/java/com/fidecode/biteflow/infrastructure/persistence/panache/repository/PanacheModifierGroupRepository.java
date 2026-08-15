@@ -19,14 +19,16 @@ public class PanacheModifierGroupRepository implements ModifierGroupRepository {
 
     @Override
     public Optional<ModifierGroup> findById(UUID id) {
-        return repo.findByIdOptional(id).map(ModifierGroupMapper::toDomain);
+        return repo.findByIdOptional(id).map(this::toDomainFull);
     }
 
     @Override
     public List<ModifierGroup> findAllByStoreId(UUID storeId) {
         return repo.find("storeId", storeId).list().stream()
-            .map(ModifierGroupMapper::toDomain).toList();
+            .map(this::toDomainFull).toList();
     }
+
+    @Inject jakarta.persistence.EntityManager em;
 
     @Override
     @Transactional
@@ -35,14 +37,37 @@ public class PanacheModifierGroupRepository implements ModifierGroupRepository {
         if (entity.id == null) {
             repo.persist(entity);
         } else {
-            // Delete old options and merge
-            repo.getEntityManager()
-                .createQuery("DELETE FROM ModifierOptionEntity WHERE modifierGroupId = :gid")
-                .setParameter("gid", entity.id)
-                .executeUpdate();
-            entity = repo.getEntityManager().merge(entity);
+            entity = em.merge(entity);
         }
-        return ModifierGroupMapper.toDomain(entity);
+
+        UUID groupId = entity.id;
+
+        // Save options
+        em.createQuery("DELETE FROM ModifierOptionEntity WHERE modifierGroupId = :gid")
+            .setParameter("gid", groupId)
+            .executeUpdate();
+
+        if (group.getOptions() != null) {
+            for (var opt : group.getOptions()) {
+                com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierOptionEntity oe =
+                    new com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierOptionEntity();
+                oe.modifierGroupId = groupId;
+                oe.name = opt.getName();
+                oe.price = opt.getPrice();
+                oe.sortOrder = opt.getSortOrder();
+                em.persist(oe);
+            }
+        }
+
+        return toDomainFull(entity);
+    }
+
+    private ModifierGroup toDomainFull(ModifierGroupEntity e) {
+        List<com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierOptionEntity> optEntities = em
+            .createQuery("SELECT o FROM ModifierOptionEntity o WHERE o.modifierGroupId = :gid ORDER BY o.sortOrder", com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierOptionEntity.class)
+            .setParameter("gid", e.id).getResultList();
+        e.options = optEntities;
+        return ModifierGroupMapper.toDomain(e);
     }
 
     @Override

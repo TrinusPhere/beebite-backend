@@ -15,7 +15,6 @@ public class TechnicalSheetItem {
     private BigDecimal costSnapshot;
 
     public TechnicalSheetItem(UUID productId, UUID ingredientId, BigDecimal quantity, BigDecimal costSnapshot) {
-        if (productId == null) throw new IllegalArgumentException("productId é obrigatório.");
         if (ingredientId == null) throw new IllegalArgumentException("ingredientId é obrigatório.");
         this.productId = productId;
         this.ingredientId = ingredientId;

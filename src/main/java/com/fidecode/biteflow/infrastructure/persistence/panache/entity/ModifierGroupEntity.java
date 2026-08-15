@@ -37,7 +37,7 @@ public class ModifierGroupEntity extends PanacheEntityBase {
 
     public String icon;
 
-    @OneToMany(mappedBy = "modifierGroupId", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @Transient
     public List<ModifierOptionEntity> options = new ArrayList<>();
 
     @CreationTimestamp

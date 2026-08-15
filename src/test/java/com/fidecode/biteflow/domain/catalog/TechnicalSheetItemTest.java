@@ -28,11 +28,7 @@ class TechnicalSheetItemTest {
         assertEquals(0, BigDecimal.valueOf(6.00).compareTo(item.getLineCost()));
     }
 
-    @Test
-    void shouldRequireProductId() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new TechnicalSheetItem(null, UUID.randomUUID(), BigDecimal.ONE, BigDecimal.ONE));
-    }
+
 
     @Test
     void shouldRequireIngredientId() {

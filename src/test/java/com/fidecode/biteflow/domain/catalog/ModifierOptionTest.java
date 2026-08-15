@@ -32,9 +32,4 @@ class ModifierOptionTest {
             () -> new ModifierOption(UUID.randomUUID(), null, BigDecimal.ZERO, 0));
     }
 
-    @Test
-    void shouldRequireGroupId() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new ModifierOption(null, "Test", BigDecimal.ZERO, 0));
-    }
 }

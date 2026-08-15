@@ -38,18 +38,7 @@ public final class ModifierGroupMapper {
         e.minSelections = g.getMinSelections();
         e.maxSelections = g.getMaxSelections();
         e.icon = g.getIcon();
-        if (g.getOptions() != null) {
-            e.options = new ArrayList<>();
-            for (var opt : g.getOptions()) {
-                ModifierOptionEntity oe = new ModifierOptionEntity();
-                oe.id = opt.getId();
-                oe.modifierGroupId = e.id;
-                oe.name = opt.getName();
-                oe.price = opt.getPrice();
-                oe.sortOrder = opt.getSortOrder();
-                e.options.add(oe);
-            }
-        }
+        // We don't map options here because PanacheModifierGroupRepository handles them manually
         return e;
     }
 }

@@ -15,7 +15,6 @@ public class ModifierOption {
     private int sortOrder;
 
     public ModifierOption(UUID modifierGroupId, String name, BigDecimal price, int sortOrder) {
-        if (modifierGroupId == null) throw new IllegalArgumentException("modifierGroupId é obrigatório.");
         if (name == null || name.isBlank()) throw new IllegalArgumentException("name é obrigatório.");
         this.modifierGroupId = modifierGroupId;
         this.name = name;
