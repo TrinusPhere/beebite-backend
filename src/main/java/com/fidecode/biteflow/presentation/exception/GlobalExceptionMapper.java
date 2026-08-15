@@ -9,6 +9,7 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
@@ -60,6 +61,13 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
         if (exception instanceof IllegalArgumentException ex) {
             return Response.status(400)
                 .entity(ErrorResponse.of(400, "Bad Request", ex.getMessage(), path))
+                .build();
+        }
+
+        if (exception instanceof WebApplicationException ex) {
+            int status = ex.getResponse().getStatus();
+            return Response.status(status)
+                .entity(ErrorResponse.of(status, ex.getResponse().getStatusInfo().getReasonPhrase(), ex.getMessage(), path))
                 .build();
         }
 

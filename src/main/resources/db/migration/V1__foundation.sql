@@ -52,7 +52,7 @@ VALUES (
     '00000000-0000-0000-0000-000000000001',
     'Administrador',
     'admin',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2a$10$FHNmuZPizma6NEjYV.1.HOWogQSpS0ZbuEJHGpsCodoFhzbvpuEv6',
     'ADMIN',
     ARRAY['dashboard','pedidos','clientes','ingredientes','produtos','entregadores','acerto_entregadores','usuarios','integracoes','financeiro'],
     true
