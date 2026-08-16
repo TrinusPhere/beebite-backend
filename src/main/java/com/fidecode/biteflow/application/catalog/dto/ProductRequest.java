@@ -6,7 +6,7 @@ import java.util.List;
 
 public record ProductRequest(
     @NotBlank(message = "Nome é obrigatório") String name,
-    String category,
+    String categoryId,
     String description,
     BigDecimal price,
     String imageUrl,

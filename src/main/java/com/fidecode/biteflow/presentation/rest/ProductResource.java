@@ -25,9 +25,9 @@ public class ProductResource {
     @Inject JsonWebToken jwt;
 
     @GET
-    public Response list(@QueryParam("category") String category) {
+    public Response list(@QueryParam("categoryId") String categoryId) {
         checkPermission("produtos");
-        return Response.ok(productUseCases.list(getStoreId(), category)).build();
+        return Response.ok(productUseCases.list(getStoreId(), categoryId)).build();
     }
 
     @GET
@@ -74,12 +74,7 @@ public class ProductResource {
         return Response.ok(productUseCases.updateModifierGroups(id, groupIds)).build();
     }
 
-    @GET
-    @Path("/categories")
-    public Response listCategories() {
-        checkPermission("produtos");
-        return Response.ok(productUseCases.listCategories(getStoreId())).build();
-    }
+
 
     private UUID getStoreId() {
         String storeIdClaim = jwt.getClaim("storeId");

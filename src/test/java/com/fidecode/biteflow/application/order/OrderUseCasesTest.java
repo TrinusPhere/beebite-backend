@@ -49,7 +49,7 @@ class OrderUseCasesTest {
     @Test
     void deveCriarPedidoComItens() {
         UUID productId = UUID.randomUUID();
-        Product product = new Product(STORE_ID, "X-Bacon", "Hamburgueres", new BigDecimal("25.00"));
+        Product product = new Product(STORE_ID, "X-Bacon", UUID.randomUUID(), new BigDecimal("25.00"));
         product.setId(productId);
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
@@ -62,7 +62,7 @@ class OrderUseCasesTest {
 
         CreateOrderRequest request = new CreateOrderRequest(
             "DELIVERY",
-            new CreateOrderRequest.CustomerInfo("João", "Rua 1"),
+            new CreateOrderRequest.CustomerInfo(null, "João", "Rua 1"),
             "PIX",
             List.of(new CreateOrderItemDto(productId.toString(), 2, "Capricha", null, null)),
             new BigDecimal("5.00")
@@ -167,7 +167,7 @@ class OrderUseCasesTest {
         order.setId(orderId);
         order.addItem(new OrderItem(UUID.randomUUID(), "X-Bacon", 1, new BigDecimal("25.00"), null));
 
-        Product product = new Product(STORE_ID, "Batata Frita", "Acompanhamentos", new BigDecimal("12.00"));
+        Product product = new Product(STORE_ID, "Batata Frita", UUID.randomUUID(), new BigDecimal("12.00"));
         product.setId(productId);
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
