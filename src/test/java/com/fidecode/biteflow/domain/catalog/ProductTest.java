@@ -16,9 +16,10 @@ class ProductTest {
 
     @Test
     void shouldCreateProduct() {
-        Product product = new Product(storeId, "X-Bacon", "Hambúrgueres", BigDecimal.valueOf(35.00));
+        UUID categoryId = UUID.randomUUID();
+        Product product = new Product(storeId, "X-Bacon", categoryId, BigDecimal.valueOf(35.00));
         assertEquals("X-Bacon", product.getName());
-        assertEquals("Hambúrgueres", product.getCategory());
+        assertEquals(categoryId, product.getCategoryId());
         assertEquals(storeId, product.getStoreId());
         assertTrue(product.isActive());
         assertEquals(0, BigDecimal.valueOf(35.00).compareTo(product.getPrice()));
@@ -27,20 +28,20 @@ class ProductTest {
     @Test
     void shouldRequireName() {
         assertThrows(IllegalArgumentException.class,
-            () -> new Product(storeId, null, "cat", BigDecimal.TEN));
+            () -> new Product(storeId, null, UUID.randomUUID(), BigDecimal.TEN));
         assertThrows(IllegalArgumentException.class,
-            () -> new Product(storeId, "  ", "cat", BigDecimal.TEN));
+            () -> new Product(storeId, "  ", UUID.randomUUID(), BigDecimal.TEN));
     }
 
     @Test
     void shouldRequireStoreId() {
         assertThrows(IllegalArgumentException.class,
-            () -> new Product(null, "X-Bacon", "cat", BigDecimal.TEN));
+            () -> new Product(null, "X-Bacon", UUID.randomUUID(), BigDecimal.TEN));
     }
 
     @Test
     void shouldCalculateTotalCost() {
-        Product product = new Product(storeId, "X-Bacon", "Hambúrgueres", BigDecimal.valueOf(35.00));
+        Product product = new Product(storeId, "X-Bacon", UUID.randomUUID(), BigDecimal.valueOf(35.00));
         TechnicalSheetItem item1 = new TechnicalSheetItem(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.valueOf(1), BigDecimal.valueOf(1.50));
         TechnicalSheetItem item2 = new TechnicalSheetItem(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.valueOf(2), BigDecimal.valueOf(3.00));
         product.setTechnicalSheet(List.of(item1, item2));
@@ -50,7 +51,7 @@ class ProductTest {
 
     @Test
     void shouldCalculateProfit() {
-        Product product = new Product(storeId, "X-Bacon", "Hambúrgueres", BigDecimal.valueOf(35.00));
+        Product product = new Product(storeId, "X-Bacon", UUID.randomUUID(), BigDecimal.valueOf(35.00));
         TechnicalSheetItem item = new TechnicalSheetItem(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.valueOf(1), BigDecimal.valueOf(8.40));
         product.setTechnicalSheet(List.of(item));
         // profit = 35.00 - 8.40 = 26.60
@@ -59,7 +60,7 @@ class ProductTest {
 
     @Test
     void shouldReturnZeroCostWithEmptySheet() {
-        Product product = new Product(storeId, "X-Bacon", "Hambúrgueres", BigDecimal.valueOf(35.00));
+        Product product = new Product(storeId, "X-Bacon", UUID.randomUUID(), BigDecimal.valueOf(35.00));
         assertEquals(0, BigDecimal.ZERO.compareTo(product.calculateTotalCost()));
         assertEquals(0, BigDecimal.valueOf(35.00).compareTo(product.calculateProfit()));
     }

@@ -4,9 +4,11 @@ import com.fidecode.biteflow.application.catalog.dto.ProductRequest;
 import com.fidecode.biteflow.application.catalog.dto.ProductResponse;
 import com.fidecode.biteflow.domain.catalog.entity.Ingredient;
 import com.fidecode.biteflow.domain.catalog.entity.Product;
+import com.fidecode.biteflow.domain.catalog.entity.ProductCategory;
 import com.fidecode.biteflow.domain.catalog.entity.TechnicalSheetItem;
 import com.fidecode.biteflow.domain.catalog.exception.ProductNotFoundException;
 import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
+import com.fidecode.biteflow.domain.catalog.repository.ProductCategoryRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -21,15 +23,20 @@ public class ProductUseCases {
 
     private final ProductRepository productRepository;
     private final IngredientRepository ingredientRepository;
+    private final ProductCategoryRepository productCategoryRepository;
 
     @Inject
-    public ProductUseCases(ProductRepository productRepository, IngredientRepository ingredientRepository) {
+    public ProductUseCases(ProductRepository productRepository, 
+                           IngredientRepository ingredientRepository,
+                           ProductCategoryRepository productCategoryRepository) {
         this.productRepository = productRepository;
         this.ingredientRepository = ingredientRepository;
+        this.productCategoryRepository = productCategoryRepository;
     }
 
     public ProductResponse create(UUID storeId, ProductRequest request) {
-        Product product = new Product(storeId, request.name(), request.category(), request.price());
+        UUID categoryId = request.categoryId() != null && !request.categoryId().isBlank() ? UUID.fromString(request.categoryId()) : null;
+        Product product = new Product(storeId, request.name(), categoryId, request.price());
         product.setDescription(request.description());
         product.setImageUrl(request.imageUrl());
         if (request.stock() != null) product.setStock(request.stock());
@@ -63,7 +70,8 @@ public class ProductUseCases {
             .orElseThrow(() -> new ProductNotFoundException(id.toString()));
 
         product.setName(request.name());
-        product.setCategory(request.category());
+        UUID categoryId = request.categoryId() != null && !request.categoryId().isBlank() ? UUID.fromString(request.categoryId()) : null;
+        product.setCategoryId(categoryId);
         product.setDescription(request.description());
         if (request.price() != null) product.setPrice(request.price());
         product.setImageUrl(request.imageUrl());
@@ -102,15 +110,11 @@ public class ProductUseCases {
             .orElseThrow(() -> new ProductNotFoundException(id.toString()));
     }
 
-    public List<ProductResponse> list(UUID storeId, String category) {
-        List<Product> products = (category != null && !category.isBlank())
-            ? productRepository.findByStoreIdAndCategory(storeId, category)
+    public List<ProductResponse> list(UUID storeId, String categoryId) {
+        List<Product> products = (categoryId != null && !categoryId.isBlank())
+            ? productRepository.findByStoreIdAndCategoryId(storeId, UUID.fromString(categoryId))
             : productRepository.findAllByStoreId(storeId);
         return products.stream().map(this::toResponse).toList();
-    }
-
-    public List<String> listCategories(UUID storeId) {
-        return productRepository.findDistinctCategoriesByStoreId(storeId);
     }
 
     public ProductResponse updateRemovableItems(UUID productId, List<String> ingredientIds) {
@@ -158,9 +162,19 @@ public class ProductUseCases {
             ? p.getModifierGroupIds().stream().map(UUID::toString).toList()
             : List.of();
 
+        String categoryName = null;
+        if (p.getCategoryId() != null) {
+            categoryName = productCategoryRepository.findById(p.getCategoryId())
+                .map(ProductCategory::getName)
+                .orElse(null);
+        }
+
         return new ProductResponse(
             p.getId() != null ? p.getId().toString() : null,
-            p.getName(), p.getCategory(), p.getDescription(),
+            p.getName(), 
+            p.getCategoryId() != null ? p.getCategoryId().toString() : null, 
+            categoryName, 
+            p.getDescription(),
             p.getPrice(), p.getImageUrl(), p.getStock(), p.isActive(),
             sheetResponse, removableResponse, modGroupIds,
             p.calculateTotalCost(), p.calculateProfit(), null

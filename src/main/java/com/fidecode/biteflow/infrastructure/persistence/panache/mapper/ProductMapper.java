@@ -14,7 +14,7 @@ public final class ProductMapper {
     public static Product toDomain(ProductEntity e, List<TechnicalSheetItemEntity> sheetEntities,
                                    List<UUID> removableItemIds, List<UUID> modifierGroupIds) {
         if (e == null) return null;
-        Product p = new Product(e.storeId, e.name, e.category, e.price);
+        Product p = new Product(e.storeId, e.name, e.categoryId, e.price);
         p.setId(e.id);
         p.setDescription(e.description);
         p.setImageUrl(e.imageUrl);
@@ -39,7 +39,7 @@ public final class ProductMapper {
         e.id = p.getId();
         e.storeId = p.getStoreId();
         e.name = p.getName();
-        e.category = p.getCategory();
+        e.categoryId = p.getCategoryId();
         e.description = p.getDescription();
         e.price = p.getPrice();
         e.imageUrl = p.getImageUrl();

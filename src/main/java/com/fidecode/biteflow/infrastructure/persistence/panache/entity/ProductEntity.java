@@ -23,7 +23,8 @@ public class ProductEntity extends PanacheEntityBase {
     @Column(nullable = false)
     public String name;
 
-    public String category;
+    @Column(name = "category_id")
+    public UUID categoryId;
 
     @Column(columnDefinition = "TEXT")
     public String description;

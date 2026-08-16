@@ -32,16 +32,9 @@ public class PanacheProductRepository implements ProductRepository {
     }
 
     @Override
-    public List<Product> findByStoreIdAndCategory(UUID storeId, String category) {
-        return repo.find("storeId = ?1 and category = ?2", storeId, category).list().stream()
+    public List<Product> findByStoreIdAndCategoryId(UUID storeId, UUID categoryId) {
+        return repo.find("storeId = ?1 and categoryId = ?2", storeId, categoryId).list().stream()
             .map(this::toDomainFull).toList();
-    }
-
-    @Override
-    public List<String> findDistinctCategoriesByStoreId(UUID storeId) {
-        return em.createQuery("SELECT DISTINCT p.category FROM ProductEntity p WHERE p.storeId = :storeId AND p.category IS NOT NULL ORDER BY p.category", String.class)
-            .setParameter("storeId", storeId)
-            .getResultList();
     }
 
     @Override
