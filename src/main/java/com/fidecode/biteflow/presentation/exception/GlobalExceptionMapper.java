@@ -3,6 +3,10 @@ package com.fidecode.biteflow.presentation.exception;
 import com.fidecode.biteflow.domain.auth.exception.InvalidCredentialsException;
 import com.fidecode.biteflow.domain.auth.exception.UserAlreadyExistsException;
 import com.fidecode.biteflow.domain.auth.exception.UserNotFoundException;
+import com.fidecode.biteflow.domain.catalog.exception.AdditionalNotFoundException;
+import com.fidecode.biteflow.domain.catalog.exception.IngredientNotFoundException;
+import com.fidecode.biteflow.domain.catalog.exception.ModifierGroupNotFoundException;
+import com.fidecode.biteflow.domain.catalog.exception.ProductNotFoundException;
 import com.fidecode.biteflow.domain.store.exception.StoreNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -38,6 +42,30 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
         }
 
         if (exception instanceof StoreNotFoundException ex) {
+            return Response.status(404)
+                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
+                .build();
+        }
+
+        if (exception instanceof IngredientNotFoundException ex) {
+            return Response.status(404)
+                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
+                .build();
+        }
+
+        if (exception instanceof ProductNotFoundException ex) {
+            return Response.status(404)
+                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
+                .build();
+        }
+
+        if (exception instanceof ModifierGroupNotFoundException ex) {
+            return Response.status(404)
+                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
+                .build();
+        }
+
+        if (exception instanceof AdditionalNotFoundException ex) {
             return Response.status(404)
                 .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
                 .build();
