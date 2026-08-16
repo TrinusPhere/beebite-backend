@@ -1,7 +1,6 @@
 package com.fidecode.biteflow.application.catalog;
 
 import com.fidecode.biteflow.application.catalog.dto.ModifierGroupRequest;
-import com.fidecode.biteflow.application.catalog.dto.ModifierGroupRequest.ModifierOptionRequest;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

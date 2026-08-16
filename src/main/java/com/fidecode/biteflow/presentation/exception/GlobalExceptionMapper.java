@@ -7,6 +7,10 @@ import com.fidecode.biteflow.domain.catalog.exception.AdditionalNotFoundExceptio
 import com.fidecode.biteflow.domain.catalog.exception.IngredientNotFoundException;
 import com.fidecode.biteflow.domain.catalog.exception.ModifierGroupNotFoundException;
 import com.fidecode.biteflow.domain.catalog.exception.ProductNotFoundException;
+import com.fidecode.biteflow.domain.customer.exception.CustomerNotFoundException;
+import com.fidecode.biteflow.domain.delivery.exception.DriverNotFoundException;
+import com.fidecode.biteflow.domain.order.exception.InvalidOrderTransitionException;
+import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
 import com.fidecode.biteflow.domain.store.exception.StoreNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -68,6 +72,30 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
         if (exception instanceof AdditionalNotFoundException ex) {
             return Response.status(404)
                 .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
+                .build();
+        }
+
+        if (exception instanceof OrderNotFoundException ex) {
+            return Response.status(404)
+                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
+                .build();
+        }
+
+        if (exception instanceof CustomerNotFoundException ex) {
+            return Response.status(404)
+                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
+                .build();
+        }
+
+        if (exception instanceof DriverNotFoundException ex) {
+            return Response.status(404)
+                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
+                .build();
+        }
+
+        if (exception instanceof InvalidOrderTransitionException ex) {
+            return Response.status(422)
+                .entity(ErrorResponse.of(422, "Unprocessable Entity", ex.getMessage(), path))
                 .build();
         }
 

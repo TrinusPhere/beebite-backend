@@ -1,0 +1,222 @@
+package com.fidecode.biteflow.application.order;
+
+import com.fidecode.biteflow.application.order.dto.*;
+import com.fidecode.biteflow.domain.catalog.entity.ModifierGroup;
+import com.fidecode.biteflow.domain.catalog.entity.ModifierOption;
+import com.fidecode.biteflow.domain.catalog.entity.Product;
+import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
+import com.fidecode.biteflow.domain.catalog.repository.ModifierGroupRepository;
+import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
+import com.fidecode.biteflow.domain.order.entity.Order;
+import com.fidecode.biteflow.domain.order.entity.OrderItem;
+import com.fidecode.biteflow.domain.order.exception.InvalidOrderTransitionException;
+import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
+import com.fidecode.biteflow.domain.order.repository.OrderRepository;
+import com.fidecode.biteflow.domain.order.service.OrderDomainService;
+import com.fidecode.biteflow.domain.order.valueobject.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class OrderUseCasesTest {
+
+    @Mock private OrderRepository orderRepository;
+    @Mock private ProductRepository productRepository;
+    @Mock private ModifierGroupRepository modifierGroupRepository;
+    @Mock private IngredientRepository ingredientRepository;
+
+    private OrderUseCases useCases;
+    private final UUID STORE_ID = UUID.randomUUID();
+
+    @BeforeEach
+    void setUp() {
+        useCases = new OrderUseCases(orderRepository, productRepository,
+            modifierGroupRepository, ingredientRepository);
+    }
+
+    @Test
+    void deveCriarPedidoComItens() {
+        UUID productId = UUID.randomUUID();
+        Product product = new Product(STORE_ID, "X-Bacon", "Hamburgueres", new BigDecimal("25.00"));
+        product.setId(productId);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(orderRepository.getNextDisplayIdSequence()).thenReturn(1001L);
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            o.setId(UUID.randomUUID());
+            return o;
+        });
+
+        CreateOrderRequest request = new CreateOrderRequest(
+            "DELIVERY",
+            new CreateOrderRequest.CustomerInfo("João", "Rua 1"),
+            "PIX",
+            List.of(new CreateOrderItemDto(productId.toString(), 2, "Capricha", null, null)),
+            new BigDecimal("5.00")
+        );
+
+        OrderResponse response = useCases.create(STORE_ID, request);
+
+        assertNotNull(response.id());
+        assertEquals("#1001", response.displayId());
+        assertEquals("João", response.customerName());
+        assertEquals("DELIVERY", response.type());
+        assertEquals("ANALISE", response.status());
+        assertEquals(1, response.items().size());
+        assertEquals("X-Bacon", response.items().get(0).productName());
+        assertEquals(2, response.items().get(0).quantity());
+    }
+
+    @Test
+    void deveAvancarStatusDoPedido() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
+        order.setId(orderId);
+        order.addItem(new OrderItem(UUID.randomUUID(), "X-Bacon", 1, new BigDecimal("25.00"), null));
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        OrderResponse response = useCases.advanceStatus(orderId);
+        assertEquals("PREPARO", response.status());
+    }
+
+    @Test
+    void deveLancarExcecaoAoAvancarPedidoInexistente() {
+        UUID orderId = UUID.randomUUID();
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+
+        assertThrows(OrderNotFoundException.class,
+            () -> useCases.advanceStatus(orderId));
+    }
+
+    @Test
+    void deveMoverPedidoParaColuna() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
+        order.setId(orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        OrderResponse response = useCases.moveToColumn(orderId,
+            new MoveOrderRequest("PREPARO"));
+        assertEquals("PREPARO", response.status());
+    }
+
+    @Test
+    void deveAtribuirMotoboy() {
+        UUID orderId = UUID.randomUUID();
+        UUID driverId = UUID.randomUUID();
+        Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.setId(orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        OrderResponse response = useCases.assignDriver(orderId,
+            new AssignDriverRequest(driverId.toString(), "Carlos", null));
+        assertEquals(driverId.toString(), response.driverId());
+        assertEquals("Carlos", response.driverName());
+    }
+
+    @Test
+    void deveListarKanbanComQuatroColunas() {
+        Order o1 = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        o1.setId(UUID.randomUUID());
+        o1.setDisplayId("#1001");
+        o1.addItem(new OrderItem(UUID.randomUUID(), "X-Bacon", 1, new BigDecimal("25.00"), null));
+
+        Order o2 = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
+        o2.setId(UUID.randomUUID());
+        o2.setDisplayId("#1002");
+        o2.setStatus(OrderStatus.PREPARO);
+        o2.addItem(new OrderItem(UUID.randomUUID(), "Suco", 1, new BigDecimal("8.00"), null));
+
+        when(orderRepository.findAllByStoreId(STORE_ID)).thenReturn(List.of(o1, o2));
+
+        OrderKanbanResponse kanban = useCases.listKanban(STORE_ID, null);
+
+        assertEquals(4, kanban.columns().size());
+        assertEquals("ANALISE", kanban.columns().get(0).id());
+        assertEquals(1, kanban.columns().get(0).orders().size());
+        assertEquals("PREPARO", kanban.columns().get(1).id());
+        assertEquals(1, kanban.columns().get(1).orders().size());
+        assertEquals("EM_ROTA", kanban.columns().get(2).id());
+        assertEquals(0, kanban.columns().get(2).orders().size());
+    }
+
+    @Test
+    void deveEditarPedidoAdicionandoItens() {
+        UUID orderId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.setId(orderId);
+        order.addItem(new OrderItem(UUID.randomUUID(), "X-Bacon", 1, new BigDecimal("25.00"), null));
+
+        Product product = new Product(STORE_ID, "Batata Frita", "Acompanhamentos", new BigDecimal("12.00"));
+        product.setId(productId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdateOrderRequest request = new UpdateOrderRequest(
+            null, null, null,
+            List.of(new CreateOrderItemDto(productId.toString(), 1, "", null, null))
+        );
+
+        OrderResponse response = useCases.update(orderId, request);
+
+        assertEquals(2, response.items().size());
+    }
+
+    @Test
+    void deveEmitirNfeSemErros() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
+        order.setId(orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        NfeResponse nfe = useCases.emitNfe(orderId);
+
+        assertEquals(orderId.toString(), nfe.orderId());
+        assertEquals("AUTORIZADA", nfe.status());
+        assertNotNull(nfe.nfeNumber());
+    }
+
+    @Test
+    void deveDeletarPedido() {
+        UUID orderId = UUID.randomUUID();
+        Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
+        order.setId(orderId);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        useCases.delete(orderId);
+        verify(orderRepository).deleteById(orderId);
+    }
+
+    @Test
+    void deveLancarExcecaoAoDeletarPedidoInexistente() {
+        UUID orderId = UUID.randomUUID();
+        when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+
+        assertThrows(OrderNotFoundException.class, () -> useCases.delete(orderId));
+    }
+}

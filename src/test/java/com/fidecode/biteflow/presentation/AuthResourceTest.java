@@ -85,6 +85,7 @@ class AuthResourceTest {
         String token = getAdminToken();
         given()
             .header("Authorization", "Bearer " + token)
+            .contentType(ContentType.JSON)
         .when()
             .post("/api/v1/auth/logout")
         .then()
