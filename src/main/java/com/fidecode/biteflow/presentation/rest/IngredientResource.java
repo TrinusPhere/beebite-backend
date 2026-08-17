@@ -29,18 +29,19 @@ public class IngredientResource {
     @Inject JsonWebToken jwt;
 
     @GET
-    public Response list() {
+    public Response list(
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("size") @DefaultValue("10") int size) {
         checkPermission("ingredientes");
         UUID storeId = getStoreId();
-        List<IngredientResponse> ingredients = listUseCase.execute(storeId);
-        return Response.ok(ingredients).build();
+        return Response.ok(listUseCase.execute(storeId, page, size)).build();
     }
 
     @GET
     @Path("/{id}")
     public Response getById(@PathParam("id") UUID id) {
         checkPermission("ingredientes");
-        return Response.ok(getUseCase.execute(id)).build();
+        return Response.ok(getUseCase.execute(getStoreId(), id)).build();
     }
 
     @POST
@@ -56,14 +57,14 @@ public class IngredientResource {
     @Path("/{id}")
     public Response update(@PathParam("id") UUID id, @Valid IngredientRequest request) {
         checkPermission("ingredientes");
-        return Response.ok(updateUseCase.execute(id, request)).build();
+        return Response.ok(updateUseCase.execute(getStoreId(), id, request)).build();
     }
 
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") UUID id) {
         checkPermission("ingredientes");
-        deleteUseCase.execute(id);
+        deleteUseCase.execute(getStoreId(), id);
         return Response.noContent().build();
     }
 

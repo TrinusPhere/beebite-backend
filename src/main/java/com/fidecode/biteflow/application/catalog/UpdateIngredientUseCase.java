@@ -21,9 +21,10 @@ public class UpdateIngredientUseCase {
         this.repository = repository;
     }
 
-    public IngredientResponse execute(UUID id, IngredientRequest request) {
+    public IngredientResponse execute(UUID storeId, UUID id, IngredientRequest request) {
         Ingredient ingredient = repository.findById(id)
             .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
+        if (!ingredient.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
 
         ingredient.setName(request.name());
         if (request.stock() != null) ingredient.setStock(request.stock());

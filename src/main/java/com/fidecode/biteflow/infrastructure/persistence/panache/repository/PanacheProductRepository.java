@@ -21,20 +21,45 @@ public class PanacheProductRepository implements ProductRepository {
     @Inject EntityManager em;
 
     @Override
+    @Transactional
     public Optional<Product> findById(UUID id) {
-        return repo.findByIdOptional(id).map(this::toDomainFull);
-    }
-
-    @Override
-    public List<Product> findAllByStoreId(UUID storeId) {
-        return repo.find("storeId", storeId).list().stream()
-            .map(this::toDomainFull).toList();
+        return repo.findByIdOptional(id).map(ProductMapper::toDomain);
     }
 
     @Override
     public List<Product> findByStoreIdAndCategoryId(UUID storeId, UUID categoryId) {
         return repo.find("storeId = ?1 and categoryId = ?2", storeId, categoryId).list().stream()
-            .map(this::toDomainFull).toList();
+            .map(ProductMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<Product> findAllByStoreId(UUID storeId) {
+        return repo.find("storeId", storeId).list().stream()
+            .map(ProductMapper::toDomain).toList();
+    }
+
+    @Override
+    @Transactional
+    public com.fidecode.biteflow.domain.shared.PageResult<Product> findAllByStoreId(UUID storeId, int page, int size) {
+        var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
+        List<Product> content = query.list().stream().map(ProductMapper::toDomain).toList();
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+    }
+
+    @Override
+    @Transactional
+    public com.fidecode.biteflow.domain.shared.PageResult<Product> findByStoreIdAndCategoryId(UUID storeId, UUID categoryId, int page, int size) {
+        var query = repo.find("storeId = ?1 and categoryId = ?2", storeId, categoryId).page(io.quarkus.panache.common.Page.of(page, size));
+        List<Product> content = query.list().stream().map(ProductMapper::toDomain).toList();
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+    }
+
+    @Override
+    @Transactional
+    public List<Product> findAllById(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return repo.find("id in ?1", ids).list().stream()
+            .map(ProductMapper::toDomain).toList();
     }
 
     @Override
@@ -47,72 +72,15 @@ public class PanacheProductRepository implements ProductRepository {
             entity = em.merge(entity);
         }
 
-        UUID productId = entity.id;
-
-        // Save technical sheet
-        em.createQuery("DELETE FROM TechnicalSheetItemEntity WHERE productId = :pid")
-            .setParameter("pid", productId).executeUpdate();
-        if (product.getTechnicalSheet() != null) {
-            for (var item : product.getTechnicalSheet()) {
-                TechnicalSheetItemEntity tse = new TechnicalSheetItemEntity();
-                tse.productId = productId;
-                tse.ingredientId = item.getIngredientId();
-                tse.quantity = item.getQuantity();
-                tse.costSnapshot = item.getCostSnapshot();
-                em.persist(tse);
-            }
-        }
-
-        // Save removable items
-        em.createNativeQuery("DELETE FROM product_removable_item WHERE product_id = :pid")
-            .setParameter("pid", productId).executeUpdate();
-        if (product.getRemovableItemIds() != null) {
-            for (UUID ingId : product.getRemovableItemIds()) {
-                em.createNativeQuery("INSERT INTO product_removable_item (product_id, ingredient_id) VALUES (:pid, :iid)")
-                    .setParameter("pid", productId).setParameter("iid", ingId).executeUpdate();
-            }
-        }
-
-        // Save modifier groups
-        em.createNativeQuery("DELETE FROM product_modifier_group WHERE product_id = :pid")
-            .setParameter("pid", productId).executeUpdate();
-        if (product.getModifierGroupIds() != null) {
-            for (UUID gid : product.getModifierGroupIds()) {
-                em.createNativeQuery("INSERT INTO product_modifier_group (product_id, modifier_group_id) VALUES (:pid, :gid)")
-                    .setParameter("pid", productId).setParameter("gid", gid).executeUpdate();
-            }
-        }
-
-        return toDomainFull(entity);
+        return ProductMapper.toDomain(entity);
     }
 
     @Override
     @Transactional
     public void deleteById(UUID id) {
-        em.createNativeQuery("DELETE FROM product_removable_item WHERE product_id = :pid")
-            .setParameter("pid", id).executeUpdate();
-        em.createNativeQuery("DELETE FROM product_modifier_group WHERE product_id = :pid")
-            .setParameter("pid", id).executeUpdate();
-        em.createQuery("DELETE FROM TechnicalSheetItemEntity WHERE productId = :pid")
-            .setParameter("pid", id).executeUpdate();
-        repo.deleteById(id);
-    }
-
-    private Product toDomainFull(ProductEntity e) {
-        List<TechnicalSheetItemEntity> sheetEntities = em
-            .createQuery("SELECT t FROM TechnicalSheetItemEntity t WHERE t.productId = :pid", TechnicalSheetItemEntity.class)
-            .setParameter("pid", e.id).getResultList();
-
-        @SuppressWarnings("unchecked")
-        List<UUID> removableIds = em
-            .createNativeQuery("SELECT ingredient_id FROM product_removable_item WHERE product_id = :pid")
-            .setParameter("pid", e.id).getResultList();
-
-        @SuppressWarnings("unchecked")
-        List<UUID> modGroupIds = em
-            .createNativeQuery("SELECT modifier_group_id FROM product_modifier_group WHERE product_id = :pid")
-            .setParameter("pid", e.id).getResultList();
-
-        return ProductMapper.toDomain(e, sheetEntities, removableIds, modGroupIds);
+        repo.findByIdOptional(id).ifPresent(entity -> {
+            entity.deletedAt = java.time.LocalDateTime.now();
+            em.merge(entity);
+        });
     }
 }

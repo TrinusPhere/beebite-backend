@@ -46,9 +46,10 @@ public class ModifierGroupUseCases {
         return toResponse(repository.save(group));
     }
 
-    public ModifierGroupResponse update(UUID id, ModifierGroupRequest request) {
+    public ModifierGroupResponse update(UUID storeId, UUID id, ModifierGroupRequest request) {
         ModifierGroup group = repository.findById(id)
             .orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
+        if (!group.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
 
         group.setName(request.name());
         if (request.type() != null) group.setType(ModifierType.valueOf(request.type()));
@@ -70,19 +71,23 @@ public class ModifierGroupUseCases {
         return toResponse(repository.save(group));
     }
 
-    public void delete(UUID id) {
-        repository.findById(id).orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
+    public void delete(UUID storeId, UUID id) {
+        ModifierGroup group = repository.findById(id).orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
+        if (!group.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
         repository.deleteById(id);
     }
 
-    public ModifierGroupResponse getById(UUID id) {
-        return repository.findById(id)
-            .map(ModifierGroupUseCases::toResponse)
-            .orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
+    public ModifierGroupResponse getById(UUID storeId, UUID id) {
+        ModifierGroup group = repository.findById(id).orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
+        if (!group.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
+        return toResponse(group);
     }
 
-    public List<ModifierGroupResponse> list(UUID storeId) {
-        return repository.findAllByStoreId(storeId).stream().map(ModifierGroupUseCases::toResponse).toList();
+    public com.fidecode.biteflow.application.shared.PageResponse<ModifierGroupResponse> list(UUID storeId, int page, int size) {
+        com.fidecode.biteflow.domain.shared.PageResult<ModifierGroup> result = repository.findAllByStoreId(storeId, page, size);
+        List<ModifierGroupResponse> content = result.getContent().stream()
+            .map(ModifierGroupUseCases::toResponse).toList();
+        return new com.fidecode.biteflow.application.shared.PageResponse<>(content, result.getPage(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 
     static ModifierGroupResponse toResponse(ModifierGroup g) {

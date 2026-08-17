@@ -1,6 +1,5 @@
 package com.fidecode.biteflow.presentation.rest;
 
-import com.fidecode.biteflow.application.catalog.ProductUseCases;
 import com.fidecode.biteflow.application.catalog.dto.ProductRequest;
 import com.fidecode.biteflow.application.catalog.dto.ProductResponse;
 import io.quarkus.security.Authenticated;
@@ -21,26 +20,35 @@ import java.util.UUID;
 @Authenticated
 public class ProductResource {
 
-    @Inject ProductUseCases productUseCases;
+    @Inject com.fidecode.biteflow.application.catalog.product.CreateProductUseCase createProductUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.product.UpdateProductUseCase updateProductUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.product.DeleteProductUseCase deleteProductUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.product.GetProductUseCase getProductUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.product.ListProductsUseCase listProductsUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.product.ManageProductModifiersUseCase manageProductModifiersUseCase;
+
     @Inject JsonWebToken jwt;
 
     @GET
-    public Response list(@QueryParam("categoryId") String categoryId) {
+    public Response list(
+            @QueryParam("categoryId") String categoryId,
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("size") @DefaultValue("20") int size) {
         checkPermission("produtos");
-        return Response.ok(productUseCases.list(getStoreId(), categoryId)).build();
+        return Response.ok(listProductsUseCase.execute(getStoreId(), categoryId, page, size)).build();
     }
 
     @GET
     @Path("/{id}")
     public Response getById(@PathParam("id") UUID id) {
         checkPermission("produtos");
-        return Response.ok(productUseCases.getById(id)).build();
+        return Response.ok(getProductUseCase.execute(getStoreId(), id)).build();
     }
 
     @POST
     public Response create(@Valid ProductRequest request) {
         checkPermission("produtos");
-        ProductResponse created = productUseCases.create(getStoreId(), request);
+        ProductResponse created = createProductUseCase.execute(getStoreId(), request);
         return Response.created(URI.create("/api/v1/products/" + created.id()))
             .entity(created).build();
     }
@@ -49,14 +57,14 @@ public class ProductResource {
     @Path("/{id}")
     public Response update(@PathParam("id") UUID id, @Valid ProductRequest request) {
         checkPermission("produtos");
-        return Response.ok(productUseCases.update(id, request)).build();
+        return Response.ok(updateProductUseCase.execute(getStoreId(), id, request)).build();
     }
 
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") UUID id) {
         checkPermission("produtos");
-        productUseCases.delete(id);
+        deleteProductUseCase.execute(getStoreId(), id);
         return Response.noContent().build();
     }
 
@@ -64,14 +72,14 @@ public class ProductResource {
     @Path("/{id}/removable-items")
     public Response updateRemovableItems(@PathParam("id") UUID id, List<String> ingredientIds) {
         checkPermission("produtos");
-        return Response.ok(productUseCases.updateRemovableItems(id, ingredientIds)).build();
+        return Response.ok(manageProductModifiersUseCase.updateRemovableItems(getStoreId(), id, ingredientIds)).build();
     }
 
     @PUT
     @Path("/{id}/modifier-groups")
     public Response updateModifierGroups(@PathParam("id") UUID id, List<String> groupIds) {
         checkPermission("produtos");
-        return Response.ok(productUseCases.updateModifierGroups(id, groupIds)).build();
+        return Response.ok(manageProductModifiersUseCase.updateModifierGroups(getStoreId(), id, groupIds)).build();
     }
 
 

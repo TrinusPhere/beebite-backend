@@ -37,13 +37,25 @@ class OrderUseCasesTest {
     @Mock private ModifierGroupRepository modifierGroupRepository;
     @Mock private IngredientRepository ingredientRepository;
 
-    private OrderUseCases useCases;
+    private CreateOrderUseCase createOrderUseCase;
+    private ManageOrderUseCase manageOrderUseCase;
+    private UpdateOrderUseCase updateOrderUseCase;
+    private GetOrderKanbanUseCase getOrderKanbanUseCase;
+    private DeleteOrderUseCase deleteOrderUseCase;
+    
+    @Mock private OrderDomainService orderDomainService;
+
     private final UUID STORE_ID = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        useCases = new OrderUseCases(orderRepository, productRepository,
+        createOrderUseCase = new CreateOrderUseCase(orderRepository, productRepository,
             modifierGroupRepository, ingredientRepository);
+        manageOrderUseCase = new ManageOrderUseCase(orderRepository);
+        updateOrderUseCase = new UpdateOrderUseCase(orderRepository, productRepository,
+            modifierGroupRepository, ingredientRepository);
+        getOrderKanbanUseCase = new GetOrderKanbanUseCase(orderRepository);
+        deleteOrderUseCase = new DeleteOrderUseCase(orderRepository);
     }
 
     @Test
@@ -68,7 +80,7 @@ class OrderUseCasesTest {
             new BigDecimal("5.00")
         );
 
-        OrderResponse response = useCases.create(STORE_ID, request);
+        OrderResponse response = createOrderUseCase.create(STORE_ID, request);
 
         assertNotNull(response.id());
         assertEquals("#1001", response.displayId());
@@ -90,7 +102,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        OrderResponse response = useCases.advanceStatus(orderId);
+        OrderResponse response = manageOrderUseCase.advanceStatus(STORE_ID, orderId);
         assertEquals("PREPARO", response.status());
     }
 
@@ -100,7 +112,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
         assertThrows(OrderNotFoundException.class,
-            () -> useCases.advanceStatus(orderId));
+            () -> manageOrderUseCase.advanceStatus(STORE_ID, orderId));
     }
 
     @Test
@@ -112,8 +124,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        OrderResponse response = useCases.moveToColumn(orderId,
-            new MoveOrderRequest("PREPARO"));
+        OrderResponse response = manageOrderUseCase.moveToColumn(STORE_ID, orderId, "PREPARO");
         assertEquals("PREPARO", response.status());
     }
 
@@ -127,7 +138,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        OrderResponse response = useCases.assignDriver(orderId,
+        OrderResponse response = manageOrderUseCase.assignDriver(STORE_ID, orderId,
             new AssignDriverRequest(driverId.toString(), "Carlos", null));
         assertEquals(driverId.toString(), response.driverId());
         assertEquals("Carlos", response.driverName());
@@ -146,9 +157,9 @@ class OrderUseCasesTest {
         o2.setStatus(OrderStatus.PREPARO);
         o2.addItem(new OrderItem(UUID.randomUUID(), "Suco", 1, new BigDecimal("8.00"), null));
 
-        when(orderRepository.findAllByStoreId(STORE_ID)).thenReturn(List.of(o1, o2));
+        when(orderRepository.findActiveKanbanOrdersByStoreId(eq(STORE_ID), any())).thenReturn(List.of(o1, o2));
 
-        OrderKanbanResponse kanban = useCases.listKanban(STORE_ID, null);
+        OrderKanbanResponse kanban = getOrderKanbanUseCase.listKanban(STORE_ID, null);
 
         assertEquals(4, kanban.columns().size());
         assertEquals("ANALISE", kanban.columns().get(0).id());
@@ -179,7 +190,7 @@ class OrderUseCasesTest {
             List.of(new CreateOrderItemDto(productId.toString(), 1, "", null, null))
         );
 
-        OrderResponse response = useCases.update(orderId, request);
+        OrderResponse response = updateOrderUseCase.update(STORE_ID, orderId, request);
 
         assertEquals(2, response.items().size());
     }
@@ -193,7 +204,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        NfeResponse nfe = useCases.emitNfe(orderId);
+        NfeResponse nfe = manageOrderUseCase.emitNfe(STORE_ID, orderId);
 
         assertEquals(orderId.toString(), nfe.orderId());
         assertEquals("AUTORIZADA", nfe.status());
@@ -208,7 +219,7 @@ class OrderUseCasesTest {
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
-        useCases.delete(orderId);
+        deleteOrderUseCase.delete(STORE_ID, orderId);
         verify(orderRepository).deleteById(orderId);
     }
 
@@ -217,6 +228,6 @@ class OrderUseCasesTest {
         UUID orderId = UUID.randomUUID();
         when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
-        assertThrows(OrderNotFoundException.class, () -> useCases.delete(orderId));
+        assertThrows(OrderNotFoundException.class, () -> deleteOrderUseCase.delete(STORE_ID, orderId));
     }
 }

@@ -26,29 +26,35 @@ public class AdditionalUseCases {
         return toResponse(repository.save(additional));
     }
 
-    public AdditionalResponse update(UUID id, AdditionalRequest request) {
+    public AdditionalResponse update(UUID storeId, UUID id, AdditionalRequest request) {
         Additional additional = repository.findById(id)
             .orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
+        if (!additional.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
         additional.setName(request.name());
         if (request.price() != null) additional.setPrice(request.price());
         additional.setCategory(request.category());
         return toResponse(repository.save(additional));
     }
 
-    public void delete(UUID id) {
-        repository.findById(id).orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
+    public void delete(UUID storeId, UUID id) {
+        Additional additional = repository.findById(id).orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
+        if (!additional.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
         repository.deleteById(id);
     }
 
-    public AdditionalResponse toggleStatus(UUID id) {
+    public AdditionalResponse toggleStatus(UUID storeId, UUID id) {
         Additional additional = repository.findById(id)
             .orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
+        if (!additional.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
         additional.toggleActive();
         return toResponse(repository.save(additional));
     }
 
-    public List<AdditionalResponse> list(UUID storeId) {
-        return repository.findAllByStoreId(storeId).stream().map(AdditionalUseCases::toResponse).toList();
+    public com.fidecode.biteflow.application.shared.PageResponse<AdditionalResponse> list(UUID storeId, int page, int size) {
+        com.fidecode.biteflow.domain.shared.PageResult<Additional> result = repository.findAllByStoreId(storeId, page, size);
+        List<AdditionalResponse> content = result.getContent().stream()
+            .map(AdditionalUseCases::toResponse).toList();
+        return new com.fidecode.biteflow.application.shared.PageResponse<>(content, result.getPage(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 
     static AdditionalResponse toResponse(Additional a) {

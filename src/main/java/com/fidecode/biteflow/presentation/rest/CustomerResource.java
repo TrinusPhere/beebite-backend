@@ -1,6 +1,10 @@
 package com.fidecode.biteflow.presentation.rest;
 
-import com.fidecode.biteflow.application.customer.CustomerUseCases;
+import com.fidecode.biteflow.application.customer.CreateCustomerUseCase;
+import com.fidecode.biteflow.application.customer.DeleteCustomerUseCase;
+import com.fidecode.biteflow.application.customer.GetCustomerUseCase;
+import com.fidecode.biteflow.application.customer.ListCustomersUseCase;
+import com.fidecode.biteflow.application.customer.UpdateCustomerUseCase;
 import com.fidecode.biteflow.application.customer.dto.CustomerRequest;
 import com.fidecode.biteflow.application.customer.dto.CustomerResponse;
 import io.quarkus.security.Authenticated;
@@ -21,26 +25,33 @@ import java.util.UUID;
 @Authenticated
 public class CustomerResource {
 
-    @Inject CustomerUseCases customerUseCases;
+    @Inject CreateCustomerUseCase createCustomerUseCase;
+    @Inject UpdateCustomerUseCase updateCustomerUseCase;
+    @Inject DeleteCustomerUseCase deleteCustomerUseCase;
+    @Inject GetCustomerUseCase getCustomerUseCase;
+    @Inject ListCustomersUseCase listCustomersUseCase;
     @Inject JsonWebToken jwt;
 
     @GET
-    public Response list(@QueryParam("search") String search) {
+    public Response list(
+            @QueryParam("search") String search,
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("size") @DefaultValue("10") int size) {
         checkPermission("clientes");
-        return Response.ok(customerUseCases.list(getStoreId(), search)).build();
+        return Response.ok(listCustomersUseCase.execute(getStoreId(), search, page, size)).build();
     }
 
     @GET
     @Path("/{id}")
     public Response getById(@PathParam("id") UUID id) {
         checkPermission("clientes");
-        return Response.ok(customerUseCases.getById(id)).build();
+        return Response.ok(getCustomerUseCase.execute(getStoreId(), id)).build();
     }
 
     @POST
     public Response create(@Valid CustomerRequest request) {
         checkPermission("clientes");
-        CustomerResponse created = customerUseCases.create(getStoreId(), request);
+        CustomerResponse created = createCustomerUseCase.execute(getStoreId(), request);
         return Response.created(URI.create("/api/v1/customers/" + created.id()))
             .entity(created).build();
     }
@@ -49,14 +60,14 @@ public class CustomerResource {
     @Path("/{id}")
     public Response update(@PathParam("id") UUID id, @Valid CustomerRequest request) {
         checkPermission("clientes");
-        return Response.ok(customerUseCases.update(id, request)).build();
+        return Response.ok(updateCustomerUseCase.execute(getStoreId(), id, request)).build();
     }
 
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") UUID id) {
         checkPermission("clientes");
-        customerUseCases.delete(id);
+        deleteCustomerUseCase.execute(getStoreId(), id);
         return Response.noContent().build();
     }
 

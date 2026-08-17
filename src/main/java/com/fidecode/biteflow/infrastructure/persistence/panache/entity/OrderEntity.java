@@ -4,14 +4,20 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "orders")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class OrderEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     public UUID id;
+
+    @Version
+    public Long version;
 
     @Column(name = "store_id", nullable = false)
     public UUID storeId;
@@ -69,4 +75,11 @@ public class OrderEntity {
 
     @Column(name = "finished_at")
     public LocalDateTime finishedAt;
+
+    @org.hibernate.annotations.BatchSize(size = 50)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<OrderItemEntity> items = new ArrayList<>();
+
+    @jakarta.persistence.Column(name = "deleted_at")
+    public LocalDateTime deletedAt;
 }

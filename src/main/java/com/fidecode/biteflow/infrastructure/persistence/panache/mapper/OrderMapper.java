@@ -33,6 +33,14 @@ public class OrderMapper {
         e.createdAt = order.getCreatedAt();
         e.updatedAt = order.getUpdatedAt();
         e.finishedAt = order.getFinishedAt();
+
+        if (order.getItems() != null) {
+            for (OrderItem item : order.getItems()) {
+                OrderItemEntity itemEntity = toItemEntity(item);
+                itemEntity.order = e;
+                e.items.add(itemEntity);
+            }
+        }
         return e;
     }
 
@@ -59,10 +67,9 @@ public class OrderMapper {
         return order;
     }
 
-    public static OrderItemEntity toItemEntity(OrderItem item, java.util.UUID orderId) {
+    public static OrderItemEntity toItemEntity(OrderItem item) {
         OrderItemEntity e = new OrderItemEntity();
         e.id = item.getId();
-        e.orderId = orderId;
         e.productId = item.getProductId();
         e.productName = item.getProductName();
         e.quantity = item.getQuantity();
@@ -70,6 +77,22 @@ public class OrderMapper {
         e.extraPrice = item.getExtraPrice();
         e.totalPrice = item.getTotalPrice();
         e.observation = item.getObservation();
+
+        if (item.getModifiers() != null) {
+            for (OrderItemModifier mod : item.getModifiers()) {
+                OrderItemModifierEntity modEntity = toModifierEntity(mod);
+                modEntity.orderItem = e;
+                e.modifiers.add(modEntity);
+            }
+        }
+
+        if (item.getRemovals() != null) {
+            for (OrderItemRemoval rem : item.getRemovals()) {
+                OrderItemRemovalEntity remEntity = toRemovalEntity(rem);
+                remEntity.orderItem = e;
+                e.removals.add(remEntity);
+            }
+        }
         return e;
     }
 
@@ -85,10 +108,9 @@ public class OrderMapper {
         return item;
     }
 
-    public static OrderItemModifierEntity toModifierEntity(OrderItemModifier mod, java.util.UUID orderItemId) {
+    public static OrderItemModifierEntity toModifierEntity(OrderItemModifier mod) {
         OrderItemModifierEntity e = new OrderItemModifierEntity();
         e.id = mod.getId();
-        e.orderItemId = orderItemId;
         e.modifierGroupId = mod.getGroupId();
         e.groupName = mod.getGroupName();
         e.modifierOptionId = mod.getOptionId();
@@ -104,10 +126,9 @@ public class OrderMapper {
         return mod;
     }
 
-    public static OrderItemRemovalEntity toRemovalEntity(OrderItemRemoval rem, java.util.UUID orderItemId) {
+    public static OrderItemRemovalEntity toRemovalEntity(OrderItemRemoval rem) {
         OrderItemRemovalEntity e = new OrderItemRemovalEntity();
         e.id = rem.getId();
-        e.orderItemId = orderItemId;
         e.ingredientId = rem.getIngredientId();
         e.ingredientName = rem.getIngredientName();
         return e;

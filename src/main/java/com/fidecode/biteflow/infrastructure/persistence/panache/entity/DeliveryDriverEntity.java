@@ -7,6 +7,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "delivery_driver")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class DeliveryDriverEntity {
 
     @Id
@@ -80,4 +81,7 @@ public class DeliveryDriverEntity {
     public void setCreatedAt(LocalDateTime c) { this.createdAt = c; }
     public LocalDateTime getUpdatedAt()       { return updatedAt; }
     public void setUpdatedAt(LocalDateTime u) { this.updatedAt = u; }
+
+    @jakarta.persistence.Column(name = "deleted_at")
+    public LocalDateTime deletedAt;
 }

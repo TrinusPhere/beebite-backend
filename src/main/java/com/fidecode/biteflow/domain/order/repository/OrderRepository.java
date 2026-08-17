@@ -14,13 +14,17 @@ public interface OrderRepository {
 
     Optional<Order> findById(UUID id);
 
-    List<Order> findAllByStoreId(UUID storeId);
+    com.fidecode.biteflow.domain.shared.PageResult<Order> findAllByStoreId(UUID storeId, int page, int size);
 
-    List<Order> findByStoreIdAndStatus(UUID storeId, OrderStatus status);
+    com.fidecode.biteflow.domain.shared.PageResult<Order> findByStoreIdAndStatus(UUID storeId, OrderStatus status, int page, int size);
 
     Order save(Order order);
 
     void deleteById(UUID id);
 
     long getNextDisplayIdSequence();
+    
+    List<Order> findActiveKanbanOrdersByStoreId(UUID storeId, java.time.LocalDateTime startOfDay);
+
+    List<Order> findAllById(List<UUID> ids);
 }

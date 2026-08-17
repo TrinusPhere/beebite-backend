@@ -1,5 +1,6 @@
 package com.fidecode.biteflow.infrastructure.persistence.panache.entity;
 
+import java.time.LocalDateTime;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,14 +9,20 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "product")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class ProductEntity extends PanacheEntityBase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     public UUID id;
+
+    @Version
+    public Long version;
 
     @Column(name = "store_id", nullable = false)
     public UUID storeId;
@@ -46,4 +53,23 @@ public class ProductEntity extends PanacheEntityBase {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     public Instant updatedAt;
+
+    @org.hibernate.annotations.BatchSize(size = 50)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<TechnicalSheetItemEntity> technicalSheet = new ArrayList<>();
+
+    @org.hibernate.annotations.BatchSize(size = 50)
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "product_removable_item", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "ingredient_id")
+    public List<UUID> removableItemIds = new ArrayList<>();
+
+    @org.hibernate.annotations.BatchSize(size = 50)
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "product_modifier_group", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "modifier_group_id")
+    public List<UUID> modifierGroupIds = new ArrayList<>();
+
+    @jakarta.persistence.Column(name = "deleted_at")
+    public LocalDateTime deletedAt;
 }

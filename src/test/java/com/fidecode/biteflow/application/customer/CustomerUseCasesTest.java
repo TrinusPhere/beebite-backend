@@ -67,7 +67,7 @@ class CustomerUseCasesTest {
             null, null, null, null, null
         );
 
-        CustomerResponse response = useCases.update(customerId, request);
+        CustomerResponse response = useCases.update(STORE_ID, customerId, request);
         assertEquals("João Atualizado", response.name());
         assertEquals("(11) 91111-2222", response.phone());
     }
@@ -78,7 +78,7 @@ class CustomerUseCasesTest {
         when(customerRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(CustomerNotFoundException.class,
-            () -> useCases.update(id, new CustomerRequest("X", null, null, null, null, null, null, null)));
+            () -> useCases.update(STORE_ID, id, new CustomerRequest("X", null, null, null, null, null, null, null)));
     }
 
     @Test
@@ -88,7 +88,7 @@ class CustomerUseCasesTest {
         customer.setId(id);
         when(customerRepository.findById(id)).thenReturn(Optional.of(customer));
 
-        useCases.delete(id);
+        useCases.delete(STORE_ID, id);
         verify(customerRepository).deleteById(id);
     }
 
@@ -124,7 +124,7 @@ class CustomerUseCasesTest {
         customer.setId(id);
         when(customerRepository.findById(id)).thenReturn(Optional.of(customer));
 
-        CustomerResponse response = useCases.getById(id);
+        CustomerResponse response = useCases.getById(STORE_ID, id);
         assertEquals("João", response.name());
     }
 }

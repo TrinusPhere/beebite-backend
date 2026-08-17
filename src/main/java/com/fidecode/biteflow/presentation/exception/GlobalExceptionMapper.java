@@ -127,6 +127,12 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
                 .build();
         }
 
+        if (exception instanceof com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException ex) {
+            return Response.status(403)
+                .entity(ErrorResponse.of(403, "Forbidden", ex.getMessage(), path))
+                .build();
+        }
+
         // Fallback genérico — 500
         return Response.status(500)
             .entity(ErrorResponse.of(500, "Internal Server Error",

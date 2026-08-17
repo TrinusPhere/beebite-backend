@@ -17,9 +17,10 @@ public class DeleteIngredientUseCase {
         this.repository = repository;
     }
 
-    public void execute(UUID id) {
-        repository.findById(id)
+    public void execute(UUID storeId, UUID id) {
+        var ingredient = repository.findById(id)
             .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
+        if (!ingredient.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
         repository.deleteById(id);
     }
 }

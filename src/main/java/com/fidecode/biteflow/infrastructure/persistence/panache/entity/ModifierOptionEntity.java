@@ -14,8 +14,9 @@ public class ModifierOptionEntity extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.UUID)
     public UUID id;
 
-    @Column(name = "modifier_group_id", nullable = false)
-    public UUID modifierGroupId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "modifier_group_id", nullable = false)
+    public ModifierGroupEntity modifierGroup;
 
     @Column(nullable = false)
     public String name;

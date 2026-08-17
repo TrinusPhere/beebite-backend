@@ -1,6 +1,5 @@
 package com.fidecode.biteflow.presentation.rest;
 
-import com.fidecode.biteflow.application.catalog.CategoryUseCases;
 import com.fidecode.biteflow.application.catalog.dto.CategoryRequest;
 import com.fidecode.biteflow.application.catalog.dto.CategoryResponse;
 import jakarta.annotation.security.RolesAllowed;
@@ -21,8 +20,12 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 public class CategoryResource {
 
-    @Inject
-    CategoryUseCases categoryUseCases;
+    @Inject com.fidecode.biteflow.application.catalog.category.CreateCategoryUseCase createCategoryUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.category.UpdateCategoryUseCase updateCategoryUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.category.DeleteCategoryUseCase deleteCategoryUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.category.GetCategoryUseCase getCategoryUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.category.ListCategoriesUseCase listCategoriesUseCase;
+    @Inject com.fidecode.biteflow.application.catalog.category.BulkApplyCategoryModifiersUseCase bulkApplyCategoryModifiersUseCase;
 
     @Inject
     JsonWebToken jwt;
@@ -30,8 +33,7 @@ public class CategoryResource {
     @POST
     @RolesAllowed({"ADMIN", "USER"})
     public Response create(@Valid CategoryRequest request) {
-        UUID storeId = UUID.fromString(jwt.getClaim("storeId"));
-        CategoryResponse response = categoryUseCases.create(storeId, request);
+        CategoryResponse response = createCategoryUseCase.execute(getStoreId(), request);
         return Response.status(Response.Status.CREATED).entity(response).build();
     }
 
@@ -39,7 +41,7 @@ public class CategoryResource {
     @Path("/{id}")
     @RolesAllowed({"ADMIN", "USER"})
     public Response update(@PathParam("id") UUID id, @Valid CategoryRequest request) {
-        CategoryResponse response = categoryUseCases.update(id, request);
+        CategoryResponse response = updateCategoryUseCase.execute(getStoreId(), id, request);
         return Response.ok(response).build();
     }
 
@@ -47,15 +49,14 @@ public class CategoryResource {
     @Path("/{id}")
     @RolesAllowed({"ADMIN", "USER"})
     public Response delete(@PathParam("id") UUID id) {
-        categoryUseCases.delete(id);
+        deleteCategoryUseCase.execute(getStoreId(), id);
         return Response.noContent().build();
     }
 
     @GET
     @RolesAllowed({"ADMIN", "USER"})
     public Response list() {
-        UUID storeId = UUID.fromString(jwt.getClaim("storeId"));
-        List<CategoryResponse> list = categoryUseCases.list(storeId);
+        List<CategoryResponse> list = listCategoriesUseCase.execute(getStoreId());
         return Response.ok(list).build();
     }
 
@@ -63,7 +64,7 @@ public class CategoryResource {
     @Path("/{id}")
     @RolesAllowed({"ADMIN", "USER"})
     public Response getById(@PathParam("id") UUID id) {
-        CategoryResponse response = categoryUseCases.getById(id);
+        CategoryResponse response = getCategoryUseCase.execute(getStoreId(), id);
         return Response.ok(response).build();
     }
 
@@ -71,7 +72,13 @@ public class CategoryResource {
     @Path("/{id}/bulk-apply-modifiers")
     @RolesAllowed({"ADMIN", "USER"})
     public Response bulkApplyModifiers(@PathParam("id") UUID id) {
-        categoryUseCases.bulkApplyModifiers(id);
+        bulkApplyCategoryModifiersUseCase.execute(getStoreId(), id);
         return Response.ok().build();
+    }
+
+    private UUID getStoreId() {
+        String storeIdClaim = jwt.getClaim("storeId");
+        return storeIdClaim != null ? UUID.fromString(storeIdClaim)
+            : UUID.fromString("00000000-0000-0000-0000-000000000001");
     }
 }

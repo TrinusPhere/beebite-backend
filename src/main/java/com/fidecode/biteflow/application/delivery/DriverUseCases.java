@@ -37,9 +37,10 @@ public class DriverUseCases {
         return toResponse(saved);
     }
 
-    public DriverResponse update(UUID id, DriverRequest request) {
+    public DriverResponse update(UUID storeId, UUID id, DriverRequest request) {
         DeliveryDriver driver = driverRepository.findById(id)
             .orElseThrow(() -> new DriverNotFoundException(id.toString()));
+        if (!driver.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
 
         driver.setName(request.name());
         if (request.phone() != null) driver.setPhone(request.phone());
@@ -54,21 +55,25 @@ public class DriverUseCases {
         return toResponse(saved);
     }
 
-    public void delete(UUID id) {
-        driverRepository.findById(id)
+    public void delete(UUID storeId, UUID id) {
+        DeliveryDriver driver = driverRepository.findById(id)
             .orElseThrow(() -> new DriverNotFoundException(id.toString()));
+        if (!driver.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
         driverRepository.deleteById(id);
     }
 
-    public List<DriverResponse> list(UUID storeId) {
-        return driverRepository.findAllByStoreId(storeId).stream()
+    public com.fidecode.biteflow.application.shared.PageResponse<DriverResponse> list(UUID storeId, int page, int size) {
+        com.fidecode.biteflow.domain.shared.PageResult<DeliveryDriver> result = driverRepository.findAllByStoreId(storeId, page, size);
+        List<DriverResponse> content = result.getContent().stream()
             .map(DriverUseCases::toResponse).toList();
+        return new com.fidecode.biteflow.application.shared.PageResponse<>(content, result.getPage(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
 
-    public DriverResponse getById(UUID id) {
-        return driverRepository.findById(id)
-            .map(DriverUseCases::toResponse)
+    public DriverResponse getById(UUID storeId, UUID id) {
+        DeliveryDriver driver = driverRepository.findById(id)
             .orElseThrow(() -> new DriverNotFoundException(id.toString()));
+        if (!driver.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
+        return toResponse(driver);
     }
 
     public static DriverResponse toResponse(DeliveryDriver d) {

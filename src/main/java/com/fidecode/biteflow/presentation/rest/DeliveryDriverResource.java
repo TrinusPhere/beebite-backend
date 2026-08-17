@@ -25,16 +25,18 @@ public class DeliveryDriverResource {
     @Inject JsonWebToken jwt;
 
     @GET
-    public Response list() {
+    public Response list(
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("size") @DefaultValue("10") int size) {
         checkPermission("entregadores");
-        return Response.ok(driverUseCases.list(getStoreId())).build();
+        return Response.ok(driverUseCases.list(getStoreId(), page, size)).build();
     }
 
     @GET
     @Path("/{id}")
     public Response getById(@PathParam("id") UUID id) {
         checkPermission("entregadores");
-        return Response.ok(driverUseCases.getById(id)).build();
+        return Response.ok(driverUseCases.getById(getStoreId(), id)).build();
     }
 
     @POST
@@ -49,14 +51,14 @@ public class DeliveryDriverResource {
     @Path("/{id}")
     public Response update(@PathParam("id") UUID id, @Valid DriverRequest request) {
         checkPermission("entregadores");
-        return Response.ok(driverUseCases.update(id, request)).build();
+        return Response.ok(driverUseCases.update(getStoreId(), id, request)).build();
     }
 
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") UUID id) {
         checkPermission("entregadores");
-        driverUseCases.delete(id);
+        driverUseCases.delete(getStoreId(), id);
         return Response.noContent().build();
     }
 

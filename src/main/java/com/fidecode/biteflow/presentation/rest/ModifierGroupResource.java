@@ -25,16 +25,18 @@ public class ModifierGroupResource {
     @Inject JsonWebToken jwt;
 
     @GET
-    public Response list() {
+    public Response list(
+            @QueryParam("page") @DefaultValue("0") int page,
+            @QueryParam("size") @DefaultValue("10") int size) {
         checkPermission("produtos");
-        return Response.ok(useCases.list(getStoreId())).build();
+        return Response.ok(useCases.list(getStoreId(), page, size)).build();
     }
 
     @GET
     @Path("/{id}")
     public Response getById(@PathParam("id") UUID id) {
         checkPermission("produtos");
-        return Response.ok(useCases.getById(id)).build();
+        return Response.ok(useCases.getById(getStoreId(), id)).build();
     }
 
     @POST
@@ -49,14 +51,14 @@ public class ModifierGroupResource {
     @Path("/{id}")
     public Response update(@PathParam("id") UUID id, @Valid ModifierGroupRequest request) {
         checkPermission("produtos");
-        return Response.ok(useCases.update(id, request)).build();
+        return Response.ok(useCases.update(getStoreId(), id, request)).build();
     }
 
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") UUID id) {
         checkPermission("produtos");
-        useCases.delete(id);
+        useCases.delete(getStoreId(), id);
         return Response.noContent().build();
     }
 

@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface AdditionalRepository {
     Optional<Additional> findById(UUID id);
-    List<Additional> findAllByStoreId(UUID storeId);
+    com.fidecode.biteflow.domain.shared.PageResult<Additional> findAllByStoreId(UUID storeId, int page, int size);
     Additional save(Additional additional);
     void deleteById(UUID id);
 }

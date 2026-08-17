@@ -14,8 +14,9 @@ public class TechnicalSheetItemEntity extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.UUID)
     public UUID id;
 
-    @Column(name = "product_id", nullable = false)
-    public UUID productId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    public ProductEntity product;
 
     @Column(name = "ingredient_id", nullable = false)
     public UUID ingredientId;

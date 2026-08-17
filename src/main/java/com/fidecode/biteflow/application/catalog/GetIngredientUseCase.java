@@ -18,9 +18,9 @@ public class GetIngredientUseCase {
         this.repository = repository;
     }
 
-    public IngredientResponse execute(UUID id) {
-        return repository.findById(id)
-            .map(CreateIngredientUseCase::toResponse)
-            .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
+    public IngredientResponse execute(UUID storeId, UUID id) {
+        var ingredient = repository.findById(id).orElseThrow(() -> new IngredientNotFoundException(id.toString()));
+        if (!ingredient.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
+        return CreateIngredientUseCase.toResponse(ingredient);
     }
 }

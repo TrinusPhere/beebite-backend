@@ -18,13 +18,24 @@ public class PanacheModifierGroupRepository implements ModifierGroupRepository {
     @Inject ModifierGroupPanacheRepo repo;
 
     @Override
+    @Transactional
     public Optional<ModifierGroup> findById(UUID id) {
         return repo.findByIdOptional(id).map(this::toDomainFull);
     }
 
     @Override
-    public List<ModifierGroup> findAllByStoreId(UUID storeId) {
-        return repo.find("storeId", storeId).list().stream()
+    @Transactional
+    public com.fidecode.biteflow.domain.shared.PageResult<ModifierGroup> findAllByStoreId(UUID storeId, int page, int size) {
+        var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
+        List<ModifierGroup> content = query.list().stream().map(ModifierGroupMapper::toDomain).toList();
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+    }
+
+    @Override
+    @Transactional
+    public List<ModifierGroup> findAllById(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return repo.find("id in ?1", ids).list().stream()
             .map(this::toDomainFull).toList();
     }
 
@@ -37,42 +48,22 @@ public class PanacheModifierGroupRepository implements ModifierGroupRepository {
         if (entity.id == null) {
             repo.persist(entity);
         } else {
-            entity = em.merge(entity);
-        }
-
-        UUID groupId = entity.id;
-
-        // Save options
-        em.createQuery("DELETE FROM ModifierOptionEntity WHERE modifierGroupId = :gid")
-            .setParameter("gid", groupId)
-            .executeUpdate();
-
-        if (group.getOptions() != null) {
-            for (var opt : group.getOptions()) {
-                com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierOptionEntity oe =
-                    new com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierOptionEntity();
-                oe.modifierGroupId = groupId;
-                oe.name = opt.getName();
-                oe.price = opt.getPrice();
-                oe.sortOrder = opt.getSortOrder();
-                em.persist(oe);
-            }
+            entity = repo.getEntityManager().merge(entity);
         }
 
         return toDomainFull(entity);
     }
 
     private ModifierGroup toDomainFull(ModifierGroupEntity e) {
-        List<com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierOptionEntity> optEntities = em
-            .createQuery("SELECT o FROM ModifierOptionEntity o WHERE o.modifierGroupId = :gid ORDER BY o.sortOrder", com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierOptionEntity.class)
-            .setParameter("gid", e.id).getResultList();
-        e.options = optEntities;
         return ModifierGroupMapper.toDomain(e);
     }
 
     @Override
     @Transactional
     public void deleteById(UUID id) {
-        repo.deleteById(id);
+        repo.findByIdOptional(id).ifPresent(entity -> {
+            entity.deletedAt = java.time.LocalDateTime.now();
+            repo.getEntityManager().merge(entity);
+        });
     }
 }
