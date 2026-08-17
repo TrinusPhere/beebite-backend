@@ -1,4 +1,5 @@
 package com.fidecode.biteflow.domain.customer.entity;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 
 import java.util.UUID;
 
@@ -6,7 +7,7 @@ import java.util.UUID;
  * Domain entity — Cliente.
  * POJO puro, sem dependência de framework.
  */
-public class Customer {
+public class Customer implements StoreGuard.StoreScoped {
 
     private UUID id;
     private UUID storeId;

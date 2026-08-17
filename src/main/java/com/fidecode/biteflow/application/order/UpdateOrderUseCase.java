@@ -13,6 +13,7 @@ import com.fidecode.biteflow.domain.order.entity.*;
 import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.valueobject.*;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -40,19 +41,19 @@ public class UpdateOrderUseCase {
     }
 
     public OrderResponse update(UUID storeId, UUID orderId, UpdateOrderRequest request) {
-        Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new OrderNotFoundException(orderId.toString()));
-        if (!order.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
+        Order order = StoreGuard.enforce(
+            orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
+            storeId
+        );
 
         if (request.type() != null) {
-            order.setType(OrderType.valueOf(request.type()));
+            order.changeType(OrderType.valueOf(request.type()));
         }
         if (request.paymentMethod() != null) {
-            order.setPaymentMethod(PaymentMethod.valueOf(request.paymentMethod()));
+            order.changePaymentMethod(PaymentMethod.valueOf(request.paymentMethod()));
         }
         if (request.customer() != null) {
-            order.setCustomerName(request.customer().name());
-            order.setCustomerAddress(request.customer().address());
+            order.updateCustomerInfo(request.customer().name(), request.customer().address());
         }
 
         if (request.additionalItems() != null && !request.additionalItems().isEmpty()) {

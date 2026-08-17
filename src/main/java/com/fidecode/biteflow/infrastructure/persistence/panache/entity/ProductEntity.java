@@ -58,14 +58,12 @@ public class ProductEntity extends PanacheEntityBase {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<TechnicalSheetItemEntity> technicalSheet = new ArrayList<>();
 
-    @org.hibernate.annotations.BatchSize(size = 50)
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_removable_item", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "ingredient_id")
     public List<UUID> removableItemIds = new ArrayList<>();
 
-    @org.hibernate.annotations.BatchSize(size = 50)
-    @ElementCollection(fetch = FetchType.LAZY)
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_modifier_group", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "modifier_group_id")
     public List<UUID> modifierGroupIds = new ArrayList<>();

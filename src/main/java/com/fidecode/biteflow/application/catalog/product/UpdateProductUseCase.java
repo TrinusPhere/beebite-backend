@@ -9,6 +9,7 @@ import com.fidecode.biteflow.domain.catalog.exception.ProductNotFoundException;
 import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
 import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -38,7 +39,7 @@ public class UpdateProductUseCase {
     public ProductResponse execute(UUID storeId, UUID id, ProductRequest request) {
         Product product = productRepository.findById(id)
             .orElseThrow(() -> new ProductNotFoundException(id.toString()));
-        if (!product.getStoreId().equals(storeId)) throw new ForbiddenAccessException("Acesso negado");
+        StoreGuard.enforce(product, storeId);
 
         product.setName(request.name());
         UUID categoryId = request.categoryId() != null && !request.categoryId().isBlank() ? UUID.fromString(request.categoryId()) : null;

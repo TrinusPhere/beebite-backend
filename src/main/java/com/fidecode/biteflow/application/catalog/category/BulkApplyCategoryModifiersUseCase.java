@@ -5,6 +5,7 @@ import com.fidecode.biteflow.domain.catalog.entity.Product;
 import com.fidecode.biteflow.domain.catalog.repository.ProductCategoryRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
 import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -28,7 +29,7 @@ public class BulkApplyCategoryModifiersUseCase {
     public void execute(UUID storeId, UUID categoryId) {
         ProductCategory category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
-        if (!category.getStoreId().equals(storeId)) throw new ForbiddenAccessException("Acesso negado");
+        StoreGuard.enforce(category, storeId);
         
         if (category.getDefaultModifierGroupIds() == null) {
             return;

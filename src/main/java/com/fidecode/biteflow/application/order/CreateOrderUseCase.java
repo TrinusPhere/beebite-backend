@@ -46,10 +46,9 @@ public class CreateOrderUseCase {
 
         if (request.customer() != null) {
             if (request.customer().id() != null && !request.customer().id().isBlank()) {
-                order.setCustomerId(UUID.fromString(request.customer().id()));
+                order.linkCustomer(UUID.fromString(request.customer().id()));
             }
-            order.setCustomerName(request.customer().name());
-            order.setCustomerAddress(request.customer().address());
+            order.updateCustomerInfo(request.customer().name(), request.customer().address());
         }
 
         if (request.deliveryCost() != null) {

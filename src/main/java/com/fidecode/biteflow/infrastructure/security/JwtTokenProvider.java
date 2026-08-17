@@ -36,11 +36,4 @@ public class JwtTokenProvider implements TokenProvider {
             .expiresIn(Duration.ofSeconds(TOKEN_LIFESPAN_SECONDS))
             .sign();
     }
-
-    @Override
-    public String extractLogin(String token) {
-        // Extração de claims é feita pelo SmallRye JWT automaticamente via @Context
-        // Este método é para uso programático quando necessário
-        throw new UnsupportedOperationException("Use @Claim injetado via SmallRye JWT.");
-    }
 }

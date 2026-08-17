@@ -7,7 +7,7 @@ import com.fidecode.biteflow.domain.auth.exception.UserAlreadyExistsException;
 import com.fidecode.biteflow.domain.auth.repository.UserRepository;
 import com.fidecode.biteflow.domain.auth.valueobject.Permission;
 import com.fidecode.biteflow.domain.auth.valueobject.Role;
-import com.fidecode.biteflow.infrastructure.security.PasswordHasher;
+import com.fidecode.biteflow.application.auth.port.PasswordEncoder;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -18,12 +18,12 @@ import java.util.UUID;
 public class CreateUserUseCase {
 
     private final UserRepository userRepository;
-    private final PasswordHasher passwordHasher;
+    private final PasswordEncoder passwordEncoder;
 
     @Inject
-    public CreateUserUseCase(UserRepository userRepository, PasswordHasher passwordHasher) {
+    public CreateUserUseCase(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.passwordHasher = passwordHasher;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserResponse execute(UUID storeId, CreateUserRequest request) {
@@ -36,7 +36,7 @@ public class CreateUserUseCase {
             ? request.permissions().stream().map(Permission::fromValue).toList()
             : List.of();
 
-        String hashed = passwordHasher.hash(request.password());
+        String hashed = passwordEncoder.hash(request.password());
         User user = new User(storeId, request.name(), request.login(), hashed, role, permissions);
         User saved = userRepository.save(user);
 

@@ -1,4 +1,5 @@
 package com.fidecode.biteflow.domain.catalog.entity;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 
 import com.fidecode.biteflow.domain.catalog.valueobject.ModifierType;
 
@@ -9,7 +10,7 @@ import java.util.UUID;
 /**
  * Domain entity — ModifierGroup.
  */
-public class ModifierGroup {
+public class ModifierGroup implements StoreGuard.StoreScoped {
 
     private UUID id;
     private UUID storeId;

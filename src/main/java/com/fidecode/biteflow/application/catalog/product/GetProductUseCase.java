@@ -8,6 +8,7 @@ import com.fidecode.biteflow.domain.catalog.exception.ProductNotFoundException;
 import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
 import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -36,7 +37,7 @@ public class GetProductUseCase {
     public ProductResponse execute(UUID storeId, UUID id) {
         Product product = productRepository.findById(id)
             .orElseThrow(() -> new ProductNotFoundException(id.toString()));
-        if (!product.getStoreId().equals(storeId)) throw new ForbiddenAccessException("Acesso negado");
+        StoreGuard.enforce(product, storeId);
         
         List<UUID> ingredientIds = new ArrayList<>();
         if (product.getTechnicalSheet() != null) {

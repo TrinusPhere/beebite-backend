@@ -1,78 +1,69 @@
 package com.fidecode.biteflow.presentation.rest;
 
-import com.fidecode.biteflow.application.delivery.DriverUseCases;
+import com.fidecode.biteflow.application.delivery.*;
 import com.fidecode.biteflow.application.delivery.dto.DriverRequest;
 import com.fidecode.biteflow.application.delivery.dto.DriverResponse;
-import io.quarkus.security.Authenticated;
+
+import jakarta.annotation.security.RolesAllowed;
+import io.quarkus.security.PermissionsAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.net.URI;
-import java.util.List;
 import java.util.UUID;
 
 @Path("/api/v1/drivers")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Authenticated
-public class DeliveryDriverResource {
 
-    @Inject DriverUseCases driverUseCases;
-    @Inject JsonWebToken jwt;
 
+@RolesAllowed({"ADMIN","GERENTE"})
+public class DeliveryDriverResource extends BaseResource {
+
+    @Inject CreateDriverUseCase createUseCase;
+    @Inject UpdateDriverUseCase updateUseCase;
+    @Inject DeleteDriverUseCase deleteUseCase;
+    @Inject GetDriverUseCase getUseCase;
+    @Inject ListDriversUseCase listUseCase;
+
+    @PermissionsAllowed("entregadores")
     @GET
     public Response list(
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("10") int size) {
-        checkPermission("entregadores");
-        return Response.ok(driverUseCases.list(getStoreId(), page, size)).build();
+        return Response.ok(listUseCase.execute(getStoreId(), page, size)).build();
     }
 
+    @PermissionsAllowed("entregadores")
     @GET
     @Path("/{id}")
     public Response getById(@PathParam("id") UUID id) {
-        checkPermission("entregadores");
-        return Response.ok(driverUseCases.getById(getStoreId(), id)).build();
+        return Response.ok(getUseCase.execute(getStoreId(), id)).build();
     }
 
+    @PermissionsAllowed("entregadores")
     @POST
     public Response create(@Valid DriverRequest request) {
-        checkPermission("entregadores");
-        DriverResponse created = driverUseCases.create(getStoreId(), request);
+        DriverResponse created = createUseCase.execute(getStoreId(), request);
         return Response.created(URI.create("/api/v1/drivers/" + created.id()))
             .entity(created).build();
     }
 
+    @PermissionsAllowed("entregadores")
     @PUT
     @Path("/{id}")
     public Response update(@PathParam("id") UUID id, @Valid DriverRequest request) {
-        checkPermission("entregadores");
-        return Response.ok(driverUseCases.update(getStoreId(), id, request)).build();
+        return Response.ok(updateUseCase.execute(getStoreId(), id, request)).build();
     }
 
+    @PermissionsAllowed("entregadores")
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") UUID id) {
-        checkPermission("entregadores");
-        driverUseCases.delete(getStoreId(), id);
+        deleteUseCase.execute(getStoreId(), id);
         return Response.noContent().build();
-    }
-
-    private UUID getStoreId() {
-        String storeIdClaim = jwt.getClaim("storeId");
-        return storeIdClaim != null ? UUID.fromString(storeIdClaim)
-            : UUID.fromString("00000000-0000-0000-0000-000000000001");
-    }
-
-    private void checkPermission(String required) {
-        List<String> permissions = jwt.getClaim("permissions");
-        boolean isAdmin = jwt.getGroups().contains("ADMIN");
-        if (!isAdmin && (permissions == null || !permissions.contains(required))) {
-            throw new ForbiddenException("Permissão '" + required + "' necessária.");
-        }
     }
 }

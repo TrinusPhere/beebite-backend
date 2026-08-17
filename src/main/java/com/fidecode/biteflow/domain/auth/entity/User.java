@@ -2,6 +2,7 @@ package com.fidecode.biteflow.domain.auth.entity;
 
 import com.fidecode.biteflow.domain.auth.valueobject.Permission;
 import com.fidecode.biteflow.domain.auth.valueobject.Role;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 
 import java.util.Arrays;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.UUID;
  * Domain entity — User.
  * POJO puro, sem dependência de framework.
  */
-public class User {
+public class User implements StoreGuard.StoreScoped {
 
     private UUID id;
     private UUID storeId;

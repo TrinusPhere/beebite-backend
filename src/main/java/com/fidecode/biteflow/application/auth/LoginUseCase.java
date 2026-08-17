@@ -6,7 +6,7 @@ import com.fidecode.biteflow.application.auth.port.TokenProvider;
 import com.fidecode.biteflow.domain.auth.entity.User;
 import com.fidecode.biteflow.domain.auth.exception.InvalidCredentialsException;
 import com.fidecode.biteflow.domain.auth.repository.UserRepository;
-import com.fidecode.biteflow.infrastructure.security.PasswordHasher;
+import com.fidecode.biteflow.application.auth.port.PasswordEncoder;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -16,15 +16,15 @@ import java.util.List;
 public class LoginUseCase {
 
     private final UserRepository userRepository;
-    private final PasswordHasher passwordHasher;
+    private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
 
     @Inject
     public LoginUseCase(UserRepository userRepository,
-                        PasswordHasher passwordHasher,
+                        PasswordEncoder passwordEncoder,
                         TokenProvider tokenProvider) {
         this.userRepository = userRepository;
-        this.passwordHasher = passwordHasher;
+        this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
     }
 
@@ -36,7 +36,7 @@ public class LoginUseCase {
             throw new InvalidCredentialsException();
         }
 
-        if (!passwordHasher.matches(request.password(), user.getPasswordHash())) {
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
 

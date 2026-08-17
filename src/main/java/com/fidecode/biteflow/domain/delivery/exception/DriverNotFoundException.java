@@ -1,6 +1,8 @@
 package com.fidecode.biteflow.domain.delivery.exception;
 
-public class DriverNotFoundException extends RuntimeException {
+import com.fidecode.biteflow.domain.shared.exception.EntityNotFoundException;
+
+public class DriverNotFoundException extends EntityNotFoundException {
     public DriverNotFoundException(String id) {
         super("Entregador não encontrado: " + id);
     }

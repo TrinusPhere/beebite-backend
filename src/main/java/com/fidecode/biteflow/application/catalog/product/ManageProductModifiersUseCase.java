@@ -5,6 +5,7 @@ import com.fidecode.biteflow.domain.catalog.entity.Product;
 import com.fidecode.biteflow.domain.catalog.exception.ProductNotFoundException;
 import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
 import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -27,7 +28,7 @@ public class ManageProductModifiersUseCase {
     public ProductResponse updateRemovableItems(UUID storeId, UUID productId, List<String> ingredientIds) {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new ProductNotFoundException(productId.toString()));
-        if (!product.getStoreId().equals(storeId)) throw new ForbiddenAccessException("Acesso negado");
+        StoreGuard.enforce(product, storeId);
         product.setRemovableItemIds(ingredientIds != null ? ingredientIds.stream().map(UUID::fromString).toList() : List.of());
         return productDtoMapper.toResponse(productRepository.save(product)); 
     }
@@ -35,7 +36,7 @@ public class ManageProductModifiersUseCase {
     public ProductResponse updateModifierGroups(UUID storeId, UUID productId, List<String> groupIds) {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new ProductNotFoundException(productId.toString()));
-        if (!product.getStoreId().equals(storeId)) throw new ForbiddenAccessException("Acesso negado");
+        StoreGuard.enforce(product, storeId);
         product.setModifierGroupIds(groupIds != null ? groupIds.stream().map(UUID::fromString).toList() : List.of());
         return productDtoMapper.toResponse(productRepository.save(product));
     }

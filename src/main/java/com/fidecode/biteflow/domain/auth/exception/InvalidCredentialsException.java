@@ -1,6 +1,8 @@
 package com.fidecode.biteflow.domain.auth.exception;
 
-public class InvalidCredentialsException extends RuntimeException {
+import com.fidecode.biteflow.domain.shared.exception.UnauthorizedException;
+
+public class InvalidCredentialsException extends UnauthorizedException {
     public InvalidCredentialsException() {
         super("Credenciais inválidas.");
     }

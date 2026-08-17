@@ -4,6 +4,7 @@ import com.fidecode.biteflow.application.order.dto.OrderResponse;
 import com.fidecode.biteflow.domain.order.entity.Order;
 import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -20,9 +21,10 @@ public class GetOrderUseCase {
     }
 
     public OrderResponse getById(UUID storeId, UUID id) {
-        Order order = orderRepository.findById(id)
-            .orElseThrow(() -> new OrderNotFoundException(id.toString()));
-        if (!order.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
+        Order order = StoreGuard.enforce(
+            orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id.toString())),
+            storeId
+        );
         return OrderDtoMapper.toResponse(order);
     }
 }

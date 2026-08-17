@@ -3,6 +3,7 @@ package com.fidecode.biteflow.infrastructure.persistence.panache.repository;
 import com.fidecode.biteflow.domain.order.entity.*;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.valueobject.OrderStatus;
+import com.fidecode.biteflow.domain.shared.exception.ConcurrentModificationException;
 import com.fidecode.biteflow.infrastructure.persistence.panache.entity.*;
 import com.fidecode.biteflow.infrastructure.persistence.panache.mapper.OrderMapper;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -62,14 +63,18 @@ public class PanacheOrderRepository implements OrderRepository {
     @Transactional
     public Order save(Order order) {
         OrderEntity entity = OrderMapper.toEntity(order);
-
-        if (entity.id == null) {
-            repo.persist(entity);
-        } else {
-            entity = em.merge(entity);
+        try {
+            if (entity.id == null) {
+                repo.persist(entity);
+            } else {
+                entity = em.merge(entity);
+            }
+            return toDomainFull(entity);
+        } catch (jakarta.persistence.OptimisticLockException | org.hibernate.StaleObjectStateException ex) {
+            // Converte exceção de infra para exceção de domínio — mantém P7
+            String id = entity.id != null ? entity.id.toString() : "desconhecido";
+            throw new ConcurrentModificationException("pedido", id);
         }
-
-        return toDomainFull(entity);
     }
 
     @Override

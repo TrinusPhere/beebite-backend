@@ -5,12 +5,16 @@ import com.fidecode.biteflow.domain.order.exception.InvalidOrderTransitionExcept
 import com.fidecode.biteflow.domain.order.valueobject.OrderStatus;
 import com.fidecode.biteflow.domain.order.valueobject.OrderType;
 
-import java.time.LocalDateTime;
+import java.util.UUID;
+
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Domain Service — regras de transição de status do pedido.
- * POJO puro, sem dependência de framework.
+ * POJO puro, sem dependência de framework — anotação @ApplicationScoped é
+ * puramente infraestrutural (ciclo de vida CDI) e não afeta a lógica de domínio.
  */
+@ApplicationScoped
 public class OrderDomainService {
 
     /**
@@ -69,11 +73,10 @@ public class OrderDomainService {
     }
 
     /**
-     * Atribui motoboy ao pedido.
+     * Atribui motoboy ao pedido via método de comportamento do aggregate.
      */
-    public void assignDriver(Order order, java.util.UUID driverId, String driverName) {
-        order.setDriverId(driverId);
-        order.setDriverName(driverName);
+    public void assignDriver(Order order, UUID driverId, String driverName) {
+        order.assignDriver(driverId, driverName);
     }
 
     private void applyStatusChange(Order order, OrderStatus newStatus) {
@@ -84,11 +87,6 @@ public class OrderDomainService {
                 "Motoboy obrigatório para mover pedido delivery para EM_ROTA.");
         }
 
-        order.setStatus(newStatus);
-        order.setUpdatedAt(LocalDateTime.now());
-
-        if (newStatus == OrderStatus.FINALIZADO) {
-            order.setFinishedAt(LocalDateTime.now());
-        }
+        order.changeStatus(newStatus);
     }
 }

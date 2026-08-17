@@ -6,6 +6,7 @@ import com.fidecode.biteflow.domain.catalog.entity.Ingredient;
 import com.fidecode.biteflow.domain.catalog.exception.IngredientNotFoundException;
 import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
 import com.fidecode.biteflow.domain.catalog.valueobject.Unit;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -24,7 +25,7 @@ public class UpdateIngredientUseCase {
     public IngredientResponse execute(UUID storeId, UUID id, IngredientRequest request) {
         Ingredient ingredient = repository.findById(id)
             .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
-        if (!ingredient.getStoreId().equals(storeId)) throw new com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException("Acesso negado");
+        StoreGuard.enforce(ingredient, storeId);
 
         ingredient.setName(request.name());
         if (request.stock() != null) ingredient.setStock(request.stock());

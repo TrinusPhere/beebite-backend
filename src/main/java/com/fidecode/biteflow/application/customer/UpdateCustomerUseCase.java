@@ -6,6 +6,7 @@ import com.fidecode.biteflow.domain.customer.entity.Customer;
 import com.fidecode.biteflow.domain.customer.exception.CustomerNotFoundException;
 import com.fidecode.biteflow.domain.customer.repository.CustomerRepository;
 import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -24,7 +25,7 @@ public class UpdateCustomerUseCase {
     public CustomerResponse execute(UUID storeId, UUID id, CustomerRequest request) {
         Customer customer = customerRepository.findById(id)
             .orElseThrow(() -> new CustomerNotFoundException(id.toString()));
-        if (!customer.getStoreId().equals(storeId)) throw new ForbiddenAccessException("Acesso negado");
+        StoreGuard.enforce(customer, storeId);
 
         customer.setName(request.name());
         customer.setPhone(request.phone());

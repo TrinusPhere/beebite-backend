@@ -14,6 +14,7 @@ public class OrderMapper {
     public static OrderEntity toEntity(Order order) {
         OrderEntity e = new OrderEntity();
         e.id = order.getId();
+        e.version = order.getVersion();   // obrigatório para @Version — evita OptimisticLockException
         e.storeId = order.getStoreId();
         e.displayId = order.getDisplayId();
         e.customerId = order.getCustomerId();
@@ -45,26 +46,16 @@ public class OrderMapper {
     }
 
     public static Order toDomain(OrderEntity e, List<OrderItem> items) {
-        Order order = new Order(e.storeId, OrderType.valueOf(e.type), PaymentMethod.valueOf(e.paymentMethod));
-        order.setId(e.id);
-        order.setDisplayId(e.displayId);
-        order.setCustomerId(e.customerId);
-        order.setCustomerName(e.customerName);
-        order.setCustomerAddress(e.customerAddress);
-        order.setStatus(OrderStatus.valueOf(e.status));
-        order.setDriverId(e.driverId);
-        order.setDriverName(e.driverName);
-        order.setPlatform(OrderPlatform.valueOf(e.platform));
-        order.setExternalOrderId(e.externalOrderId);
-        order.setSubtotal(e.subtotal);
-        order.setDeliveryCost(e.deliveryCost);
-        order.setTotalValue(e.totalValue);
-        order.setNfeEmitted(e.nfeEmitted);
-        order.setItems(items != null ? items : new ArrayList<>());
-        order.setCreatedAt(e.createdAt);
-        order.setUpdatedAt(e.updatedAt);
-        order.setFinishedAt(e.finishedAt);
-        return order;
+        return Order.reconstitute(
+            e.id, e.storeId, e.displayId, e.version,
+            e.customerId, e.customerName, e.customerAddress,
+            OrderType.valueOf(e.type), OrderStatus.valueOf(e.status), PaymentMethod.valueOf(e.paymentMethod),
+            e.driverId, e.driverName,
+            OrderPlatform.valueOf(e.platform), e.externalOrderId,
+            e.subtotal, e.deliveryCost, e.totalValue,
+            e.nfeEmitted, items != null ? items : new ArrayList<>(),
+            e.createdAt, e.updatedAt, e.finishedAt
+        );
     }
 
     public static OrderItemEntity toItemEntity(OrderItem item) {

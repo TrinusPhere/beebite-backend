@@ -4,6 +4,7 @@ import com.fidecode.biteflow.application.catalog.dto.CategoryResponse;
 import com.fidecode.biteflow.domain.catalog.entity.ProductCategory;
 import com.fidecode.biteflow.domain.catalog.repository.ProductCategoryRepository;
 import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -22,7 +23,7 @@ public class GetCategoryUseCase {
     public CategoryResponse execute(UUID storeId, UUID id) {
         ProductCategory category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
-        if (!category.getStoreId().equals(storeId)) throw new ForbiddenAccessException("Acesso negado");
+        StoreGuard.enforce(category, storeId);
         return CategoryDtoMapper.toResponse(category);
     }
 }
