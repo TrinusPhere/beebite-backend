@@ -13,6 +13,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
@@ -27,6 +28,15 @@ public class AuthResource {
     @Inject GetUserUseCase getUserUseCase;
     @Inject JsonWebToken jwt;
 
+    private NewCookie createAuthCookie(String token) {
+        // secure = false for local development. We set HttpOnly = true.
+        return new NewCookie("biteflow_jwt", token, "/", null, null, 86400, false, true);
+    }
+
+    private NewCookie createExpiredCookie() {
+        return new NewCookie("biteflow_jwt", null, "/", null, null, 0, false, true);
+    }
+
     /**
      * POST /api/v1/auth/login — público
      */
@@ -35,18 +45,17 @@ public class AuthResource {
     @PermitAll
     public Response login(@Valid LoginRequest request) {
         LoginResponse response = loginUseCase.execute(request);
-        return Response.ok(response).build();
+        return Response.ok(response).cookie(createAuthCookie(response.token())).build();
     }
 
     /**
-     * POST /api/v1/auth/logout — autenticado (stateless: apenas retorna 204)
+     * POST /api/v1/auth/logout — público (para garantir que o cookie é limpo mesmo expirado)
      */
     @POST
     @Path("/logout")
-    @Authenticated
+    @PermitAll
     public Response logout() {
-        // JWT é stateless; invalidação real requer blocklist (fase futura)
-        return Response.noContent().build();
+        return Response.noContent().cookie(createExpiredCookie()).build();
     }
 
     /**
