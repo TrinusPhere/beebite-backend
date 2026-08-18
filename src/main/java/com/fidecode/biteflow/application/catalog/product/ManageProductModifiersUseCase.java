@@ -29,7 +29,12 @@ public class ManageProductModifiersUseCase {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new ProductNotFoundException(productId.toString()));
         StoreGuard.enforce(product, storeId);
-        product.setRemovableItemIds(ingredientIds != null ? ingredientIds.stream().map(UUID::fromString).toList() : List.of());
+        product.setRemovableItemIds(ingredientIds != null
+            ? ingredientIds.stream()
+                .filter(id -> id != null && !id.isBlank())
+                .map(UUID::fromString)
+                .toList()
+            : List.of());
         return productDtoMapper.toResponse(productRepository.save(product)); 
     }
 
@@ -37,7 +42,12 @@ public class ManageProductModifiersUseCase {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new ProductNotFoundException(productId.toString()));
         StoreGuard.enforce(product, storeId);
-        product.setModifierGroupIds(groupIds != null ? groupIds.stream().map(UUID::fromString).toList() : List.of());
+        product.setModifierGroupIds(groupIds != null
+            ? groupIds.stream()
+                .filter(id -> id != null && !id.isBlank())
+                .map(UUID::fromString)
+                .toList()
+            : List.of());
         return productDtoMapper.toResponse(productRepository.save(product));
     }
 }

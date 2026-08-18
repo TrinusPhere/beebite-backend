@@ -15,6 +15,7 @@ public final class ProductMapper {
         if (e == null) return null;
         Product p = new Product(e.storeId, e.name, e.categoryId, e.price);
         p.setId(e.id);
+        p.setVersion(e.version); // P9 — round-trip do @Version
         p.setDescription(e.description);
         p.setImageUrl(e.imageUrl);
         p.setStock(e.stock);
@@ -36,6 +37,7 @@ public final class ProductMapper {
     public static ProductEntity toEntity(Product p) {
         ProductEntity e = new ProductEntity();
         e.id = p.getId();
+        e.version = p.getVersion(); // P9 — round-trip do @Version
         e.storeId = p.getStoreId();
         e.name = p.getName();
         e.categoryId = p.getCategoryId();

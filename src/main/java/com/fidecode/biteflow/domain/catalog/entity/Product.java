@@ -13,6 +13,7 @@ import java.util.UUID;
 public class Product implements StoreGuard.StoreScoped {
 
     private UUID id;
+    private Long version; // P9 — campo @Version para controle de concorrência
     private UUID storeId;
     private String name;
     private UUID categoryId;
@@ -59,6 +60,7 @@ public class Product implements StoreGuard.StoreScoped {
 
     // ── Getters ──
     public UUID getId()                         { return id; }
+    public Long getVersion()                    { return version; }
     public UUID getStoreId()                    { return storeId; }
     public String getName()                     { return name; }
     public UUID getCategoryId()                 { return categoryId; }
@@ -73,6 +75,7 @@ public class Product implements StoreGuard.StoreScoped {
 
     // ── Setters ──
     public void setId(UUID id)                                  { this.id = id; }
+    public void setVersion(Long version)                        { this.version = version; }
     public void setName(String name)                            { this.name = name; }
     public void setCategoryId(UUID categoryId)                  { this.categoryId = categoryId; }
     public void setDescription(String description)              { this.description = description; }

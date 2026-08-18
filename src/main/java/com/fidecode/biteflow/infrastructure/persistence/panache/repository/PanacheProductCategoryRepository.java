@@ -1,16 +1,18 @@
 package com.fidecode.biteflow.infrastructure.persistence.panache.repository;
 
-import com.fidecode.biteflow.domain.catalog.entity.ProductCategory;
-import com.fidecode.biteflow.domain.catalog.repository.ProductCategoryRepository;
-import com.fidecode.biteflow.infrastructure.persistence.panache.entity.ProductCategoryEntity;
-import com.fidecode.biteflow.infrastructure.persistence.panache.mapper.ProductCategoryMapper;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import com.fidecode.biteflow.domain.catalog.entity.ProductCategory;
+import com.fidecode.biteflow.domain.catalog.repository.ProductCategoryRepository;
+import com.fidecode.biteflow.infrastructure.persistence.panache.entity.ProductCategoryEntity;
+import com.fidecode.biteflow.infrastructure.persistence.panache.mapper.ProductCategoryMapper;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class PanacheProductCategoryRepository implements ProductCategoryRepository {
@@ -31,13 +33,19 @@ public class PanacheProductCategoryRepository implements ProductCategoryReposito
     }
 
     @Override
+    @Transactional
     public ProductCategory save(ProductCategory category) {
         ProductCategoryEntity entity = ProductCategoryMapper.toEntity(category);
-        repo.persist(entity);
+        if (entity.id == null) {
+            repo.persist(entity);
+        } else {
+            entity = repo.getEntityManager().merge(entity);
+        }
         return ProductCategoryMapper.toDomain(entity);
     }
 
     @Override
+    @Transactional
     public void deleteById(UUID id) {
         repo.findByIdOptional(id).ifPresent(entity -> {
             entity.deletedAt = java.time.LocalDateTime.now();
