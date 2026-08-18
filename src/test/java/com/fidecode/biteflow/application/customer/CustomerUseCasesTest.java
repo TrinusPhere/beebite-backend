@@ -2,9 +2,11 @@ package com.fidecode.biteflow.application.customer;
 
 import com.fidecode.biteflow.application.customer.dto.CustomerRequest;
 import com.fidecode.biteflow.application.customer.dto.CustomerResponse;
+import com.fidecode.biteflow.application.shared.PageResponse;
 import com.fidecode.biteflow.domain.customer.entity.Customer;
 import com.fidecode.biteflow.domain.customer.exception.CustomerNotFoundException;
 import com.fidecode.biteflow.domain.customer.repository.CustomerRepository;
+import com.fidecode.biteflow.domain.shared.PageResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,12 +27,21 @@ class CustomerUseCasesTest {
 
     @Mock private CustomerRepository customerRepository;
 
-    private CustomerUseCases useCases;
+    private CreateCustomerUseCase createCustomerUseCase;
+    private UpdateCustomerUseCase updateCustomerUseCase;
+    private DeleteCustomerUseCase deleteCustomerUseCase;
+    private ListCustomersUseCase listCustomersUseCase;
+    private GetCustomerUseCase getCustomerUseCase;
+
     private final UUID STORE_ID = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        useCases = new CustomerUseCases(customerRepository);
+        createCustomerUseCase = new CreateCustomerUseCase(customerRepository);
+        updateCustomerUseCase = new UpdateCustomerUseCase(customerRepository);
+        deleteCustomerUseCase = new DeleteCustomerUseCase(customerRepository);
+        listCustomersUseCase = new ListCustomersUseCase(customerRepository);
+        getCustomerUseCase = new GetCustomerUseCase(customerRepository);
     }
 
     @Test
@@ -45,7 +57,7 @@ class CustomerUseCasesTest {
             "01310-100", "Rua das Flores", "123", "Apto 42", "Centro"
         );
 
-        CustomerResponse response = useCases.create(STORE_ID, request);
+        CustomerResponse response = createCustomerUseCase.execute(STORE_ID, request);
 
         assertNotNull(response.id());
         assertEquals("João Silva", response.name());
@@ -67,7 +79,7 @@ class CustomerUseCasesTest {
             null, null, null, null, null
         );
 
-        CustomerResponse response = useCases.update(STORE_ID, customerId, request);
+        CustomerResponse response = updateCustomerUseCase.execute(STORE_ID, customerId, request);
         assertEquals("João Atualizado", response.name());
         assertEquals("(11) 91111-2222", response.phone());
     }
@@ -78,7 +90,7 @@ class CustomerUseCasesTest {
         when(customerRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(CustomerNotFoundException.class,
-            () -> useCases.update(STORE_ID, id, new CustomerRequest("X", null, null, null, null, null, null, null)));
+            () -> updateCustomerUseCase.execute(STORE_ID, id, new CustomerRequest("X", null, null, null, null, null, null, null)));
     }
 
     @Test
@@ -88,7 +100,7 @@ class CustomerUseCasesTest {
         customer.setId(id);
         when(customerRepository.findById(id)).thenReturn(Optional.of(customer));
 
-        useCases.delete(STORE_ID, id);
+        deleteCustomerUseCase.execute(STORE_ID, id);
         verify(customerRepository).deleteById(id);
     }
 
@@ -97,11 +109,12 @@ class CustomerUseCasesTest {
         Customer c1 = new Customer(STORE_ID, "João");
         c1.setId(UUID.randomUUID());
 
-        when(customerRepository.searchByStoreId(STORE_ID, "João")).thenReturn(List.of(c1));
+        PageResult<Customer> pageResult = new PageResult<>(List.of(c1), 0, 20, 1L, 1);
+        when(customerRepository.searchByStoreId(eq(STORE_ID), eq("João"), eq(0), eq(20))).thenReturn(pageResult);
 
-        List<CustomerResponse> result = useCases.list(STORE_ID, "João");
-        assertEquals(1, result.size());
-        assertEquals("João", result.get(0).name());
+        PageResponse<CustomerResponse> result = listCustomersUseCase.execute(STORE_ID, "João", 0, 20);
+        assertEquals(1, result.getContent().size());
+        assertEquals("João", result.getContent().get(0).name());
     }
 
     @Test
@@ -111,10 +124,11 @@ class CustomerUseCasesTest {
         Customer c2 = new Customer(STORE_ID, "Maria");
         c2.setId(UUID.randomUUID());
 
-        when(customerRepository.findAllByStoreId(STORE_ID)).thenReturn(List.of(c1, c2));
+        PageResult<Customer> pageResult = new PageResult<>(List.of(c1, c2), 0, 20, 2L, 1);
+        when(customerRepository.findAllByStoreId(eq(STORE_ID), eq(0), eq(20))).thenReturn(pageResult);
 
-        List<CustomerResponse> result = useCases.list(STORE_ID, null);
-        assertEquals(2, result.size());
+        PageResponse<CustomerResponse> result = listCustomersUseCase.execute(STORE_ID, null, 0, 20);
+        assertEquals(2, result.getContent().size());
     }
 
     @Test
@@ -124,7 +138,7 @@ class CustomerUseCasesTest {
         customer.setId(id);
         when(customerRepository.findById(id)).thenReturn(Optional.of(customer));
 
-        CustomerResponse response = useCases.getById(STORE_ID, id);
+        CustomerResponse response = getCustomerUseCase.execute(STORE_ID, id);
         assertEquals("João", response.name());
     }
 }

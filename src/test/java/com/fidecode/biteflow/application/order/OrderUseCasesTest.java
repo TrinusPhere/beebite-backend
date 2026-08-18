@@ -51,7 +51,7 @@ class OrderUseCasesTest {
     void setUp() {
         createOrderUseCase = new CreateOrderUseCase(orderRepository, productRepository,
             modifierGroupRepository, ingredientRepository);
-        manageOrderUseCase = new ManageOrderUseCase(orderRepository);
+        manageOrderUseCase = new ManageOrderUseCase(orderRepository, orderDomainService);
         updateOrderUseCase = new UpdateOrderUseCase(orderRepository, productRepository,
             modifierGroupRepository, ingredientRepository);
         getOrderKanbanUseCase = new GetOrderKanbanUseCase(orderRepository);
@@ -154,7 +154,7 @@ class OrderUseCasesTest {
         Order o2 = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
         o2.setId(UUID.randomUUID());
         o2.setDisplayId("#1002");
-        o2.setStatus(OrderStatus.PREPARO);
+        o2.changeStatus(OrderStatus.PREPARO);
         o2.addItem(new OrderItem(UUID.randomUUID(), "Suco", 1, new BigDecimal("8.00"), null));
 
         when(orderRepository.findActiveKanbanOrdersByStoreId(eq(STORE_ID), any())).thenReturn(List.of(o1, o2));

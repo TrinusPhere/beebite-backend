@@ -2,13 +2,15 @@ package com.fidecode.biteflow.application.delivery;
 
 import com.fidecode.biteflow.application.delivery.dto.DriverRequest;
 import com.fidecode.biteflow.application.delivery.dto.DriverResponse;
+import com.fidecode.biteflow.application.shared.PageResponse;
 import com.fidecode.biteflow.domain.delivery.entity.DeliveryDriver;
 import com.fidecode.biteflow.domain.delivery.exception.DriverNotFoundException;
 import com.fidecode.biteflow.domain.delivery.repository.DeliveryDriverRepository;
 import com.fidecode.biteflow.domain.delivery.valueobject.DriverStatus;
+import com.fidecode.biteflow.domain.shared.PageResult;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -19,15 +21,30 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DriverUseCasesTest {
 
     @Mock DeliveryDriverRepository driverRepository;
-    @InjectMocks DriverUseCases driverUseCases;
+
+    private CreateDriverUseCase createDriverUseCase;
+    private UpdateDriverUseCase updateDriverUseCase;
+    private DeleteDriverUseCase deleteDriverUseCase;
+    private ListDriversUseCase listDriversUseCase;
+    private GetDriverUseCase getDriverUseCase;
 
     private final UUID storeId = UUID.randomUUID();
+
+    @BeforeEach
+    void setUp() {
+        createDriverUseCase = new CreateDriverUseCase(driverRepository);
+        updateDriverUseCase = new UpdateDriverUseCase(driverRepository);
+        deleteDriverUseCase = new DeleteDriverUseCase(driverRepository);
+        listDriversUseCase = new ListDriversUseCase(driverRepository);
+        getDriverUseCase = new GetDriverUseCase(driverRepository);
+    }
 
     @Test
     void shouldCreateDriver() {
@@ -42,7 +59,7 @@ class DriverUseCasesTest {
             return d;
         });
 
-        DriverResponse response = driverUseCases.create(storeId, request);
+        DriverResponse response = createDriverUseCase.execute(storeId, request);
 
         assertNotNull(response.id());
         assertEquals("Carlos Silva", response.name());
@@ -64,7 +81,7 @@ class DriverUseCasesTest {
         DriverRequest request = new DriverRequest("New Name", "222", "INATIVO",
             false, true, BigDecimal.ZERO, false, BigDecimal.ZERO);
 
-        DriverResponse response = driverUseCases.update(storeId, driverId, request);
+        DriverResponse response = updateDriverUseCase.execute(storeId, driverId, request);
 
         assertEquals("New Name", response.name());
         assertEquals("INATIVO", response.status());
@@ -76,7 +93,7 @@ class DriverUseCasesTest {
         when(driverRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(DriverNotFoundException.class,
-            () -> driverUseCases.update(storeId, id, new DriverRequest("X", null, null, null, null, null, null, null)));
+            () -> updateDriverUseCase.execute(storeId, id, new DriverRequest("X", null, null, null, null, null, null, null)));
     }
 
     @Test
@@ -87,7 +104,7 @@ class DriverUseCasesTest {
 
         when(driverRepository.findById(id)).thenReturn(Optional.of(existing));
 
-        driverUseCases.delete(storeId, id);
+        deleteDriverUseCase.execute(storeId, id);
 
         verify(driverRepository).deleteById(id);
     }
@@ -97,7 +114,7 @@ class DriverUseCasesTest {
         UUID id = UUID.randomUUID();
         when(driverRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(DriverNotFoundException.class, () -> driverUseCases.delete(storeId, id));
+        assertThrows(DriverNotFoundException.class, () -> deleteDriverUseCase.execute(storeId, id));
     }
 
     @Test
@@ -107,10 +124,11 @@ class DriverUseCasesTest {
         DeliveryDriver d2 = new DeliveryDriver(storeId, "B", "2");
         d2.setId(UUID.randomUUID());
 
-        when(driverRepository.findAllByStoreId(storeId)).thenReturn(List.of(d1, d2));
+        PageResult<DeliveryDriver> pageResult = new PageResult<>(List.of(d1, d2), 0, 20, 2L, 1);
+        when(driverRepository.findAllByStoreId(eq(storeId), eq(0), eq(20))).thenReturn(pageResult);
 
-        List<DriverResponse> result = driverUseCases.list(storeId);
-        assertEquals(2, result.size());
+        PageResponse<DriverResponse> result = listDriversUseCase.execute(storeId, 0, 20);
+        assertEquals(2, result.getContent().size());
     }
 
     @Test
@@ -121,7 +139,7 @@ class DriverUseCasesTest {
 
         when(driverRepository.findById(id)).thenReturn(Optional.of(d));
 
-        DriverResponse result = driverUseCases.getById(storeId, id);
+        DriverResponse result = getDriverUseCase.execute(storeId, id);
         assertEquals("Carlos", result.name());
     }
 
@@ -130,6 +148,6 @@ class DriverUseCasesTest {
         UUID id = UUID.randomUUID();
         when(driverRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(DriverNotFoundException.class, () -> driverUseCases.getById(storeId, id));
+        assertThrows(DriverNotFoundException.class, () -> getDriverUseCase.execute(storeId, id));
     }
 }
