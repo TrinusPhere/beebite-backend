@@ -136,6 +136,15 @@ public class Order implements StoreGuard.StoreScoped {
     // ═══════════════════════════════════════════════════════════════════════
 
     /**
+     * Verifica se o pedido pode ser editado.
+     * Pedidos em trânsito (EM_ROTA), concluídos (FINALIZADO) ou cancelados (CANCELADO)
+     * são imutáveis — qualquer edição geraria inconsistência operacional.
+     */
+    public boolean isEditable() {
+        return this.status == OrderStatus.ANALISE || this.status == OrderStatus.PREPARO;
+    }
+
+    /**
      * Adiciona um item ao pedido e recalcula totais.
      */
     public void addItem(OrderItem item) {

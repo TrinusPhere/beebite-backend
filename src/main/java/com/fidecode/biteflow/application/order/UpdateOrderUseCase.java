@@ -10,6 +10,7 @@ import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ModifierGroupRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
 import com.fidecode.biteflow.domain.order.entity.*;
+import com.fidecode.biteflow.domain.order.exception.InvalidOrderTransitionException;
 import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.valueobject.*;
@@ -45,6 +46,12 @@ public class UpdateOrderUseCase {
             orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
             storeId
         );
+
+        if (!order.isEditable()) {
+            throw new InvalidOrderTransitionException(
+                "Pedido " + order.getDisplayId() + " não pode ser editado no status " + order.getStatus() + "."
+            );
+        }
 
         if (request.type() != null) {
             order.changeType(OrderType.valueOf(request.type()));

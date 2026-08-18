@@ -72,9 +72,9 @@ class GetDashboardUseCaseTest {
         when(orderRepository.findActiveKanbanOrdersByStoreId(eq(STORE_ID), any()))
             .thenReturn(List.of(activeOrder));
 
-        // Arrange — Clientes novos (no dia)
-        when(customerRepository.findAllByStoreId(eq(STORE_ID), eq(0), eq(1)))
-            .thenReturn(new PageResult<>(List.of(), 0, 1, 12, 12));
+        // Arrange — Clientes novos (hoje vs ontem)
+        when(customerRepository.countByStoreIdAndCreatedSince(eq(STORE_ID), any()))
+            .thenReturn(3L);
 
         // Arrange — Entregadores
         var driver = new DeliveryDriver(STORE_ID, "Carlos Silva", "(11) 99999-0000");

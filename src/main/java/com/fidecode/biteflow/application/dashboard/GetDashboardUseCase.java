@@ -73,33 +73,50 @@ public class GetDashboardUseCase {
 
         String revenueChange = calculateChange(todayRevenue, yesterdayRevenue);
 
-        // ── KPI 2: Novos clientes (total — comparação com ontem é por query count) ──
-        long totalCustomers = customerRepository.findAllByStoreId(storeId, 0, 1).getTotalElements();
+        // ── KPI 2: Novos clientes (hoje vs ontem) ──
+        long newCustomersToday = customerRepository.countByStoreIdAndCreatedSince(storeId, today.atStartOfDay());
+        long newCustomersYesterday = customerRepository.countByStoreIdAndCreatedSince(storeId, yesterday.atStartOfDay())
+            - newCustomersToday; // subtrai os de hoje para isolar apenas os de ontem
+        String customersChange = calculateChange(
+            BigDecimal.valueOf(newCustomersToday), BigDecimal.valueOf(Math.max(newCustomersYesterday, 0)));
 
-        // ── KPI 3: Pedidos ativos ──
+        // ── KPI 3: Pedidos ativos (hoje vs ontem) ──
         List<Order> activeOrders = orderRepository.findActiveKanbanOrdersByStoreId(storeId,
             today.atStartOfDay());
         int activeOrderCount = activeOrders.size();
 
-        // ── KPI 4: Ticket médio ──
+        List<Order> yesterdayActiveOrders = orderRepository.findActiveKanbanOrdersByStoreId(storeId,
+            yesterday.atStartOfDay());
+        // Pedidos ativos de ontem = total encontrados desde ontem - os de hoje
+        int yesterdayActiveCount = Math.max(yesterdayActiveOrders.size() - activeOrderCount, 0);
+        String ordersChange = calculateChange(
+            BigDecimal.valueOf(activeOrderCount), BigDecimal.valueOf(yesterdayActiveCount));
+
+        // ── KPI 4: Ticket médio (hoje vs ontem) ──
         BigDecimal ticketMedio = BigDecimal.ZERO;
         if (!todayRecords.isEmpty()) {
             ticketMedio = todayRevenue.divide(
                 BigDecimal.valueOf(todayRecords.size()), 2, RoundingMode.HALF_UP);
         }
+        BigDecimal yesterdayTicketMedio = BigDecimal.ZERO;
+        if (!yesterdayRecords.isEmpty()) {
+            yesterdayTicketMedio = yesterdayRevenue.divide(
+                BigDecimal.valueOf(yesterdayRecords.size()), 2, RoundingMode.HALF_UP);
+        }
+        String ticketChange = calculateChange(ticketMedio, yesterdayTicketMedio);
 
         // Stats
         List<DashboardResponse.StatItem> stats = new ArrayList<>();
         stats.add(new DashboardResponse.StatItem(
             "Vendas Hoje", todayRevenue, formatCurrency(todayRevenue), revenueChange));
         stats.add(new DashboardResponse.StatItem(
-            "Total Clientes", BigDecimal.valueOf(totalCustomers),
-            String.valueOf(totalCustomers), ""));
+            "Novos Clientes", BigDecimal.valueOf(newCustomersToday),
+            String.valueOf(newCustomersToday), customersChange));
         stats.add(new DashboardResponse.StatItem(
             "Pedidos Ativos", BigDecimal.valueOf(activeOrderCount),
-            String.valueOf(activeOrderCount), ""));
+            String.valueOf(activeOrderCount), ordersChange));
         stats.add(new DashboardResponse.StatItem(
-            "Ticket Médio", ticketMedio, formatCurrency(ticketMedio), ""));
+            "Ticket Médio", ticketMedio, formatCurrency(ticketMedio), ticketChange));
 
         // ── Pedidos recentes (últimos 10 ativos) ──
         List<DashboardResponse.RecentOrder> recentOrders = activeOrders.stream()

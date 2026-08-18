@@ -20,4 +20,6 @@ public interface CustomerRepository {
     Customer save(Customer customer);
 
     void deleteById(UUID id);
+
+    long countByStoreIdAndCreatedSince(UUID storeId, java.time.LocalDateTime since);
 }

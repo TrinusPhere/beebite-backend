@@ -67,4 +67,9 @@ public class PanacheCustomerRepository implements CustomerRepository {
             em.merge(entity);
         });
     }
+
+    @Override
+    public long countByStoreIdAndCreatedSince(UUID storeId, java.time.LocalDateTime since) {
+        return repo.count("storeId = ?1 and createdAt >= ?2", storeId, since);
+    }
 }
