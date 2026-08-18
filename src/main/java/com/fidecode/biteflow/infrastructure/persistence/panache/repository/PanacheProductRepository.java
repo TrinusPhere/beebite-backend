@@ -65,13 +65,58 @@ public class PanacheProductRepository implements ProductRepository {
     @Override
     @Transactional
     public Product save(Product product) {
-        ProductEntity entity = ProductMapper.toEntity(product);
-        if (entity.id == null) {
+        if (product.getId() == null) {
+            ProductEntity entity = ProductMapper.toEntity(product);
             repo.persist(entity);
-        } else {
-            entity = em.merge(entity);
+            return ProductMapper.toDomain(entity);
         }
 
+        ProductEntity entity = repo.findById(product.getId());
+        if (entity == null) {
+            ProductEntity newEntity = ProductMapper.toEntity(product);
+            return ProductMapper.toDomain(em.merge(newEntity));
+        }
+
+        entity.name = product.getName();
+        entity.categoryId = product.getCategoryId();
+        entity.description = product.getDescription();
+        entity.price = product.getPrice();
+        entity.imageUrl = product.getImageUrl();
+        entity.stock = product.getStock();
+        entity.active = product.isActive();
+
+        entity.removableItemIds.clear();
+        if (product.getRemovableItemIds() != null) {
+            entity.removableItemIds.addAll(product.getRemovableItemIds());
+        }
+
+        entity.modifierGroupIds.clear();
+        if (product.getModifierGroupIds() != null) {
+            entity.modifierGroupIds.addAll(product.getModifierGroupIds());
+        }
+
+        if (product.getTechnicalSheet() == null) {
+            entity.technicalSheet.clear();
+        } else {
+            entity.technicalSheet.removeIf(tse -> product.getTechnicalSheet().stream().noneMatch(i -> i.getIngredientId().equals(tse.ingredientId)));
+            for (var item : product.getTechnicalSheet()) {
+                var existing = entity.technicalSheet.stream().filter(tse -> tse.ingredientId.equals(item.getIngredientId())).findFirst();
+                if (existing.isPresent()) {
+                    existing.get().quantity = item.getQuantity();
+                    existing.get().costSnapshot = item.getCostSnapshot();
+                } else {
+                    var tse = new com.fidecode.biteflow.infrastructure.persistence.panache.entity.TechnicalSheetItemEntity();
+                    tse.id = item.getId();
+                    tse.product = entity;
+                    tse.ingredientId = item.getIngredientId();
+                    tse.quantity = item.getQuantity();
+                    tse.costSnapshot = item.getCostSnapshot();
+                    entity.technicalSheet.add(tse);
+                }
+            }
+        }
+
+        entity = em.merge(entity);
         return ProductMapper.toDomain(entity);
     }
 
