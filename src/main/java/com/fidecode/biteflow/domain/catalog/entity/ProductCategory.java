@@ -1,11 +1,12 @@
 package com.fidecode.biteflow.domain.catalog.entity;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class ProductCategory {
+public class ProductCategory implements StoreGuard.StoreScoped {
     private UUID id;
     private UUID storeId;
     private String name;

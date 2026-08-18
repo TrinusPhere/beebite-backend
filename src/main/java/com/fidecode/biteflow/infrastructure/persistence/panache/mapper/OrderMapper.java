@@ -14,6 +14,7 @@ public class OrderMapper {
     public static OrderEntity toEntity(Order order) {
         OrderEntity e = new OrderEntity();
         e.id = order.getId();
+        e.version = order.getVersion();   // obrigatório para @Version — evita OptimisticLockException
         e.storeId = order.getStoreId();
         e.displayId = order.getDisplayId();
         e.customerId = order.getCustomerId();
@@ -33,36 +34,33 @@ public class OrderMapper {
         e.createdAt = order.getCreatedAt();
         e.updatedAt = order.getUpdatedAt();
         e.finishedAt = order.getFinishedAt();
+
+        if (order.getItems() != null) {
+            for (OrderItem item : order.getItems()) {
+                OrderItemEntity itemEntity = toItemEntity(item);
+                itemEntity.order = e;
+                e.items.add(itemEntity);
+            }
+        }
         return e;
     }
 
     public static Order toDomain(OrderEntity e, List<OrderItem> items) {
-        Order order = new Order(e.storeId, OrderType.valueOf(e.type), PaymentMethod.valueOf(e.paymentMethod));
-        order.setId(e.id);
-        order.setDisplayId(e.displayId);
-        order.setCustomerId(e.customerId);
-        order.setCustomerName(e.customerName);
-        order.setCustomerAddress(e.customerAddress);
-        order.setStatus(OrderStatus.valueOf(e.status));
-        order.setDriverId(e.driverId);
-        order.setDriverName(e.driverName);
-        order.setPlatform(OrderPlatform.valueOf(e.platform));
-        order.setExternalOrderId(e.externalOrderId);
-        order.setSubtotal(e.subtotal);
-        order.setDeliveryCost(e.deliveryCost);
-        order.setTotalValue(e.totalValue);
-        order.setNfeEmitted(e.nfeEmitted);
-        order.setItems(items != null ? items : new ArrayList<>());
-        order.setCreatedAt(e.createdAt);
-        order.setUpdatedAt(e.updatedAt);
-        order.setFinishedAt(e.finishedAt);
-        return order;
+        return Order.reconstitute(
+            e.id, e.storeId, e.displayId, e.version,
+            e.customerId, e.customerName, e.customerAddress,
+            OrderType.valueOf(e.type), OrderStatus.valueOf(e.status), PaymentMethod.valueOf(e.paymentMethod),
+            e.driverId, e.driverName,
+            OrderPlatform.valueOf(e.platform), e.externalOrderId,
+            e.subtotal, e.deliveryCost, e.totalValue,
+            e.nfeEmitted, items != null ? items : new ArrayList<>(),
+            e.createdAt, e.updatedAt, e.finishedAt
+        );
     }
 
-    public static OrderItemEntity toItemEntity(OrderItem item, java.util.UUID orderId) {
+    public static OrderItemEntity toItemEntity(OrderItem item) {
         OrderItemEntity e = new OrderItemEntity();
         e.id = item.getId();
-        e.orderId = orderId;
         e.productId = item.getProductId();
         e.productName = item.getProductName();
         e.quantity = item.getQuantity();
@@ -70,6 +68,22 @@ public class OrderMapper {
         e.extraPrice = item.getExtraPrice();
         e.totalPrice = item.getTotalPrice();
         e.observation = item.getObservation();
+
+        if (item.getModifiers() != null) {
+            for (OrderItemModifier mod : item.getModifiers()) {
+                OrderItemModifierEntity modEntity = toModifierEntity(mod);
+                modEntity.orderItem = e;
+                e.modifiers.add(modEntity);
+            }
+        }
+
+        if (item.getRemovals() != null) {
+            for (OrderItemRemoval rem : item.getRemovals()) {
+                OrderItemRemovalEntity remEntity = toRemovalEntity(rem);
+                remEntity.orderItem = e;
+                e.removals.add(remEntity);
+            }
+        }
         return e;
     }
 
@@ -85,10 +99,9 @@ public class OrderMapper {
         return item;
     }
 
-    public static OrderItemModifierEntity toModifierEntity(OrderItemModifier mod, java.util.UUID orderItemId) {
+    public static OrderItemModifierEntity toModifierEntity(OrderItemModifier mod) {
         OrderItemModifierEntity e = new OrderItemModifierEntity();
         e.id = mod.getId();
-        e.orderItemId = orderItemId;
         e.modifierGroupId = mod.getGroupId();
         e.groupName = mod.getGroupName();
         e.modifierOptionId = mod.getOptionId();
@@ -104,10 +117,9 @@ public class OrderMapper {
         return mod;
     }
 
-    public static OrderItemRemovalEntity toRemovalEntity(OrderItemRemoval rem, java.util.UUID orderItemId) {
+    public static OrderItemRemovalEntity toRemovalEntity(OrderItemRemoval rem) {
         OrderItemRemovalEntity e = new OrderItemRemovalEntity();
         e.id = rem.getId();
-        e.orderItemId = orderItemId;
         e.ingredientId = rem.getIngredientId();
         e.ingredientName = rem.getIngredientName();
         return e;

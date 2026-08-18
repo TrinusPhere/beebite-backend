@@ -30,6 +30,21 @@ public class PanacheIngredientRepository implements IngredientRepository {
 
     @Override
     @Transactional
+    public com.fidecode.biteflow.domain.shared.PageResult<Ingredient> findAllByStoreId(UUID storeId, int page, int size) {
+        var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
+        List<Ingredient> content = query.list().stream().map(IngredientMapper::toDomain).toList();
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+    }
+
+    @Override
+    public List<Ingredient> findAllById(List<UUID> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return repo.find("id in ?1", ids).list().stream()
+            .map(IngredientMapper::toDomain).toList();
+    }
+
+    @Override
+    @Transactional
     public Ingredient save(Ingredient ingredient) {
         IngredientEntity entity = IngredientMapper.toEntity(ingredient);
         if (entity.id == null) {
@@ -43,6 +58,9 @@ public class PanacheIngredientRepository implements IngredientRepository {
     @Override
     @Transactional
     public void deleteById(UUID id) {
-        repo.deleteById(id);
+        repo.findByIdOptional(id).ifPresent(entity -> {
+            entity.deletedAt = java.time.LocalDateTime.now();
+            repo.getEntityManager().merge(entity);
+        });
     }
 }

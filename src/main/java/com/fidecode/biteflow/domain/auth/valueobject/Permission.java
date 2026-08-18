@@ -30,4 +30,13 @@ public enum Permission {
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Permissão inválida: " + value));
     }
+
+    /** Retorna todos os valores string das permissões — usado pelo JwtPermissionsAugmentor para ADMIN. */
+    public static java.util.Set<String> allValues() {
+        java.util.Set<String> all = new java.util.LinkedHashSet<>();
+        for (Permission p : values()) {
+            all.add(p.value);
+        }
+        return all;
+    }
 }

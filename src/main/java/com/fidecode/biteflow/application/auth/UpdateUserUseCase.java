@@ -7,7 +7,7 @@ import com.fidecode.biteflow.domain.auth.exception.UserNotFoundException;
 import com.fidecode.biteflow.domain.auth.repository.UserRepository;
 import com.fidecode.biteflow.domain.auth.valueobject.Permission;
 import com.fidecode.biteflow.domain.auth.valueobject.Role;
-import com.fidecode.biteflow.infrastructure.security.PasswordHasher;
+import com.fidecode.biteflow.application.auth.port.PasswordEncoder;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -18,12 +18,12 @@ import java.util.UUID;
 public class UpdateUserUseCase {
 
     private final UserRepository userRepository;
-    private final PasswordHasher passwordHasher;
+    private final PasswordEncoder passwordEncoder;
 
     @Inject
-    public UpdateUserUseCase(UserRepository userRepository, PasswordHasher passwordHasher) {
+    public UpdateUserUseCase(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.passwordHasher = passwordHasher;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserResponse execute(UUID id, UpdateUserRequest request) {
@@ -34,7 +34,7 @@ public class UpdateUserUseCase {
             user.setName(request.name());
         }
         if (request.password() != null && !request.password().isBlank()) {
-            user.setPasswordHash(passwordHasher.hash(request.password()));
+            user.setPasswordHash(passwordEncoder.hash(request.password()));
         }
         if (request.role() != null) {
             user.setRole(Role.valueOf(request.role()));

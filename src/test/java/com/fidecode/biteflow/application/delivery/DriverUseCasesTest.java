@@ -64,7 +64,7 @@ class DriverUseCasesTest {
         DriverRequest request = new DriverRequest("New Name", "222", "INATIVO",
             false, true, BigDecimal.ZERO, false, BigDecimal.ZERO);
 
-        DriverResponse response = driverUseCases.update(driverId, request);
+        DriverResponse response = driverUseCases.update(storeId, driverId, request);
 
         assertEquals("New Name", response.name());
         assertEquals("INATIVO", response.status());
@@ -76,7 +76,7 @@ class DriverUseCasesTest {
         when(driverRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(DriverNotFoundException.class,
-            () -> driverUseCases.update(id, new DriverRequest("X", null, null, null, null, null, null, null)));
+            () -> driverUseCases.update(storeId, id, new DriverRequest("X", null, null, null, null, null, null, null)));
     }
 
     @Test
@@ -87,7 +87,7 @@ class DriverUseCasesTest {
 
         when(driverRepository.findById(id)).thenReturn(Optional.of(existing));
 
-        driverUseCases.delete(id);
+        driverUseCases.delete(storeId, id);
 
         verify(driverRepository).deleteById(id);
     }
@@ -97,7 +97,7 @@ class DriverUseCasesTest {
         UUID id = UUID.randomUUID();
         when(driverRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(DriverNotFoundException.class, () -> driverUseCases.delete(id));
+        assertThrows(DriverNotFoundException.class, () -> driverUseCases.delete(storeId, id));
     }
 
     @Test
@@ -121,7 +121,7 @@ class DriverUseCasesTest {
 
         when(driverRepository.findById(id)).thenReturn(Optional.of(d));
 
-        DriverResponse result = driverUseCases.getById(id);
+        DriverResponse result = driverUseCases.getById(storeId, id);
         assertEquals("Carlos", result.name());
     }
 
@@ -130,6 +130,6 @@ class DriverUseCasesTest {
         UUID id = UUID.randomUUID();
         when(driverRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(DriverNotFoundException.class, () -> driverUseCases.getById(id));
+        assertThrows(DriverNotFoundException.class, () -> driverUseCases.getById(storeId, id));
     }
 }

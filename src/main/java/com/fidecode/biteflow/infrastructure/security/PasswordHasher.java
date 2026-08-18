@@ -1,27 +1,29 @@
 package com.fidecode.biteflow.infrastructure.security;
 
+import com.fidecode.biteflow.application.auth.port.PasswordEncoder;
 import jakarta.enterprise.context.ApplicationScoped;
 
-import java.security.SecureRandom;
-import java.util.Base64;
-
 /**
- * BCrypt password hashing.
- * Usa a implementação nativa do Quarkus via elytron-security-common.
+ * Implementação BCrypt do port {@link PasswordEncoder}.
+ * Confinada na infraestrutura — Use Cases dependem apenas da interface.
  */
 @ApplicationScoped
-public class PasswordHasher {
+public class PasswordHasher implements PasswordEncoder {
 
     /**
-     * Gera hash BCrypt da senha.
+     * {@inheritDoc}
+     * Gera hash BCrypt da senha (fator 10).
      */
+    @Override
     public String hash(String plainPassword) {
         return org.mindrot.jbcrypt.BCrypt.hashpw(plainPassword, org.mindrot.jbcrypt.BCrypt.gensalt(10));
     }
 
     /**
-     * Verifica se a senha plain corresponde ao hash BCrypt.
+     * {@inheritDoc}
+     * Verifica se a senha plain corresponde ao hash BCrypt armazenado.
      */
+    @Override
     public boolean matches(String plainPassword, String hashedPassword) {
         try {
             return org.mindrot.jbcrypt.BCrypt.checkpw(plainPassword, hashedPassword);

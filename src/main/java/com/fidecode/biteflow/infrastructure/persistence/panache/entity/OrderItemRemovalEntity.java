@@ -11,8 +11,9 @@ public class OrderItemRemovalEntity {
     @GeneratedValue(strategy = GenerationType.AUTO)
     public UUID id;
 
-    @Column(name = "order_item_id", nullable = false)
-    public UUID orderItemId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_item_id", nullable = false)
+    public OrderItemEntity orderItem;
 
     @Column(name = "ingredient_id")
     public UUID ingredientId;

@@ -13,9 +13,9 @@ public interface CustomerRepository {
 
     Optional<Customer> findById(UUID id);
 
-    List<Customer> findAllByStoreId(UUID storeId);
+    com.fidecode.biteflow.domain.shared.PageResult<Customer> findAllByStoreId(UUID storeId, int page, int size);
 
-    List<Customer> searchByStoreId(UUID storeId, String search);
+    com.fidecode.biteflow.domain.shared.PageResult<Customer> searchByStoreId(UUID storeId, String search, int page, int size);
 
     Customer save(Customer customer);
 

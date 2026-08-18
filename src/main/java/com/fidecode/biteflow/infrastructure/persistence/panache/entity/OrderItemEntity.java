@@ -3,6 +3,8 @@ package com.fidecode.biteflow.infrastructure.persistence.panache.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "order_item")
@@ -12,8 +14,9 @@ public class OrderItemEntity {
     @GeneratedValue(strategy = GenerationType.AUTO)
     public UUID id;
 
-    @Column(name = "order_id", nullable = false)
-    public UUID orderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    public OrderEntity order;
 
     @Column(name = "product_id")
     public UUID productId;
@@ -35,4 +38,10 @@ public class OrderItemEntity {
 
     @Column(name = "observation")
     public String observation;
+
+    @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<OrderItemModifierEntity> modifiers = new ArrayList<>();
+
+    @OneToMany(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<OrderItemRemovalEntity> removals = new ArrayList<>();
 }

@@ -23,9 +23,11 @@ public class PanacheAdditionalRepository implements AdditionalRepository {
     }
 
     @Override
-    public List<Additional> findAllByStoreId(UUID storeId) {
-        return repo.find("storeId", storeId).list().stream()
-            .map(AdditionalMapper::toDomain).toList();
+    @Transactional
+    public com.fidecode.biteflow.domain.shared.PageResult<Additional> findAllByStoreId(UUID storeId, int page, int size) {
+        var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
+        List<Additional> content = query.list().stream().map(AdditionalMapper::toDomain).toList();
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
     }
 
     @Override
@@ -43,6 +45,9 @@ public class PanacheAdditionalRepository implements AdditionalRepository {
     @Override
     @Transactional
     public void deleteById(UUID id) {
-        repo.deleteById(id);
+        repo.findByIdOptional(id).ifPresent(entity -> {
+            entity.deletedAt = java.time.LocalDateTime.now();
+            repo.getEntityManager().merge(entity);
+        });
     }
 }

@@ -1,5 +1,6 @@
 package com.fidecode.biteflow.infrastructure.persistence.panache.entity;
 
+import java.time.LocalDateTime;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "additional")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class AdditionalEntity extends PanacheEntityBase {
 
     @Id
@@ -37,4 +39,7 @@ public class AdditionalEntity extends PanacheEntityBase {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     public Instant updatedAt;
+
+    @jakarta.persistence.Column(name = "deleted_at")
+    public LocalDateTime deletedAt;
 }

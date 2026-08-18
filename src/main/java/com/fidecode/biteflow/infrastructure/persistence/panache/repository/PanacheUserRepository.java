@@ -60,6 +60,9 @@ public class PanacheUserRepository implements UserRepository {
     @Override
     @Transactional
     public void delete(UUID id) {
-        repo.deleteById(id);
+        repo.findByIdOptional(id).ifPresent(entity -> {
+            entity.deletedAt = java.time.LocalDateTime.now();
+            repo.getEntityManager().merge(entity);
+        });
     }
 }

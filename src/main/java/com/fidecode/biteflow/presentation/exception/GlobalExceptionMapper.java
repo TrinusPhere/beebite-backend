@@ -1,30 +1,29 @@
 package com.fidecode.biteflow.presentation.exception;
 
-import com.fidecode.biteflow.domain.auth.exception.InvalidCredentialsException;
-import com.fidecode.biteflow.domain.auth.exception.UserAlreadyExistsException;
-import com.fidecode.biteflow.domain.auth.exception.UserNotFoundException;
-import com.fidecode.biteflow.domain.catalog.exception.AdditionalNotFoundException;
-import com.fidecode.biteflow.domain.catalog.exception.IngredientNotFoundException;
-import com.fidecode.biteflow.domain.catalog.exception.ModifierGroupNotFoundException;
-import com.fidecode.biteflow.domain.catalog.exception.ProductNotFoundException;
-import com.fidecode.biteflow.domain.customer.exception.CustomerNotFoundException;
-import com.fidecode.biteflow.domain.delivery.exception.DriverNotFoundException;
-import com.fidecode.biteflow.domain.order.exception.InvalidOrderTransitionException;
-import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
-import com.fidecode.biteflow.domain.store.exception.StoreNotFoundException;
+import com.fidecode.biteflow.domain.shared.exception.DomainException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
+import org.jboss.logging.Logger;
 
 import java.util.stream.Collectors;
 
+/**
+ * Mapeador global de exceções para respostas HTTP padronizadas.
+ *
+ * <p>Graças à hierarquia {@link DomainException}, este mapper resolve
+ * TODAS as exceções de domínio via polimorfismo — sem cadeia de {@code instanceof}.
+ * Novas exceções de domínio nunca exigem modificação deste mapper (OCP).
+ */
 @Provider
 public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
+
+    private static final Logger LOG = Logger.getLogger(GlobalExceptionMapper.class);
 
     @Context
     UriInfo uriInfo;
@@ -33,78 +32,18 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
     public Response toResponse(Exception exception) {
         String path = uriInfo != null ? uriInfo.getPath() : "";
 
-        if (exception instanceof InvalidCredentialsException ex) {
-            return Response.status(401)
-                .entity(ErrorResponse.of(401, "Unauthorized", ex.getMessage(), path))
+        // ── 1. Exceções de Domínio (polimórfico) ──
+        if (exception instanceof DomainException ex) {
+            // Loga apenas erros 5xx — 4xx são situações esperadas
+            if (ex.getHttpStatus() >= 500) {
+                LOG.errorf(ex, "DomainException 5xx em %s", path);
+            }
+            return Response.status(ex.getHttpStatus())
+                .entity(ErrorResponse.of(ex.getHttpStatus(), ex.getErrorType(), ex.getMessage(), path))
                 .build();
         }
 
-        if (exception instanceof UserNotFoundException ex) {
-            return Response.status(404)
-                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof StoreNotFoundException ex) {
-            return Response.status(404)
-                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof IngredientNotFoundException ex) {
-            return Response.status(404)
-                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof ProductNotFoundException ex) {
-            return Response.status(404)
-                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof ModifierGroupNotFoundException ex) {
-            return Response.status(404)
-                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof AdditionalNotFoundException ex) {
-            return Response.status(404)
-                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof OrderNotFoundException ex) {
-            return Response.status(404)
-                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof CustomerNotFoundException ex) {
-            return Response.status(404)
-                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof DriverNotFoundException ex) {
-            return Response.status(404)
-                .entity(ErrorResponse.of(404, "Not Found", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof InvalidOrderTransitionException ex) {
-            return Response.status(422)
-                .entity(ErrorResponse.of(422, "Unprocessable Entity", ex.getMessage(), path))
-                .build();
-        }
-
-        if (exception instanceof UserAlreadyExistsException ex) {
-            return Response.status(409)
-                .entity(ErrorResponse.of(409, "Conflict", ex.getMessage(), path))
-                .build();
-        }
-
+        // ── 2. Validação de Bean (Jakarta Validation) ──
         if (exception instanceof ConstraintViolationException ex) {
             String message = ex.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
@@ -114,20 +53,25 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
                 .build();
         }
 
+        // ── 3. IllegalArgumentException (args inválidos) ──
         if (exception instanceof IllegalArgumentException ex) {
+            LOG.warnf(ex, "IllegalArgumentException em %s", path);
             return Response.status(400)
                 .entity(ErrorResponse.of(400, "Bad Request", ex.getMessage(), path))
                 .build();
         }
 
+        // ── 4. JAX-RS nativas (ForbiddenException, NotFoundException, etc.) ──
         if (exception instanceof WebApplicationException ex) {
             int status = ex.getResponse().getStatus();
             return Response.status(status)
-                .entity(ErrorResponse.of(status, ex.getResponse().getStatusInfo().getReasonPhrase(), ex.getMessage(), path))
+                .entity(ErrorResponse.of(status, ex.getResponse().getStatusInfo().getReasonPhrase(),
+                    ex.getMessage(), path))
                 .build();
         }
 
-        // Fallback genérico — 500
+        // ── 5. Fallback genérico — 500 — SEMPRE loga stack trace completo ──
+        LOG.errorf(exception, "Exceção não mapeada em %s [%s]", path, exception.getClass().getName());
         return Response.status(500)
             .entity(ErrorResponse.of(500, "Internal Server Error",
                 "Erro interno. Tente novamente mais tarde.", path))

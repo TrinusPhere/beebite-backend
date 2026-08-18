@@ -39,14 +39,19 @@ public class PanacheDeliveryDriverRepository implements DeliveryDriverRepository
     }
 
     @Override
-    public List<DeliveryDriver> findAllByStoreId(UUID storeId) {
-        return repo.find("storeId", storeId).stream()
-            .map(DeliveryDriverMapper::toDomain).toList();
+    @Transactional
+    public com.fidecode.biteflow.domain.shared.PageResult<DeliveryDriver> findAllByStoreId(UUID storeId, int page, int size) {
+        var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
+        List<DeliveryDriver> content = query.list().stream().map(DeliveryDriverMapper::toDomain).toList();
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
     }
 
     @Override
     @Transactional
     public void deleteById(UUID id) {
-        repo.deleteById(id);
+        repo.findByIdOptional(id).ifPresent(entity -> {
+            entity.deletedAt = java.time.LocalDateTime.now();
+            repo.getEntityManager().merge(entity);
+        });
     }
 }

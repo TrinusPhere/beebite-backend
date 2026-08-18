@@ -1,4 +1,5 @@
 package com.fidecode.biteflow.domain.catalog.entity;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 
 import com.fidecode.biteflow.domain.catalog.valueobject.Unit;
 
@@ -9,7 +10,7 @@ import java.util.UUID;
  * Domain entity — Ingredient.
  * POJO puro, sem dependência de framework.
  */
-public class Ingredient {
+public class Ingredient implements StoreGuard.StoreScoped {
 
     private UUID id;
     private UUID storeId;

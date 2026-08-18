@@ -1,4 +1,5 @@
 package com.fidecode.biteflow.domain.delivery.entity;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 
 import com.fidecode.biteflow.domain.delivery.valueobject.DriverStatus;
 
@@ -9,7 +10,7 @@ import java.util.UUID;
 /**
  * Domain entity — POJO puro, zero dependência de framework.
  */
-public class DeliveryDriver {
+public class DeliveryDriver implements StoreGuard.StoreScoped {
 
     private UUID id;
     private UUID storeId;

@@ -11,8 +11,7 @@ import java.util.UUID;
 public final class ProductMapper {
     private ProductMapper() {}
 
-    public static Product toDomain(ProductEntity e, List<TechnicalSheetItemEntity> sheetEntities,
-                                   List<UUID> removableItemIds, List<UUID> modifierGroupIds) {
+    public static Product toDomain(ProductEntity e) {
         if (e == null) return null;
         Product p = new Product(e.storeId, e.name, e.categoryId, e.price);
         p.setId(e.id);
@@ -21,16 +20,16 @@ public final class ProductMapper {
         p.setStock(e.stock);
         p.setActive(e.active);
 
-        if (sheetEntities != null) {
-            p.setTechnicalSheet(sheetEntities.stream().map(se -> {
-                TechnicalSheetItem item = new TechnicalSheetItem(se.productId, se.ingredientId, se.quantity, se.costSnapshot);
+        if (e.technicalSheet != null) {
+            p.setTechnicalSheet(e.technicalSheet.stream().map(se -> {
+                TechnicalSheetItem item = new TechnicalSheetItem(e.id, se.ingredientId, se.quantity, se.costSnapshot);
                 item.setId(se.id);
                 return item;
             }).toList());
         }
 
-        p.setRemovableItemIds(removableItemIds);
-        p.setModifierGroupIds(modifierGroupIds);
+        p.setRemovableItemIds(e.removableItemIds);
+        p.setModifierGroupIds(e.modifierGroupIds);
         return p;
     }
 
@@ -45,6 +44,27 @@ public final class ProductMapper {
         e.imageUrl = p.getImageUrl();
         e.stock = p.getStock();
         e.active = p.isActive();
+
+        if (p.getTechnicalSheet() != null) {
+            for (TechnicalSheetItem item : p.getTechnicalSheet()) {
+                TechnicalSheetItemEntity tse = new TechnicalSheetItemEntity();
+                tse.id = item.getId();
+                tse.product = e;
+                tse.ingredientId = item.getIngredientId();
+                tse.quantity = item.getQuantity();
+                tse.costSnapshot = item.getCostSnapshot();
+                e.technicalSheet.add(tse);
+            }
+        }
+
+        if (p.getRemovableItemIds() != null) {
+            e.removableItemIds.addAll(p.getRemovableItemIds());
+        }
+
+        if (p.getModifierGroupIds() != null) {
+            e.modifierGroupIds.addAll(p.getModifierGroupIds());
+        }
+
         return e;
     }
 }

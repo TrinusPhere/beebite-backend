@@ -1,17 +1,15 @@
 package com.fidecode.biteflow.presentation.rest;
 
-import com.fidecode.biteflow.application.catalog.CategoryUseCases;
+import com.fidecode.biteflow.application.catalog.category.*;
 import com.fidecode.biteflow.application.catalog.dto.CategoryRequest;
 import com.fidecode.biteflow.application.catalog.dto.CategoryResponse;
+import io.quarkus.security.PermissionsAllowed;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,59 +17,59 @@ import java.util.UUID;
 @Path("/api/v1/categories")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class CategoryResource {
+@RolesAllowed({"ADMIN", "GERENTE"})
+public class CategoryResource extends BaseResource {
 
-    @Inject
-    CategoryUseCases categoryUseCases;
-
-    @Inject
-    JsonWebToken jwt;
+    @Inject CreateCategoryUseCase createCategoryUseCase;
+    @Inject UpdateCategoryUseCase updateCategoryUseCase;
+    @Inject DeleteCategoryUseCase deleteCategoryUseCase;
+    @Inject GetCategoryUseCase getCategoryUseCase;
+    @Inject ListCategoriesUseCase listCategoriesUseCase;
+    @Inject BulkApplyCategoryModifiersUseCase bulkApplyCategoryModifiersUseCase;
 
     @POST
-    @RolesAllowed({"ADMIN", "USER"})
+    @PermissionsAllowed("produtos")
     public Response create(@Valid CategoryRequest request) {
-        UUID storeId = UUID.fromString(jwt.getClaim("storeId"));
-        CategoryResponse response = categoryUseCases.create(storeId, request);
+        CategoryResponse response = createCategoryUseCase.execute(getStoreId(), request);
         return Response.status(Response.Status.CREATED).entity(response).build();
     }
 
     @PUT
     @Path("/{id}")
-    @RolesAllowed({"ADMIN", "USER"})
+    @PermissionsAllowed("produtos")
     public Response update(@PathParam("id") UUID id, @Valid CategoryRequest request) {
-        CategoryResponse response = categoryUseCases.update(id, request);
+        CategoryResponse response = updateCategoryUseCase.execute(getStoreId(), id, request);
         return Response.ok(response).build();
     }
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({"ADMIN", "USER"})
+    @PermissionsAllowed("produtos")
     public Response delete(@PathParam("id") UUID id) {
-        categoryUseCases.delete(id);
+        deleteCategoryUseCase.execute(getStoreId(), id);
         return Response.noContent().build();
     }
 
     @GET
-    @RolesAllowed({"ADMIN", "USER"})
+    @PermissionsAllowed("produtos")
     public Response list() {
-        UUID storeId = UUID.fromString(jwt.getClaim("storeId"));
-        List<CategoryResponse> list = categoryUseCases.list(storeId);
+        List<CategoryResponse> list = listCategoriesUseCase.execute(getStoreId());
         return Response.ok(list).build();
     }
 
     @GET
     @Path("/{id}")
-    @RolesAllowed({"ADMIN", "USER"})
+    @PermissionsAllowed("produtos")
     public Response getById(@PathParam("id") UUID id) {
-        CategoryResponse response = categoryUseCases.getById(id);
+        CategoryResponse response = getCategoryUseCase.execute(getStoreId(), id);
         return Response.ok(response).build();
     }
 
     @POST
     @Path("/{id}/bulk-apply-modifiers")
-    @RolesAllowed({"ADMIN", "USER"})
+    @PermissionsAllowed("produtos")
     public Response bulkApplyModifiers(@PathParam("id") UUID id) {
-        categoryUseCases.bulkApplyModifiers(id);
+        bulkApplyCategoryModifiersUseCase.execute(getStoreId(), id);
         return Response.ok().build();
     }
 }

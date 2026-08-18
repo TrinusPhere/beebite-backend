@@ -25,16 +25,21 @@ public class PanacheCustomerRepository implements CustomerRepository {
     }
 
     @Override
-    public List<Customer> findAllByStoreId(UUID storeId) {
-        return repo.find("storeId", storeId).list().stream()
-            .map(CustomerMapper::toDomain).toList();
+    @Transactional
+    public com.fidecode.biteflow.domain.shared.PageResult<Customer> findAllByStoreId(UUID storeId, int page, int size) {
+        var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
+        List<Customer> content = query.list().stream().map(CustomerMapper::toDomain).toList();
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
     }
 
     @Override
-    public List<Customer> searchByStoreId(UUID storeId, String search) {
-        String pattern = "%" + search.toLowerCase() + "%";
-        return repo.find("storeId = ?1 and (lower(name) like ?2 or phone like ?2)", storeId, pattern)
-            .list().stream().map(CustomerMapper::toDomain).toList();
+    @Transactional
+    public com.fidecode.biteflow.domain.shared.PageResult<Customer> searchByStoreId(UUID storeId, String search, int page, int size) {
+        String like = "%" + search.toLowerCase() + "%";
+        var query = repo.find("storeId = ?1 and (lower(name) like ?2 or phone like ?2 or lower(email) like ?2)", storeId, like)
+            .page(io.quarkus.panache.common.Page.of(page, size));
+        List<Customer> content = query.list().stream().map(CustomerMapper::toDomain).toList();
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
     }
 
     @Override
@@ -52,6 +57,9 @@ public class PanacheCustomerRepository implements CustomerRepository {
     @Override
     @Transactional
     public void deleteById(UUID id) {
-        repo.deleteById(id);
+        repo.findByIdOptional(id).ifPresent(entity -> {
+            entity.deletedAt = java.time.LocalDateTime.now();
+            em.merge(entity);
+        });
     }
 }

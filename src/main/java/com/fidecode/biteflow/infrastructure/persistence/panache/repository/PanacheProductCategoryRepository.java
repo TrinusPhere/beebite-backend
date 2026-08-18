@@ -39,6 +39,9 @@ public class PanacheProductCategoryRepository implements ProductCategoryReposito
 
     @Override
     public void deleteById(UUID id) {
-        repo.deleteById(id);
+        repo.findByIdOptional(id).ifPresent(entity -> {
+            entity.deletedAt = java.time.LocalDateTime.now();
+            repo.getEntityManager().merge(entity);
+        });
     }
 }

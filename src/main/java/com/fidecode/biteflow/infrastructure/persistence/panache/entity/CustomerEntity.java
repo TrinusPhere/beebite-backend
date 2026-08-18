@@ -6,6 +6,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "customer")
+@org.hibernate.annotations.SQLRestriction("deleted_at IS NULL")
 public class CustomerEntity {
 
     @Id
@@ -47,6 +48,9 @@ public class CustomerEntity {
 
     @Column(name = "updated_at", nullable = false)
     public LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    public LocalDateTime deletedAt;
 
     @PrePersist
     void prePersist() {

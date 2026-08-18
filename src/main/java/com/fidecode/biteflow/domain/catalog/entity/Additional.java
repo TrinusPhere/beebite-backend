@@ -1,4 +1,5 @@
 package com.fidecode.biteflow.domain.catalog.entity;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -6,7 +7,7 @@ import java.util.UUID;
 /**
  * Domain entity — Additional (adicional global).
  */
-public class Additional {
+public class Additional implements StoreGuard.StoreScoped {
 
     private UUID id;
     private UUID storeId;
