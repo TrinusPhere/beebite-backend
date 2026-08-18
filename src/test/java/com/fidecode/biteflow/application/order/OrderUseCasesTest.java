@@ -14,6 +14,8 @@ import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.service.OrderDomainService;
 import com.fidecode.biteflow.domain.order.valueobject.*;
+import com.fidecode.biteflow.domain.financial.event.OrderFinalizedEvent;
+import jakarta.enterprise.event.Event;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +47,7 @@ class OrderUseCasesTest {
     private DeleteOrderUseCase deleteOrderUseCase;
     
     @Mock private OrderDomainService orderDomainService;
+    @Mock private Event<OrderFinalizedEvent> orderFinalizedEvent;
 
     private final UUID STORE_ID = UUID.randomUUID();
 
@@ -51,7 +55,7 @@ class OrderUseCasesTest {
     void setUp() {
         createOrderUseCase = new CreateOrderUseCase(orderRepository, productRepository,
             modifierGroupRepository, ingredientRepository);
-        manageOrderUseCase = new ManageOrderUseCase(orderRepository, orderDomainService);
+        manageOrderUseCase = new ManageOrderUseCase(orderRepository, orderDomainService, orderFinalizedEvent);
         updateOrderUseCase = new UpdateOrderUseCase(orderRepository, productRepository,
             modifierGroupRepository, ingredientRepository);
         getOrderKanbanUseCase = new GetOrderKanbanUseCase(orderRepository);
@@ -64,7 +68,9 @@ class OrderUseCasesTest {
         Product product = new Product(STORE_ID, "X-Bacon", UUID.randomUUID(), new BigDecimal("25.00"));
         product.setId(productId);
 
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findAllById(List.of(productId))).thenReturn(List.of(product));
+        when(ingredientRepository.findAllById(any())).thenReturn(List.of());
+        when(modifierGroupRepository.findAllById(any())).thenReturn(List.of());
         when(orderRepository.getNextDisplayIdSequence()).thenReturn(1001L);
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> {
             Order o = inv.getArgument(0);
@@ -83,7 +89,7 @@ class OrderUseCasesTest {
         OrderResponse response = createOrderUseCase.create(STORE_ID, request);
 
         assertNotNull(response.id());
-        assertEquals("#1001", response.displayId());
+        assertEquals("1001", response.displayId());
         assertEquals("João", response.customerName());
         assertEquals("DELIVERY", response.type());
         assertEquals("ANALISE", response.status());
@@ -98,6 +104,13 @@ class OrderUseCasesTest {
         Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
         order.setId(orderId);
         order.addItem(new OrderItem(UUID.randomUUID(), "X-Bacon", 1, new BigDecimal("25.00"), null));
+
+        // Mock deve delegar ao domain service real para mutar o status
+        doAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            o.changeStatus(OrderStatus.PREPARO);
+            return null;
+        }).when(orderDomainService).advanceStatus(any(Order.class));
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -121,6 +134,13 @@ class OrderUseCasesTest {
         Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
         order.setId(orderId);
 
+        doAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            OrderStatus target = inv.getArgument(1);
+            o.changeStatus(target);
+            return null;
+        }).when(orderDomainService).moveToColumn(any(Order.class), any(OrderStatus.class));
+
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -134,6 +154,14 @@ class OrderUseCasesTest {
         UUID driverId = UUID.randomUUID();
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.setId(orderId);
+
+        doAnswer(inv -> {
+            Order o = inv.getArgument(0);
+            UUID did = inv.getArgument(1);
+            String dname = inv.getArgument(2);
+            o.assignDriver(did, dname);
+            return null;
+        }).when(orderDomainService).assignDriver(any(Order.class), any(UUID.class), anyString());
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -182,7 +210,9 @@ class OrderUseCasesTest {
         product.setId(productId);
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productRepository.findAllById(List.of(productId))).thenReturn(List.of(product));
+        when(ingredientRepository.findAllById(any())).thenReturn(List.of());
+        when(modifierGroupRepository.findAllById(any())).thenReturn(List.of());
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateOrderRequest request = new UpdateOrderRequest(
@@ -229,5 +259,43 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
         assertThrows(OrderNotFoundException.class, () -> deleteOrderUseCase.delete(STORE_ID, orderId));
+    }
+
+    @Test
+    void deveLancarExcecaoAoEditarPedidoEmRota() {
+        UUID orderId = UUID.randomUUID();
+        Order order = Order.reconstitute(
+            orderId, STORE_ID, "#9999", null,
+            null, "João", null,
+            OrderType.DELIVERY, OrderStatus.EM_ROTA, PaymentMethod.PIX,
+            null, null, OrderPlatform.OWN, null,
+            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+            false, List.of(), java.time.LocalDateTime.now(), java.time.LocalDateTime.now(), null);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        UpdateOrderRequest request = new UpdateOrderRequest(null, null, null, null);
+
+        assertThrows(InvalidOrderTransitionException.class,
+            () -> updateOrderUseCase.update(STORE_ID, orderId, request));
+    }
+
+    @Test
+    void deveLancarExcecaoAoEditarPedidoFinalizado() {
+        UUID orderId = UUID.randomUUID();
+        Order order = Order.reconstitute(
+            orderId, STORE_ID, "#9998", null,
+            null, "Maria", null,
+            OrderType.BALCAO, OrderStatus.FINALIZADO, PaymentMethod.DINHEIRO,
+            null, null, OrderPlatform.OWN, null,
+            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+            false, List.of(), java.time.LocalDateTime.now(), java.time.LocalDateTime.now(), null);
+
+        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+
+        UpdateOrderRequest request = new UpdateOrderRequest(null, null, null, null);
+
+        assertThrows(InvalidOrderTransitionException.class,
+            () -> updateOrderUseCase.update(STORE_ID, orderId, request));
     }
 }

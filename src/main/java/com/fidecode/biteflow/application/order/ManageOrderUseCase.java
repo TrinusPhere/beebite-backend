@@ -1,13 +1,16 @@
 package com.fidecode.biteflow.application.order;
 
 import com.fidecode.biteflow.application.order.dto.*;
+import com.fidecode.biteflow.domain.financial.event.OrderFinalizedEvent;
 import com.fidecode.biteflow.domain.order.entity.Order;
+import com.fidecode.biteflow.domain.order.entity.OrderItem;
 import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.service.OrderDomainService;
 import com.fidecode.biteflow.domain.order.valueobject.OrderStatus;
 import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 
 import java.time.LocalDateTime;
@@ -21,11 +24,15 @@ public class ManageOrderUseCase {
 
     private final OrderRepository orderRepository;
     private final OrderDomainService orderDomainService;
+    private final Event<OrderFinalizedEvent> orderFinalizedEvent;
 
     @Inject
-    public ManageOrderUseCase(OrderRepository orderRepository, OrderDomainService orderDomainService) {
+    public ManageOrderUseCase(OrderRepository orderRepository,
+                              OrderDomainService orderDomainService,
+                              Event<OrderFinalizedEvent> orderFinalizedEvent) {
         this.orderRepository = orderRepository;
         this.orderDomainService = orderDomainService;
+        this.orderFinalizedEvent = orderFinalizedEvent;
     }
 
     public OrderResponse advanceStatus(UUID storeId, UUID orderId) {
@@ -34,7 +41,11 @@ public class ManageOrderUseCase {
             storeId
         );
         orderDomainService.advanceStatus(order);
-        return OrderDtoMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        if (saved.getStatus() == OrderStatus.FINALIZADO) {
+            fireOrderFinalizedEvent(saved);
+        }
+        return OrderDtoMapper.toResponse(saved);
     }
 
     public OrderResponse moveToColumn(UUID storeId, UUID orderId, String targetStatus) {
@@ -44,7 +55,11 @@ public class ManageOrderUseCase {
         );
         OrderStatus target = OrderStatus.valueOf(targetStatus);
         orderDomainService.moveToColumn(order, target);
-        return OrderDtoMapper.toResponse(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        if (saved.getStatus() == OrderStatus.FINALIZADO) {
+            fireOrderFinalizedEvent(saved);
+        }
+        return OrderDtoMapper.toResponse(saved);
     }
 
     public OrderResponse assignDriver(UUID storeId, UUID orderId, AssignDriverRequest request) {
@@ -108,5 +123,26 @@ public class ManageOrderUseCase {
             LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
             "AUTORIZADA"
         );
+    }
+
+    private void fireOrderFinalizedEvent(Order order) {
+        List<OrderFinalizedEvent.ProductSnapshot> products = order.getItems().stream()
+            .map(item -> new OrderFinalizedEvent.ProductSnapshot(
+                item.getProductId(),
+                item.getProductName(),
+                item.getQuantity(),
+                item.getUnitPrice()
+            ))
+            .toList();
+
+        orderFinalizedEvent.fire(new OrderFinalizedEvent(
+            order.getId(),
+            order.getStoreId(),
+            order.getTotalValue(),
+            order.getPaymentMethod(),
+            order.getCustomerId(),
+            order.getDriverId(),
+            products
+        ));
     }
 }

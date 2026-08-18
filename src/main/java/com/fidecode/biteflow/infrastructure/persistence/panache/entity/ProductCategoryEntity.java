@@ -14,7 +14,6 @@ import java.util.UUID;
 public class ProductCategoryEntity extends PanacheEntityBase {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     public UUID id;
 
     @Column(name = "store_id", nullable = false)

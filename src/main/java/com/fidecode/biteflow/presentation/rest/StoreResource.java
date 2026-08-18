@@ -37,9 +37,6 @@ public class StoreResource extends BaseResource {
      */
     @PUT
     public Response updateStore(@Valid StoreInfoRequest request) {
-        if (!jwt.getGroups().contains("ADMIN")) {
-            throw new ForbiddenException("Apenas administradores podem alterar dados da loja.");
-        }
         StoreInfoResponse response = updateStoreInfoUseCase.execute(getStoreId(), request);
         return Response.ok(response).build();
     }
