@@ -61,7 +61,22 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
                 .build();
         }
 
-        // ── 4. JAX-RS nativas (ForbiddenException, NotFoundException, etc.) ──
+        // ── 4. Exceções de segurança (sem acoplamento a io.quarkus.security.*) ──
+        // O mapper NÃO importa io.quarkus.security — verifica pelo nome da classe
+        // para manter presentation desacoplada de detalhes de framework.
+        String exceptionClassName = exception.getClass().getName();
+        if (exceptionClassName.equals("io.quarkus.security.ForbiddenException")) {
+            return Response.status(403)
+                .entity(ErrorResponse.of(403, "Forbidden", "Acesso negado.", path))
+                .build();
+        }
+        if (exceptionClassName.equals("io.quarkus.security.UnauthorizedException")) {
+            return Response.status(401)
+                .entity(ErrorResponse.of(401, "Unauthorized", "Autenticação necessária.", path))
+                .build();
+        }
+
+        // ── 5. JAX-RS nativas (ForbiddenException, NotFoundException, etc.) ──
         if (exception instanceof WebApplicationException ex) {
             int status = ex.getResponse().getStatus();
             return Response.status(status)

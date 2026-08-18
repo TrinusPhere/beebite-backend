@@ -57,9 +57,14 @@ public class JwtPermissionsAugmentor implements SecurityIdentityAugmentor {
     @SuppressWarnings("unchecked")
     private Set<String> extractPermissions(SecurityIdentity identity) {
         if (identity.getPrincipal() instanceof JWTCallerPrincipal jwt) {
-            List<String> perms = jwt.getClaim(PERMISSIONS_CLAIM);
+            // O SmallRye JWT pode retornar List<JsonString> ao invés de List<String>
+            // para claims array. Convertemos via toString() para garantir compatibilidade.
+            List<?> perms = jwt.getClaim(PERMISSIONS_CLAIM);
             if (perms != null) {
-                return Set.copyOf(perms);
+                return perms.stream()
+                    .map(Object::toString)
+                    .map(s -> s.replace("\"", ""))
+                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
             }
         }
         return Set.of();

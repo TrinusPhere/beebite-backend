@@ -33,8 +33,13 @@ public abstract class BaseResource {
      * @throws IllegalStateException se o token não contiver o claim {@code storeId}
      */
     protected UUID getStoreId() {
-        String storeIdClaim = jwt.getClaim("storeId");
-        if (storeIdClaim == null || storeIdClaim.isBlank()) {
+        Object raw = jwt.getClaim("storeId");
+        if (raw == null) {
+            throw new IllegalStateException("Token JWT inválido: claim 'storeId' ausente.");
+        }
+        // SmallRye JWT pode retornar JsonString ao invés de String para claims customizados
+        String storeIdClaim = raw.toString().replace("\"", "");
+        if (storeIdClaim.isBlank()) {
             throw new IllegalStateException("Token JWT inválido: claim 'storeId' ausente.");
         }
         return UUID.fromString(storeIdClaim);
