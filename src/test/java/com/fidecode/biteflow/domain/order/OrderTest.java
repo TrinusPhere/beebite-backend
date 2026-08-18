@@ -91,8 +91,7 @@ class OrderTest {
     @Test
     void deveSetarDadosDoCliente() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setCustomerName("João Silva");
-        order.setCustomerAddress("Rua das Flores, 123");
+        order.updateCustomerInfo("João Silva", "Rua das Flores, 123");
 
         assertEquals("João Silva", order.getCustomerName());
         assertEquals("Rua das Flores, 123", order.getCustomerAddress());

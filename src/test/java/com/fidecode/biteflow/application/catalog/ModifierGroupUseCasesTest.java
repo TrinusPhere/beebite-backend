@@ -1,26 +1,55 @@
 package com.fidecode.biteflow.application.catalog;
 
 import com.fidecode.biteflow.application.catalog.dto.ModifierGroupRequest;
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+import com.fidecode.biteflow.application.catalog.dto.ModifierGroupResponse;
+import com.fidecode.biteflow.domain.catalog.entity.ModifierGroup;
+import com.fidecode.biteflow.domain.catalog.repository.ModifierGroupRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-@QuarkusTest
-public class ModifierGroupUseCasesTest {
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
-    @Inject
-    ModifierGroupUseCases useCases;
+@ExtendWith(MockitoExtension.class)
+class ModifierGroupUseCasesTest {
+
+    @Mock
+    private ModifierGroupRepository modifierGroupRepository;
+
+    private CreateModifierGroupUseCase createModifierGroupUseCase;
+
+    private final UUID STORE_ID = UUID.randomUUID();
+
+    @BeforeEach
+    void setUp() {
+        createModifierGroupUseCase = new CreateModifierGroupUseCase(modifierGroupRepository);
+    }
 
     @Test
-    public void testCreateModifierGroup() {
+    void testCreateModifierGroup() {
+        when(modifierGroupRepository.save(any(ModifierGroup.class))).thenAnswer(inv -> {
+            ModifierGroup g = inv.getArgument(0);
+            g.setId(UUID.randomUUID());
+            return g;
+        });
+
         ModifierGroupRequest req = new ModifierGroupRequest(
             "Ponto", "RADIO", true, 1, 1, null,
             List.of(new ModifierGroupRequest.ModifierOptionDto("Mal", BigDecimal.ZERO))
         );
-        useCases.create(UUID.fromString("00000000-0000-0000-0000-000000000001"), req);
+
+        ModifierGroupResponse response = createModifierGroupUseCase.execute(STORE_ID, req);
+
+        assertNotNull(response.id());
+        assertEquals("Ponto", response.name());
+        verify(modifierGroupRepository).save(any(ModifierGroup.class));
     }
 }

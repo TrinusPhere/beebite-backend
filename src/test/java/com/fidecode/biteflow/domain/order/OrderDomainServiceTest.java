@@ -35,9 +35,8 @@ class OrderDomainServiceTest {
     @Test
     void deveAvancarDePreparoParaEmRotaDelivery() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setStatus(OrderStatus.PREPARO);
-        order.setDriverId(UUID.randomUUID());
-        order.setDriverName("Motoboy");
+        order.changeStatus(OrderStatus.PREPARO);
+        order.assignDriver(UUID.randomUUID(), "Motoboy");
 
         service.advanceStatus(order);
         assertEquals(OrderStatus.EM_ROTA, order.getStatus());
@@ -46,8 +45,8 @@ class OrderDomainServiceTest {
     @Test
     void deveAvancarDeEmRotaParaFinalizado() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setStatus(OrderStatus.EM_ROTA);
-        order.setDriverId(UUID.randomUUID());
+        order.changeStatus(OrderStatus.EM_ROTA);
+        order.assignDriver(UUID.randomUUID(), "Motoboy");
 
         service.advanceStatus(order);
         assertEquals(OrderStatus.FINALIZADO, order.getStatus());
@@ -57,7 +56,7 @@ class OrderDomainServiceTest {
     @Test
     void balcaoDevePularEmRotaEIrDiretoParaFinalizado() {
         Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
-        order.setStatus(OrderStatus.PREPARO);
+        order.changeStatus(OrderStatus.PREPARO);
 
         service.advanceStatus(order);
         assertEquals(OrderStatus.FINALIZADO, order.getStatus());
@@ -67,7 +66,7 @@ class OrderDomainServiceTest {
     @Test
     void deveLancarExcecaoAoAvancarPedidoCancelado() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setStatus(OrderStatus.CANCELADO);
+        order.changeStatus(OrderStatus.CANCELADO);
 
         assertThrows(InvalidOrderTransitionException.class,
             () -> service.advanceStatus(order));
@@ -76,7 +75,7 @@ class OrderDomainServiceTest {
     @Test
     void deveLancarExcecaoAoAvancarPedidoFinalizado() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setStatus(OrderStatus.FINALIZADO);
+        order.changeStatus(OrderStatus.FINALIZADO);
 
         assertThrows(InvalidOrderTransitionException.class,
             () -> service.advanceStatus(order));
@@ -85,7 +84,7 @@ class OrderDomainServiceTest {
     @Test
     void deveLancarExcecaoAoAvancarDeliverySemMotoboyParaEmRota() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setStatus(OrderStatus.PREPARO);
+        order.changeStatus(OrderStatus.PREPARO);
         // sem driverId
 
         assertThrows(InvalidOrderTransitionException.class,
@@ -104,7 +103,7 @@ class OrderDomainServiceTest {
     @Test
     void deveLancarExcecaoAoMoverPedidoCancelado() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setStatus(OrderStatus.CANCELADO);
+        order.changeStatus(OrderStatus.CANCELADO);
 
         assertThrows(InvalidOrderTransitionException.class,
             () -> service.moveToColumn(order, OrderStatus.PREPARO));
@@ -113,7 +112,7 @@ class OrderDomainServiceTest {
     @Test
     void deveLancarExcecaoAoMoverDeliveryParaEmRotaSemMotoboy() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setStatus(OrderStatus.PREPARO);
+        order.changeStatus(OrderStatus.PREPARO);
 
         assertThrows(InvalidOrderTransitionException.class,
             () -> service.moveToColumn(order, OrderStatus.EM_ROTA));
@@ -122,8 +121,8 @@ class OrderDomainServiceTest {
     @Test
     void deveMoverDeliveryParaEmRotaComMotoboy() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setStatus(OrderStatus.PREPARO);
-        order.setDriverId(UUID.randomUUID());
+        order.changeStatus(OrderStatus.PREPARO);
+        order.assignDriver(UUID.randomUUID(), "Carlos");
 
         service.moveToColumn(order, OrderStatus.EM_ROTA);
         assertEquals(OrderStatus.EM_ROTA, order.getStatus());
@@ -132,7 +131,7 @@ class OrderDomainServiceTest {
     @Test
     void deveSetarFinishedAtAoMoverParaFinalizado() {
         Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
-        order.setStatus(OrderStatus.PREPARO);
+        order.changeStatus(OrderStatus.PREPARO);
 
         service.moveToColumn(order, OrderStatus.FINALIZADO);
         assertEquals(OrderStatus.FINALIZADO, order.getStatus());

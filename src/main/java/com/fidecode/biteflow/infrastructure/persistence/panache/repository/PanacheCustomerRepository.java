@@ -49,6 +49,11 @@ public class PanacheCustomerRepository implements CustomerRepository {
         if (entity.id == null) {
             repo.persist(entity);
         } else {
+            // Preservar timestamps que pertencem à infra e não ao domínio
+            CustomerEntity existing = repo.findById(entity.id);
+            if (existing != null) {
+                entity.createdAt = existing.createdAt;
+            }
             entity = em.merge(entity);
         }
         return CustomerMapper.toDomain(entity);
