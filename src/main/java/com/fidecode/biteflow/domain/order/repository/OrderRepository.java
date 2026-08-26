@@ -27,4 +27,8 @@ public interface OrderRepository {
     List<Order> findActiveKanbanOrdersByStoreId(UUID storeId, java.time.LocalDateTime startOfDay);
 
     List<Order> findAllById(List<UUID> ids);
+
+    /** Busca pedido pelo ID externo (ex: ID do pedido no iFood). Usado na integração iFood. */
+    Optional<Order> findByExternalOrderId(String externalOrderId);
 }
+

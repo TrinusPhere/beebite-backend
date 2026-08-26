@@ -39,6 +39,8 @@ class OrderUseCasesTest {
     @Mock private ProductRepository productRepository;
     @Mock private ModifierGroupRepository modifierGroupRepository;
     @Mock private IngredientRepository ingredientRepository;
+    @Mock private com.fidecode.biteflow.application.order.port.BiteflowEventPublisher biteflowEventPublisher;
+
 
     private CreateOrderUseCase createOrderUseCase;
     private ManageOrderUseCase manageOrderUseCase;
@@ -55,7 +57,8 @@ class OrderUseCasesTest {
     void setUp() {
         createOrderUseCase = new CreateOrderUseCase(orderRepository, productRepository,
             modifierGroupRepository, ingredientRepository);
-        manageOrderUseCase = new ManageOrderUseCase(orderRepository, orderDomainService, orderFinalizedEvent);
+        manageOrderUseCase = new ManageOrderUseCase(orderRepository, orderDomainService, orderFinalizedEvent, biteflowEventPublisher);
+
         updateOrderUseCase = new UpdateOrderUseCase(orderRepository, productRepository,
             modifierGroupRepository, ingredientRepository);
         getOrderKanbanUseCase = new GetOrderKanbanUseCase(orderRepository);
