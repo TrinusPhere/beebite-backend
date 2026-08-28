@@ -31,10 +31,8 @@ public class UpdateOrderUseCase {
     private final IngredientRepository ingredientRepository;
 
     @Inject
-    public UpdateOrderUseCase(OrderRepository orderRepository,
-                              ProductRepository productRepository,
-                              ModifierGroupRepository modifierGroupRepository,
-                              IngredientRepository ingredientRepository) {
+    public UpdateOrderUseCase(OrderRepository orderRepository, ProductRepository productRepository,
+            ModifierGroupRepository modifierGroupRepository, IngredientRepository ingredientRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.modifierGroupRepository = modifierGroupRepository;
@@ -43,32 +41,31 @@ public class UpdateOrderUseCase {
 
     public OrderResponse update(UUID storeId, UUID orderId, UpdateOrderRequest request) {
         Order order = StoreGuard.enforce(
-            orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
-            storeId
-        );
+                orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
+                storeId);
 
         if (!order.isEditable()) {
             throw new InvalidOrderTransitionException(
-                "Pedido " + order.getDisplayId() + " não pode ser editado no status " + order.getStatus() + "."
-            );
+                    "Pedido " + order.getDisplayId() + " não pode ser editado no status " + order.getStatus() + ".");
         }
 
         if (request.type() != null) {
             order.changeType(OrderType.valueOf(request.type()));
         }
         if (request.paymentMethod() != null) {
-            order.changePaymentMethod(PaymentMethod.valueOf(request.paymentMethod()));
+            order.changePaymentMethod(CreateOrderUseCase.parsePaymentMethod(request.paymentMethod()));
         }
         if (request.customer() != null) {
             order.updateCustomerInfo(request.customer().name(), request.customer().address());
         }
+        order.defineContext(request.operation(), request.channel(), request.serviceType(), request.source());
 
-        if (request.additionalItems() != null && !request.additionalItems().isEmpty()) {
+        if (request.newItems() != null && !request.newItems().isEmpty()) {
             List<UUID> productIds = new ArrayList<>();
             List<UUID> groupIds = new ArrayList<>();
             List<UUID> ingredientIds = new ArrayList<>();
-            
-            for (CreateOrderItemDto itemDto : request.additionalItems()) {
+
+            for (CreateOrderItemDto itemDto : request.newItems()) {
                 productIds.add(UUID.fromString(itemDto.productId()));
                 if (itemDto.modifiers() != null) {
                     for (var modDto : itemDto.modifiers()) {
@@ -83,21 +80,20 @@ public class UpdateOrderUseCase {
             }
 
             Map<UUID, Product> productCache = productRepository.findAllById(productIds).stream()
-                .collect(Collectors.toMap(Product::getId, p -> p));
+                    .collect(Collectors.toMap(Product::getId, p -> p));
             Map<UUID, ModifierGroup> groupCache = modifierGroupRepository.findAllById(groupIds).stream()
-                .collect(Collectors.toMap(ModifierGroup::getId, g -> g));
+                    .collect(Collectors.toMap(ModifierGroup::getId, g -> g));
             Map<UUID, Ingredient> ingredientCache = ingredientRepository.findAllById(ingredientIds).stream()
-                .collect(Collectors.toMap(Ingredient::getId, i -> i));
+                    .collect(Collectors.toMap(Ingredient::getId, i -> i));
 
-            for (CreateOrderItemDto itemDto : request.additionalItems()) {
+            for (CreateOrderItemDto itemDto : request.newItems()) {
                 UUID productId = UUID.fromString(itemDto.productId());
                 Product product = productCache.get(productId);
-                if (product == null) throw new ProductNotFoundException(itemDto.productId());
+                if (product == null)
+                    throw new ProductNotFoundException(itemDto.productId());
 
-                OrderItem item = new OrderItem(
-                    productId, product.getName(), itemDto.quantity(),
-                    product.getPrice(), itemDto.observation()
-                );
+                OrderItem item = new OrderItem(productId, product.getName(), itemDto.quantity(), product.getPrice(),
+                        itemDto.observation());
 
                 if (itemDto.modifiers() != null) {
                     for (var modDto : itemDto.modifiers()) {

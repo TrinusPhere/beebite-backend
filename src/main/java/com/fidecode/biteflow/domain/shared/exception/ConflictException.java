@@ -1,8 +1,7 @@
 package com.fidecode.biteflow.domain.shared.exception;
 
 /**
- * Base para exceções de conflito de estado — HTTP 409.
- * Ex: criar recurso que já existe.
+ * Base para exceções de conflito de estado — HTTP 409. Ex: criar recurso que já existe.
  */
 public abstract class ConflictException extends DomainException {
 

@@ -21,8 +21,7 @@ public class GetDriverUseCase {
     }
 
     public DriverResponse execute(UUID storeId, UUID id) {
-        DeliveryDriver driver = repository.findById(id)
-            .orElseThrow(() -> new DriverNotFoundException(id.toString()));
+        DeliveryDriver driver = repository.findById(id).orElseThrow(() -> new DriverNotFoundException(id.toString()));
         StoreGuard.enforce(driver, storeId);
         return DriverDtoMapper.toResponse(driver);
     }

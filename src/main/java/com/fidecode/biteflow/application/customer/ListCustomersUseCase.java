@@ -22,12 +22,12 @@ public class ListCustomersUseCase {
 
     public PageResponse<CustomerResponse> execute(UUID storeId, String search, int page, int size) {
         com.fidecode.biteflow.domain.shared.PageResult<Customer> result = (search != null && !search.isBlank())
-            ? customerRepository.searchByStoreId(storeId, search, page, size)
-            : customerRepository.findAllByStoreId(storeId, page, size);
+                ? customerRepository.searchByStoreId(storeId, search, page, size)
+                : customerRepository.findAllByStoreId(storeId, page, size);
 
-        List<CustomerResponse> content = result.getContent().stream()
-            .map(CustomerDtoMapper::toResponse).toList();
-        
-        return new PageResponse<>(content, result.getPage(), result.getSize(), result.getTotalElements(), result.getTotalPages());
+        List<CustomerResponse> content = result.getContent().stream().map(CustomerDtoMapper::toResponse).toList();
+
+        return new PageResponse<>(content, result.getPage(), result.getSize(), result.getTotalElements(),
+                result.getTotalPages());
     }
 }

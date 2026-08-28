@@ -16,8 +16,10 @@ import java.util.UUID;
 @ApplicationScoped
 public class PanacheCustomerRepository implements CustomerRepository {
 
-    @Inject CustomerPanacheRepo repo;
-    @Inject EntityManager em;
+    @Inject
+    CustomerPanacheRepo repo;
+    @Inject
+    EntityManager em;
 
     @Override
     public Optional<Customer> findById(UUID id) {
@@ -29,17 +31,21 @@ public class PanacheCustomerRepository implements CustomerRepository {
     public com.fidecode.biteflow.domain.shared.PageResult<Customer> findAllByStoreId(UUID storeId, int page, int size) {
         var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
         List<Customer> content = query.list().stream().map(CustomerMapper::toDomain).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override
     @Transactional
-    public com.fidecode.biteflow.domain.shared.PageResult<Customer> searchByStoreId(UUID storeId, String search, int page, int size) {
+    public com.fidecode.biteflow.domain.shared.PageResult<Customer> searchByStoreId(UUID storeId, String search,
+            int page, int size) {
         String like = "%" + search.toLowerCase() + "%";
-        var query = repo.find("storeId = ?1 and (lower(name) like ?2 or phone like ?2 or lower(email) like ?2)", storeId, like)
-            .page(io.quarkus.panache.common.Page.of(page, size));
+        var query = repo
+                .find("storeId = ?1 and (lower(name) like ?2 or phone like ?2 or lower(email) like ?2)", storeId, like)
+                .page(io.quarkus.panache.common.Page.of(page, size));
         List<Customer> content = query.list().stream().map(CustomerMapper::toDomain).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override

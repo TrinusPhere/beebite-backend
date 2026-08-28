@@ -15,11 +15,13 @@ import java.util.Set;
 /**
  * Augmenta o {@link SecurityIdentity} com as permissões granulares do claim {@code permissions} do JWT.
  *
- * <p>Isso habilita o uso de {@code @PermissionsAllowed("pedidos")} nos Resources,
- * substituindo o {@code checkPermission()} imperativo pelo modelo declarativo do Quarkus.
+ * <p>
+ * Isso habilita o uso de {@code @PermissionsAllowed("pedidos")} nos Resources, substituindo o {@code checkPermission()}
+ * imperativo pelo modelo declarativo do Quarkus.
  *
- * <p>ADMIN recebe TODAS as permissões do sistema automaticamente,
- * independentemente do que está no claim {@code permissions} do token.
+ * <p>
+ * ADMIN recebe TODAS as permissões do sistema automaticamente, independentemente do que está no claim
+ * {@code permissions} do token.
  */
 @ApplicationScoped
 public class JwtPermissionsAugmentor implements SecurityIdentityAugmentor {
@@ -37,18 +39,12 @@ public class JwtPermissionsAugmentor implements SecurityIdentityAugmentor {
 
         if (identity.hasRole(ADMIN_ROLE)) {
             // ADMIN recebe todas as permissões do sistema
-            Permission.allValues().forEach(perm ->
-                builder.addPermissionChecker(requested ->
-                    Uni.createFrom().item(requested.getName().equals(perm))
-                )
-            );
+            Permission.allValues().forEach(perm -> builder
+                    .addPermissionChecker(requested -> Uni.createFrom().item(requested.getName().equals(perm))));
         } else {
             // Demais roles recebem apenas as permissões do claim JWT
-            extractPermissions(identity).forEach(perm ->
-                builder.addPermissionChecker(requested ->
-                    Uni.createFrom().item(requested.getName().equals(perm))
-                )
-            );
+            extractPermissions(identity).forEach(perm -> builder
+                    .addPermissionChecker(requested -> Uni.createFrom().item(requested.getName().equals(perm))));
         }
 
         return Uni.createFrom().item(builder.build());
@@ -61,10 +57,8 @@ public class JwtPermissionsAugmentor implements SecurityIdentityAugmentor {
             // para claims array. Convertemos via toString() para garantir compatibilidade.
             List<?> perms = jwt.getClaim(PERMISSIONS_CLAIM);
             if (perms != null) {
-                return perms.stream()
-                    .map(Object::toString)
-                    .map(s -> s.replace("\"", ""))
-                    .collect(java.util.stream.Collectors.toUnmodifiableSet());
+                return perms.stream().map(Object::toString).map(s -> s.replace("\"", ""))
+                        .collect(java.util.stream.Collectors.toUnmodifiableSet());
             }
         }
         return Set.of();

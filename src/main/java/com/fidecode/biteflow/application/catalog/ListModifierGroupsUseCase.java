@@ -23,9 +23,9 @@ public class ListModifierGroupsUseCase {
 
     public PageResponse<ModifierGroupResponse> execute(UUID storeId, int page, int size) {
         PageResult<ModifierGroup> result = repository.findAllByStoreId(storeId, page, size);
-        List<ModifierGroupResponse> content = result.getContent().stream()
-            .map(ModifierGroupDtoMapper::toResponse).toList();
-        return new PageResponse<>(content, result.getPage(), result.getSize(),
-            result.getTotalElements(), result.getTotalPages());
+        List<ModifierGroupResponse> content = result.getContent().stream().map(ModifierGroupDtoMapper::toResponse)
+                .toList();
+        return new PageResponse<>(content, result.getPage(), result.getSize(), result.getTotalElements(),
+                result.getTotalPages());
     }
 }

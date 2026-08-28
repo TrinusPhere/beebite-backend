@@ -46,22 +46,23 @@ class CalculateProductCmvUseCaseTest {
         UUID ingredientPaoId = UUID.randomUUID();
         UUID ingredientCarneId = UUID.randomUUID();
 
-        var pao = new Ingredient(STORE_ID, "Pão Brioche", BigDecimal.TEN, Unit.UN, new BigDecimal("1.50"), BigDecimal.ZERO);
+        var pao = new Ingredient(STORE_ID, "Pão Brioche", BigDecimal.TEN, Unit.UN, new BigDecimal("1.50"),
+                BigDecimal.ZERO);
         pao.setId(ingredientPaoId);
 
-        var carne = new Ingredient(STORE_ID, "Carne Bovina", BigDecimal.TEN, Unit.KG, new BigDecimal("3.00"), BigDecimal.ZERO);
+        var carne = new Ingredient(STORE_ID, "Carne Bovina", BigDecimal.TEN, Unit.KG, new BigDecimal("3.00"),
+                BigDecimal.ZERO);
         carne.setId(ingredientCarneId);
 
         var product = new Product(STORE_ID, "X-Bacon Especial", null, new BigDecimal("35.00"));
         product.setId(productId);
-        product.setTechnicalSheet(List.of(
-            new TechnicalSheetItem(productId, ingredientPaoId, BigDecimal.ONE, new BigDecimal("1.50")),
-            new TechnicalSheetItem(productId, ingredientCarneId, new BigDecimal("2"), new BigDecimal("3.00"))
-        ));
+        product.replaceTechnicalSheet(List.of(
+                new TechnicalSheetItem(productId, ingredientPaoId, BigDecimal.ONE, new BigDecimal("1.50")),
+                new TechnicalSheetItem(productId, ingredientCarneId, new BigDecimal("2"), new BigDecimal("3.00"))));
 
         when(productRepository.findById(productId)).thenReturn(Optional.of(product));
         when(ingredientRepository.findAllById(List.of(ingredientPaoId, ingredientCarneId)))
-            .thenReturn(List.of(pao, carne));
+                .thenReturn(List.of(pao, carne));
 
         ProductCmvResponse response = useCase.execute(STORE_ID, productId);
 

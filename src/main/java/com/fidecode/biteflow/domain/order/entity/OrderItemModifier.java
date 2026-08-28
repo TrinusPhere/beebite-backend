@@ -24,13 +24,32 @@ public class OrderItemModifier {
     }
 
     // ── Getters ──
-    public UUID getId()           { return id; }
-    public UUID getGroupId()      { return groupId; }
-    public String getGroupName()  { return groupName; }
-    public UUID getOptionId()     { return optionId; }
-    public String getOptionName() { return optionName; }
-    public BigDecimal getPrice()  { return price; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getGroupId() {
+        return groupId;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public UUID getOptionId() {
+        return optionId;
+    }
+
+    public String getOptionName() {
+        return optionName;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
 
     // ── Setters ──
-    public void setId(UUID id) { this.id = id; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 }

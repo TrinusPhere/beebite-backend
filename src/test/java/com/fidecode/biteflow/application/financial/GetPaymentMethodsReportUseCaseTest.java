@@ -38,26 +38,20 @@ class GetPaymentMethodsReportUseCaseTest {
         long startEpoch = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endEpoch = endDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-        var record1 = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            startDate, java.time.LocalTime.of(10, 0),
-            new BigDecimal("50.00"), PaymentMethod.PIX,
-            FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
+        var record1 = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(), startDate,
+                java.time.LocalTime.of(10, 0), new BigDecimal("50.00"), PaymentMethod.PIX, FinancialStatus.CONCLUIDO,
+                List.of(), java.time.LocalDateTime.now());
 
-        var record2 = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            startDate, java.time.LocalTime.of(11, 0),
-            new BigDecimal("30.00"), PaymentMethod.PIX,
-            FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
+        var record2 = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(), startDate,
+                java.time.LocalTime.of(11, 0), new BigDecimal("30.00"), PaymentMethod.PIX, FinancialStatus.CONCLUIDO,
+                List.of(), java.time.LocalDateTime.now());
 
-        var record3 = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            startDate, java.time.LocalTime.of(12, 0),
-            new BigDecimal("40.00"), PaymentMethod.CREDITO,
-            FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
+        var record3 = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(), startDate,
+                java.time.LocalTime.of(12, 0), new BigDecimal("40.00"), PaymentMethod.CREDITO,
+                FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
 
         when(financialRecordRepository.findByStoreIdAndDateRange(STORE_ID, startDate, endDate))
-            .thenReturn(List.of(record1, record2, record3));
+                .thenReturn(List.of(record1, record2, record3));
 
         PaymentMethodReportResponse response = useCase.execute(STORE_ID, startEpoch, endEpoch);
 

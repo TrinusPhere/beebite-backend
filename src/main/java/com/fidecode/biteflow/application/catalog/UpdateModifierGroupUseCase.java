@@ -28,24 +28,20 @@ public class UpdateModifierGroupUseCase {
 
     public ModifierGroupResponse execute(UUID storeId, UUID id, ModifierGroupRequest request) {
         ModifierGroup group = repository.findById(id)
-            .orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
+                .orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
         StoreGuard.enforce(group, storeId);
 
-        group.setName(request.name());
-        if (request.type() != null) group.setType(ModifierType.valueOf(request.type()));
-        if (request.required() != null) group.setRequired(request.required());
-        if (request.minSelections() != null) group.setMinSelections(request.minSelections());
-        if (request.maxSelections() != null) group.setMaxSelections(request.maxSelections());
-        group.setIcon(request.icon());
+        group.update(request.name(), request.type() != null ? ModifierType.valueOf(request.type()) : null,
+                request.required(), request.minSelections(), request.maxSelections(), request.icon());
 
         if (request.options() != null) {
             List<ModifierOption> options = new ArrayList<>();
             for (int i = 0; i < request.options().size(); i++) {
                 var optDto = request.options().get(i);
                 options.add(new ModifierOption(group.getId(), optDto.name(),
-                    optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i));
+                        optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i));
             }
-            group.setOptions(options);
+            group.replaceOptions(options);
         }
 
         return ModifierGroupDtoMapper.toResponse(repository.save(group));

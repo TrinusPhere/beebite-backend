@@ -32,30 +32,25 @@ class OrderTest {
 
     @Test
     void deveLancarExcecaoSeStoreIdNulo() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new Order(null, OrderType.BALCAO, PaymentMethod.DINHEIRO));
+        assertThrows(IllegalArgumentException.class, () -> new Order(null, OrderType.BALCAO, PaymentMethod.DINHEIRO));
     }
 
     @Test
     void deveLancarExcecaoSeTipoNulo() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new Order(STORE_ID, null, PaymentMethod.DINHEIRO));
+        assertThrows(IllegalArgumentException.class, () -> new Order(STORE_ID, null, PaymentMethod.DINHEIRO));
     }
 
     @Test
     void deveLancarExcecaoSePaymentMethodNulo() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new Order(STORE_ID, OrderType.BALCAO, null));
+        assertThrows(IllegalArgumentException.class, () -> new Order(STORE_ID, OrderType.BALCAO, null));
     }
 
     @Test
     void deveCalcularTotalValueComItens() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
 
-        OrderItem item1 = new OrderItem(UUID.randomUUID(), "X-Bacon", 2,
-            new BigDecimal("25.00"), null);
-        OrderItem item2 = new OrderItem(UUID.randomUUID(), "Suco", 1,
-            new BigDecimal("8.00"), null);
+        OrderItem item1 = new OrderItem(UUID.randomUUID(), "X-Bacon", 2, new BigDecimal("25.00"), null);
+        OrderItem item2 = new OrderItem(UUID.randomUUID(), "Suco", 1, new BigDecimal("8.00"), null);
 
         order.addItem(item1);
         order.addItem(item2);
@@ -68,10 +63,9 @@ class OrderTest {
     @Test
     void deveCalcularTotalValueComDeliveryCost() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setDeliveryCost(new BigDecimal("10.00"));
+        order.changeDeliveryCost(new BigDecimal("10.00"));
 
-        OrderItem item = new OrderItem(UUID.randomUUID(), "X-Bacon", 1,
-            new BigDecimal("25.00"), null);
+        OrderItem item = new OrderItem(UUID.randomUUID(), "X-Bacon", 1, new BigDecimal("25.00"), null);
         order.addItem(item);
 
         // totalValue = 25 + 10 = 35

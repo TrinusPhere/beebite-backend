@@ -7,6 +7,8 @@ import com.fidecode.biteflow.domain.catalog.entity.Product;
 import com.fidecode.biteflow.domain.catalog.entity.TechnicalSheetItem;
 import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
+import com.fidecode.biteflow.domain.catalog.valueobject.ProductType;
+import com.fidecode.biteflow.domain.catalog.valueobject.Unit;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -22,34 +24,56 @@ public class CreateProductUseCase {
 
     private final ProductRepository productRepository;
     private final IngredientRepository ingredientRepository;
-    private final ProductDtoMapper productDtoMapper;
+    private final ProductResponseAssembler productResponseAssembler;
 
     @Inject
-    public CreateProductUseCase(ProductRepository productRepository, 
-                                IngredientRepository ingredientRepository,
-                                ProductDtoMapper productDtoMapper) {
+    public CreateProductUseCase(ProductRepository productRepository, IngredientRepository ingredientRepository,
+            ProductResponseAssembler productResponseAssembler) {
         this.productRepository = productRepository;
         this.ingredientRepository = ingredientRepository;
-        this.productDtoMapper = productDtoMapper;
+        this.productResponseAssembler = productResponseAssembler;
     }
 
     public ProductResponse execute(UUID storeId, ProductRequest request) {
-        UUID categoryId = request.categoryId() != null && !request.categoryId().isBlank() ? UUID.fromString(request.categoryId()) : null;
+        UUID categoryId = request.categoryId() != null && !request.categoryId().isBlank()
+                ? UUID.fromString(request.categoryId()) : null;
         Product product = new Product(storeId, request.name(), categoryId, request.price());
-        product.setDescription(request.description());
-        product.setImageUrl(request.imageUrl());
-        if (request.stock() != null) product.setStock(request.stock());
+        product.updateBasicInfo(product.getName(), product.getCategoryId(), request.description(), product.getPrice(),
+                product.getImageUrl());
+        product.updateBasicInfo(product.getName(), product.getCategoryId(), product.getDescription(),
+                product.getPrice(), request.imageUrl());
+        if (request.stock() != null)
+            product.initializeStock(request.stock());
+        if (request.active() != null)
+            product.configureAvailability(request.active(), product.isAvailableDigitalMenu(), product.isAvailablePdv());
+        if (request.productType() != null)
+            product.configureInventory(ProductType.valueOf(request.productType()), product.isTrackStock(),
+                    product.getProductionSectorId(), product.getSaleUnit());
+        if (request.trackStock() != null)
+            product.configureInventory(product.getProductType(), request.trackStock(), product.getProductionSectorId(),
+                    product.getSaleUnit());
+        if (request.productionSectorId() != null && !request.productionSectorId().isBlank())
+            product.configureInventory(product.getProductType(), product.isTrackStock(),
+                    UUID.fromString(request.productionSectorId()), product.getSaleUnit());
+        if (request.saleUnit() != null)
+            product.configureInventory(product.getProductType(), product.isTrackStock(),
+                    product.getProductionSectorId(), Unit.valueOf(request.saleUnit()));
+        if (request.availableDigitalMenu() != null)
+            product.configureAvailability(product.isActive(), request.availableDigitalMenu(), product.isAvailablePdv());
+        if (request.availablePdv() != null)
+            product.configureAvailability(product.isActive(), product.isAvailableDigitalMenu(), request.availablePdv());
 
         List<UUID> ingredientIds = new ArrayList<>();
         if (request.technicalSheet() != null) {
-            ingredientIds.addAll(request.technicalSheet().stream().map(i -> UUID.fromString(i.ingredientId())).toList());
+            ingredientIds
+                    .addAll(request.technicalSheet().stream().map(i -> UUID.fromString(i.ingredientId())).toList());
         }
         if (request.removableItemIds() != null) {
             ingredientIds.addAll(request.removableItemIds().stream().map(UUID::fromString).toList());
         }
 
         Map<UUID, Ingredient> ingredientCache = ingredientRepository.findAllById(ingredientIds).stream()
-            .collect(Collectors.toMap(Ingredient::getId, i -> i));
+                .collect(Collectors.toMap(Ingredient::getId, i -> i));
 
         if (request.technicalSheet() != null) {
             List<TechnicalSheetItem> sheet = new ArrayList<>();
@@ -59,17 +83,17 @@ public class CreateProductUseCase {
                 BigDecimal costSnapshot = ing != null ? ing.getCostPrice() : BigDecimal.ZERO;
                 sheet.add(new TechnicalSheetItem(null, ingId, item.quantity(), costSnapshot));
             }
-            product.setTechnicalSheet(sheet);
+            product.replaceTechnicalSheet(sheet);
         }
 
         if (request.removableItemIds() != null) {
-            product.setRemovableItemIds(request.removableItemIds().stream().map(UUID::fromString).toList());
+            product.replaceRemovableItems(request.removableItemIds().stream().map(UUID::fromString).toList());
         }
         if (request.modifierGroupIds() != null) {
-            product.setModifierGroupIds(request.modifierGroupIds().stream().map(UUID::fromString).toList());
+            product.replaceModifierGroups(request.modifierGroupIds().stream().map(UUID::fromString).toList());
         }
 
         Product saved = productRepository.save(product);
-        return productDtoMapper.toResponse(saved, ingredientCache, null);
+        return productResponseAssembler.toResponse(saved, ingredientCache, null);
     }
 }

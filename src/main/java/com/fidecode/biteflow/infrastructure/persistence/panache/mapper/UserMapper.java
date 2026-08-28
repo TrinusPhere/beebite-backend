@@ -9,17 +9,16 @@ import java.util.List;
 
 public final class UserMapper {
 
-    private UserMapper() {}
+    private UserMapper() {
+    }
 
     public static User toDomain(UserEntity e) {
-        if (e == null) return null;
-        List<Permission> perms = e.permissions != null
-            ? e.permissions.stream().map(Permission::fromValue).toList()
-            : List.of();
-        User user = new User(e.storeId, e.name, e.login, e.passwordHash, Role.valueOf(e.role), perms);
-        user.setId(e.id);
-        user.setActive(e.active);
-        return user;
+        if (e == null)
+            return null;
+        List<Permission> perms = e.permissions != null ? e.permissions.stream().map(Permission::fromValue).toList()
+                : List.of();
+        return User.reconstitute(e.id, e.storeId, e.name, e.login, e.passwordHash, Role.valueOf(e.role), perms,
+                e.active);
     }
 
     public static UserEntity toEntity(User u) {

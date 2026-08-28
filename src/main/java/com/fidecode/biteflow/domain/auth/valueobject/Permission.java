@@ -3,16 +3,9 @@ package com.fidecode.biteflow.domain.auth.valueobject;
 import java.util.Arrays;
 
 public enum Permission {
-    DASHBOARD("dashboard"),
-    PEDIDOS("pedidos"),
-    CLIENTES("clientes"),
-    INGREDIENTES("ingredientes"),
-    PRODUTOS("produtos"),
-    ENTREGADORES("entregadores"),
-    ACERTO_ENTREGADORES("acerto_entregadores"),
-    USUARIOS("usuarios"),
-    INTEGRACOES("integracoes"),
-    FINANCEIRO("financeiro");
+    DASHBOARD("dashboard"), PEDIDOS("pedidos"), CLIENTES("clientes"), INGREDIENTES("ingredientes"),
+    PRODUTOS("produtos"), ENTREGADORES("entregadores"), ACERTO_ENTREGADORES("acerto_entregadores"),
+    USUARIOS("usuarios"), INTEGRACOES("integracoes"), FINANCEIRO("financeiro");
 
     private final String value;
 
@@ -25,10 +18,8 @@ public enum Permission {
     }
 
     public static Permission fromValue(String value) {
-        return Arrays.stream(values())
-            .filter(p -> p.value.equals(value))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Permissão inválida: " + value));
+        return Arrays.stream(values()).filter(p -> p.value.equals(value)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Permissão inválida: " + value));
     }
 
     /** Retorna todos os valores string das permissões — usado pelo JwtPermissionsAugmentor para ADMIN. */

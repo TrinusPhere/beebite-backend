@@ -23,9 +23,8 @@ public class ListDriversUseCase {
 
     public PageResponse<DriverResponse> execute(UUID storeId, int page, int size) {
         PageResult<DeliveryDriver> result = repository.findAllByStoreId(storeId, page, size);
-        List<DriverResponse> content = result.getContent().stream()
-            .map(DriverDtoMapper::toResponse).toList();
-        return new PageResponse<>(content, result.getPage(), result.getSize(),
-            result.getTotalElements(), result.getTotalPages());
+        List<DriverResponse> content = result.getContent().stream().map(DriverDtoMapper::toResponse).toList();
+        return new PageResponse<>(content, result.getPage(), result.getSize(), result.getTotalElements(),
+                result.getTotalPages());
     }
 }

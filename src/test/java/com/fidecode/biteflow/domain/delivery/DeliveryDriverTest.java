@@ -46,10 +46,8 @@ class DeliveryDriverTest {
     void shouldCalculateSettlementTotal() {
         // total = (deliveries × feePerDelivery) + allowance
         // total = (12 × 5.00) + 20.00 = 80.00
-        DeliverySettlement settlement = new DeliverySettlement(
-            UUID.randomUUID().toString(), "João Silva", "FIXO",
-            12, new BigDecimal("20.00"), new BigDecimal("5.00")
-        );
+        DeliverySettlement settlement = new DeliverySettlement(UUID.randomUUID().toString(), "João Silva", "FIXO", 12,
+                new BigDecimal("20.00"), new BigDecimal("5.00"));
 
         assertEquals(0, new BigDecimal("80.00").compareTo(settlement.getTotal()));
         assertEquals(12, settlement.getDeliveries());
@@ -60,10 +58,8 @@ class DeliveryDriverTest {
     @Test
     void shouldCalculateSettlementWithZeroDeliveries() {
         // total = (0 × 5.00) + 20.00 = 20.00 (only allowance)
-        DeliverySettlement settlement = new DeliverySettlement(
-            UUID.randomUUID().toString(), "Maria", "DIARISTA",
-            0, new BigDecimal("20.00"), new BigDecimal("5.00")
-        );
+        DeliverySettlement settlement = new DeliverySettlement(UUID.randomUUID().toString(), "Maria", "DIARISTA", 0,
+                new BigDecimal("20.00"), new BigDecimal("5.00"));
 
         assertEquals(0, new BigDecimal("20.00").compareTo(settlement.getTotal()));
     }
@@ -71,10 +67,8 @@ class DeliveryDriverTest {
     @Test
     void shouldCalculateSettlementWithZeroAllowance() {
         // total = (5 × 8.00) + 0 = 40.00
-        DeliverySettlement settlement = new DeliverySettlement(
-            UUID.randomUUID().toString(), "Pedro", "DIARISTA",
-            5, BigDecimal.ZERO, new BigDecimal("8.00")
-        );
+        DeliverySettlement settlement = new DeliverySettlement(UUID.randomUUID().toString(), "Pedro", "DIARISTA", 5,
+                BigDecimal.ZERO, new BigDecimal("8.00"));
 
         assertEquals(0, new BigDecimal("40.00").compareTo(settlement.getTotal()));
     }

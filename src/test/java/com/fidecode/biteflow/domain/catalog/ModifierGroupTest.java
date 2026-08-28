@@ -35,18 +35,18 @@ class ModifierGroupTest {
     @Test
     void shouldRequireName() {
         assertThrows(IllegalArgumentException.class,
-            () -> new ModifierGroup(storeId, null, ModifierType.RADIO, false, 0, 1, null));
+                () -> new ModifierGroup(storeId, null, ModifierType.RADIO, false, 0, 1, null));
     }
 
     @Test
     void shouldRequireStoreId() {
         assertThrows(IllegalArgumentException.class,
-            () -> new ModifierGroup(null, "Test", ModifierType.RADIO, false, 0, 1, null));
+                () -> new ModifierGroup(null, "Test", ModifierType.RADIO, false, 0, 1, null));
     }
 
     @Test
     void shouldValidateMinMaxSelections() {
         assertThrows(IllegalArgumentException.class,
-            () -> new ModifierGroup(storeId, "Test", ModifierType.RADIO, false, 3, 1, null));
+                () -> new ModifierGroup(storeId, "Test", ModifierType.RADIO, false, 3, 1, null));
     }
 }

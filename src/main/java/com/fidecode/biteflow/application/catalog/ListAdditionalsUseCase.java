@@ -23,9 +23,8 @@ public class ListAdditionalsUseCase {
 
     public PageResponse<AdditionalResponse> execute(UUID storeId, int page, int size) {
         PageResult<Additional> result = repository.findAllByStoreId(storeId, page, size);
-        List<AdditionalResponse> content = result.getContent().stream()
-            .map(AdditionalDtoMapper::toResponse).toList();
-        return new PageResponse<>(content, result.getPage(), result.getSize(),
-            result.getTotalElements(), result.getTotalPages());
+        List<AdditionalResponse> content = result.getContent().stream().map(AdditionalDtoMapper::toResponse).toList();
+        return new PageResponse<>(content, result.getPage(), result.getSize(), result.getTotalElements(),
+                result.getTotalPages());
     }
 }

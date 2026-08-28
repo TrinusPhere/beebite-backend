@@ -9,12 +9,10 @@ import com.fidecode.biteflow.domain.catalog.valueobject.Unit;
 import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.UUID;
 
 @ApplicationScoped
 public class UpdateIngredientUseCase {
-
     private final IngredientRepository repository;
 
     @Inject
@@ -24,16 +22,10 @@ public class UpdateIngredientUseCase {
 
     public IngredientResponse execute(UUID storeId, UUID id, IngredientRequest request) {
         Ingredient ingredient = repository.findById(id)
-            .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
+                .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
         StoreGuard.enforce(ingredient, storeId);
-
-        ingredient.setName(request.name());
-        if (request.stock() != null) ingredient.setStock(request.stock());
-        if (request.unit() != null) ingredient.setUnit(Unit.valueOf(request.unit()));
-        if (request.costPrice() != null) ingredient.setCostPrice(request.costPrice());
-        if (request.minStock() != null) ingredient.setMinStock(request.minStock());
-
-        Ingredient saved = repository.save(ingredient);
-        return CreateIngredientUseCase.toResponse(saved);
+        ingredient.updateDetails(request.name(), request.unit() != null ? Unit.valueOf(request.unit()) : null,
+                request.costPrice(), request.minStock(), request.active());
+        return CreateIngredientUseCase.toResponse(repository.save(ingredient));
     }
 }

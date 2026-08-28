@@ -23,7 +23,7 @@ public class GetCustomerUseCase {
 
     public CustomerResponse execute(UUID storeId, UUID id) {
         Customer customer = customerRepository.findById(id)
-            .orElseThrow(() -> new CustomerNotFoundException(id.toString()));
+                .orElseThrow(() -> new CustomerNotFoundException(id.toString()));
         StoreGuard.enforce(customer, storeId);
         return CustomerDtoMapper.toResponse(customer);
     }

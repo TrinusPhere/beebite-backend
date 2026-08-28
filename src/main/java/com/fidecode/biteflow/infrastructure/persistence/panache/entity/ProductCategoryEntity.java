@@ -35,6 +35,6 @@ public class ProductCategoryEntity extends PanacheEntityBase {
     @Column(name = "created_at", nullable = false, updatable = false)
     public Instant createdAt;
 
-    @jakarta.persistence.Column(name = "deleted_at")
+    @Column(name = "deleted_at")
     public LocalDateTime deletedAt;
 }

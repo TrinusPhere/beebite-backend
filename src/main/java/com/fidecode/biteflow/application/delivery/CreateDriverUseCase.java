@@ -23,12 +23,9 @@ public class CreateDriverUseCase {
     public DriverResponse execute(UUID storeId, DriverRequest request) {
         DeliveryDriver driver = new DeliveryDriver(storeId, request.name(), request.phone());
 
-        if (request.status() != null) driver.setStatus(DriverStatus.valueOf(request.status()));
-        if (request.isFixed() != null) driver.setFixed(request.isFixed());
-        if (request.isDaily() != null) driver.setDaily(request.isDaily());
-        if (request.allowance() != null) driver.setAllowance(request.allowance());
-        if (request.hasFixedDeliveryValue() != null) driver.setHasFixedDeliveryValue(request.hasFixedDeliveryValue());
-        if (request.fixedDeliveryValue() != null) driver.setFixedDeliveryValue(request.fixedDeliveryValue());
+        driver.configureWork(request.status() != null ? DriverStatus.valueOf(request.status()) : null,
+                request.isFixed(), request.isDaily(), request.allowance(), request.hasFixedDeliveryValue(),
+                request.fixedDeliveryValue());
 
         return DriverDtoMapper.toResponse(repository.save(driver));
     }

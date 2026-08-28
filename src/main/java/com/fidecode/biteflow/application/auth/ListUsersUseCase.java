@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
+import java.util.UUID;
 
 @ApplicationScoped
 public class ListUsersUseCase {
@@ -17,9 +18,7 @@ public class ListUsersUseCase {
         this.userRepository = userRepository;
     }
 
-    public List<UserResponse> execute() {
-        return userRepository.findAll().stream()
-            .map(CreateUserUseCase::toResponse)
-            .toList();
+    public List<UserResponse> execute(UUID storeId) {
+        return userRepository.findAllByStoreId(storeId).stream().map(CreateUserUseCase::toResponse).toList();
     }
 }

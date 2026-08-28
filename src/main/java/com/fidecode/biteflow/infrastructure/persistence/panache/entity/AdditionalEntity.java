@@ -40,6 +40,6 @@ public class AdditionalEntity extends PanacheEntityBase {
     @Column(name = "updated_at", nullable = false)
     public Instant updatedAt;
 
-    @jakarta.persistence.Column(name = "deleted_at")
+    @Column(name = "deleted_at")
     public LocalDateTime deletedAt;
 }

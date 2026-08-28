@@ -22,9 +22,7 @@ public class GetOrderUseCase {
 
     public OrderResponse getById(UUID storeId, UUID id) {
         Order order = StoreGuard.enforce(
-            orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id.toString())),
-            storeId
-        );
+                orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id.toString())), storeId);
         return OrderDtoMapper.toResponse(order);
     }
 }

@@ -27,7 +27,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DriverUseCasesTest {
 
-    @Mock DeliveryDriverRepository driverRepository;
+    @Mock
+    DeliveryDriverRepository driverRepository;
 
     private CreateDriverUseCase createDriverUseCase;
     private UpdateDriverUseCase updateDriverUseCase;
@@ -48,10 +49,8 @@ class DriverUseCasesTest {
 
     @Test
     void shouldCreateDriver() {
-        DriverRequest request = new DriverRequest(
-            "Carlos Silva", "(11) 98765-4321", "ATIVO",
-            true, false, new BigDecimal("20.00"), true, new BigDecimal("5.00")
-        );
+        DriverRequest request = new DriverRequest("Carlos Silva", "(11) 98765-4321", "ATIVO", true, false,
+                new BigDecimal("20.00"), true, new BigDecimal("5.00"));
 
         when(driverRepository.save(any())).thenAnswer(inv -> {
             DeliveryDriver d = inv.getArgument(0);
@@ -78,8 +77,8 @@ class DriverUseCasesTest {
         when(driverRepository.findById(driverId)).thenReturn(Optional.of(existing));
         when(driverRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        DriverRequest request = new DriverRequest("New Name", "222", "INATIVO",
-            false, true, BigDecimal.ZERO, false, BigDecimal.ZERO);
+        DriverRequest request = new DriverRequest("New Name", "222", "INATIVO", false, true, BigDecimal.ZERO, false,
+                BigDecimal.ZERO);
 
         DriverResponse response = updateDriverUseCase.execute(storeId, driverId, request);
 
@@ -92,8 +91,8 @@ class DriverUseCasesTest {
         UUID id = UUID.randomUUID();
         when(driverRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(DriverNotFoundException.class,
-            () -> updateDriverUseCase.execute(storeId, id, new DriverRequest("X", null, null, null, null, null, null, null)));
+        assertThrows(DriverNotFoundException.class, () -> updateDriverUseCase.execute(storeId, id,
+                new DriverRequest("X", null, null, null, null, null, null, null)));
     }
 
     @Test

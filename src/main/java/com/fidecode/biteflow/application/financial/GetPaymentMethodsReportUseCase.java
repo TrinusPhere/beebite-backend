@@ -31,29 +31,21 @@ public class GetPaymentMethodsReportUseCase {
         LocalDate startDate = epochToLocalDate(startEpoch);
         LocalDate endDate = epochToLocalDate(endEpoch);
 
-        List<FinancialRecord> records = financialRecordRepository
-            .findByStoreIdAndDateRange(storeId, startDate, endDate)
-            .stream()
-            .filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO)
-            .toList();
+        List<FinancialRecord> records = financialRecordRepository.findByStoreIdAndDateRange(storeId, startDate, endDate)
+                .stream().filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO).toList();
 
         Map<String, int[]> quantityMap = new LinkedHashMap<>();
         Map<String, BigDecimal> valueMap = new LinkedHashMap<>();
 
         for (FinancialRecord record : records) {
             String method = record.getPaymentMethod().name();
-            quantityMap.computeIfAbsent(method, k -> new int[]{0})[0]++;
+            quantityMap.computeIfAbsent(method, k -> new int[] { 0 })[0]++;
             valueMap.merge(method, record.getTotalValue(), BigDecimal::add);
         }
 
-        List<PaymentMethodReportResponse.MethodEntry> methods = quantityMap.entrySet().stream()
-            .map(e -> new PaymentMethodReportResponse.MethodEntry(
-                e.getKey(),
-                e.getValue()[0],
-                valueMap.get(e.getKey())
-            ))
-            .sorted(Comparator.comparing(PaymentMethodReportResponse.MethodEntry::totalValue).reversed())
-            .toList();
+        List<PaymentMethodReportResponse.MethodEntry> methods = quantityMap.entrySet().stream().map(
+                e -> new PaymentMethodReportResponse.MethodEntry(e.getKey(), e.getValue()[0], valueMap.get(e.getKey())))
+                .sorted(Comparator.comparing(PaymentMethodReportResponse.MethodEntry::totalValue).reversed()).toList();
 
         return new PaymentMethodReportResponse(startEpoch, endEpoch, methods);
     }

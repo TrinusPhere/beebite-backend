@@ -8,4 +8,8 @@ public class StoreNotFoundException extends EntityNotFoundException {
     public StoreNotFoundException(UUID id) {
         super("Loja com ID '" + id + "' não encontrada.");
     }
+
+    public StoreNotFoundException(String identifier) {
+        super("Loja não encontrada: " + identifier);
+    }
 }

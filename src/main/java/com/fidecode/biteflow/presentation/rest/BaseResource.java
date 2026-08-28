@@ -6,18 +6,18 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import java.util.UUID;
 
 /**
- * Classe base para todos os JAX-RS Resources autenticados.
- * Centraliza a extração de contexto do JWT (storeId),
+ * Classe base para todos os JAX-RS Resources autenticados. Centraliza a extração de contexto do JWT (storeId),
  * eliminando duplicação em todos os Resources.
  *
- * <p>Controle de acesso é feito declarativamente nas subclasses:
+ * <p>
+ * Controle de acesso é feito declarativamente nas subclasses:
  * <ul>
- *   <li>{@code @RolesAllowed} — controla quais roles podem acessar o endpoint
- *   <li>{@code @PermissionsAllowed} — controla qual permissão granular é necessária
+ * <li>{@code @RolesAllowed} — controla quais roles podem acessar o endpoint
+ * <li>{@code @PermissionsAllowed} — controla qual permissão granular é necessária
  * </ul>
  *
- * <p>Nunca declare anotações JAX-RS aqui — cada subclasse define
- * seu próprio {@code @Path}, {@code @Produces}, etc.
+ * <p>
+ * Nunca declare anotações JAX-RS aqui — cada subclasse define seu próprio {@code @Path}, {@code @Produces}, etc.
  */
 public abstract class BaseResource {
 
@@ -25,12 +25,13 @@ public abstract class BaseResource {
     protected JsonWebToken jwt;
 
     /**
-     * Extrai o storeId do claim JWT.
-     * Fail-fast: lança {@link IllegalStateException} se o claim não existir,
-     * evitando o fallback silencioso que concedia acesso à store padrão.
+     * Extrai o storeId do claim JWT. Fail-fast: lança {@link IllegalStateException} se o claim não existir, evitando o
+     * fallback silencioso que concedia acesso à store padrão.
      *
      * @return UUID da store do usuário autenticado
-     * @throws IllegalStateException se o token não contiver o claim {@code storeId}
+     *
+     * @throws IllegalStateException
+     *             se o token não contiver o claim {@code storeId}
      */
     protected UUID getStoreId() {
         Object raw = jwt.getClaim("storeId");

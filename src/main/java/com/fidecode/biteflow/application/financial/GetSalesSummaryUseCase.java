@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Use Case — Resumo de vendas por período.
- * Recebe startDate/endDate como epoch (ms). Calcula variação % vs período anterior.
+ * Use Case — Resumo de vendas por período. Recebe startDate/endDate como epoch (ms). Calcula variação % vs período
+ * anterior.
  */
 @ApplicationScoped
 public class GetSalesSummaryUseCase {
@@ -36,17 +36,15 @@ public class GetSalesSummaryUseCase {
         LocalDate endDate = epochToLocalDate(endEpoch);
 
         // Busca registros do período atual
-        List<FinancialRecord> currentRecords = financialRecordRepository
-            .findByStoreIdAndDateRange(storeId, startDate, endDate);
+        List<FinancialRecord> currentRecords = financialRecordRepository.findByStoreIdAndDateRange(storeId, startDate,
+                endDate);
 
         // Filtra apenas CONCLUIDO
         List<FinancialRecord> validRecords = currentRecords.stream()
-            .filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO)
-            .toList();
+                .filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO).toList();
 
-        BigDecimal revenue = validRecords.stream()
-            .map(FinancialRecord::getTotalValue)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal revenue = validRecords.stream().map(FinancialRecord::getTotalValue).reduce(BigDecimal.ZERO,
+                BigDecimal::add);
 
         int totalOrders = validRecords.size();
 
@@ -55,13 +53,11 @@ public class GetSalesSummaryUseCase {
         LocalDate prevEnd = startDate.minusDays(1);
         LocalDate prevStart = prevEnd.minusDays(daysInPeriod - 1);
 
-        List<FinancialRecord> previousRecords = financialRecordRepository
-            .findByStoreIdAndDateRange(storeId, prevStart, prevEnd);
+        List<FinancialRecord> previousRecords = financialRecordRepository.findByStoreIdAndDateRange(storeId, prevStart,
+                prevEnd);
 
-        BigDecimal previousRevenue = previousRecords.stream()
-            .filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO)
-            .map(FinancialRecord::getTotalValue)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal previousRevenue = previousRecords.stream().filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO)
+                .map(FinancialRecord::getTotalValue).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         String changePercentage = calculateChangePercentage(revenue, previousRevenue);
 
@@ -75,10 +71,8 @@ public class GetSalesSummaryUseCase {
             }
             return "+100%";
         }
-        BigDecimal change = current.subtract(previous)
-            .divide(previous, 4, RoundingMode.HALF_UP)
-            .multiply(new BigDecimal("100"))
-            .setScale(1, RoundingMode.HALF_UP);
+        BigDecimal change = current.subtract(previous).divide(previous, 4, RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100")).setScale(1, RoundingMode.HALF_UP);
 
         String prefix = change.compareTo(BigDecimal.ZERO) > 0 ? "+" : "";
         return prefix + change.stripTrailingZeros().toPlainString() + "%";

@@ -6,10 +6,7 @@ import java.util.List;
 /**
  * Response — ranking de vendas por produto.
  */
-public record SalesByProductResponse(
-    long startDate,
-    long endDate,
-    List<ProductSale> products
-) {
-    public record ProductSale(String productName, int quantity, BigDecimal totalValue) {}
+public record SalesByProductResponse(long startDate, long endDate, List<ProductSale> products) {
+    public record ProductSale(String productName, int quantity, BigDecimal totalValue) {
+    }
 }

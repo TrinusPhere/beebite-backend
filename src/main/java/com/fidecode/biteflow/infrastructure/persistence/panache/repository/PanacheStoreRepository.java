@@ -12,8 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Implementação do port StoreRepository (domínio).
- * Usa StorePanacheRepo internamente — padrão Repository do Panache.
+ * Implementação do port StoreRepository (domínio). Usa StorePanacheRepo internamente — padrão Repository do Panache.
  */
 @ApplicationScoped
 public class PanacheStoreRepository implements StoreRepository {
@@ -24,6 +23,14 @@ public class PanacheStoreRepository implements StoreRepository {
     @Override
     public Optional<Store> findById(UUID id) {
         return repo.findByIdOptional(id).map(StoreMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Store> findByPublicIdentifier(String identifier) {
+        if (identifier == null || identifier.isBlank())
+            return Optional.empty();
+        return repo.find("lower(publicSlug) = ?1 or lower(name) = ?1", identifier.toLowerCase()).firstResultOptional()
+                .map(StoreMapper::toDomain);
     }
 
     @Override

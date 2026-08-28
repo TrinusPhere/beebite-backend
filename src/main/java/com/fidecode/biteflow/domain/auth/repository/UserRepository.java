@@ -11,9 +11,14 @@ import java.util.UUID;
  */
 public interface UserRepository {
     Optional<User> findById(UUID id);
+
     Optional<User> findByLogin(String login);
-    List<User> findAll();
+
+    List<User> findAllByStoreId(UUID storeId);
+
     boolean existsByLogin(String login);
+
     User save(User user);
+
     void delete(UUID id);
 }

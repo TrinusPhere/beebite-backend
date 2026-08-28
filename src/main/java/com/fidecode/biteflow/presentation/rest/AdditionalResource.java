@@ -19,20 +19,23 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-
-@RolesAllowed({"ADMIN","GERENTE"})
+@RolesAllowed({ "ADMIN", "GERENTE" })
 public class AdditionalResource extends BaseResource {
 
-    @Inject CreateAdditionalUseCase createUseCase;
-    @Inject UpdateAdditionalUseCase updateUseCase;
-    @Inject DeleteAdditionalUseCase deleteUseCase;
-    @Inject ListAdditionalsUseCase listUseCase;
-    @Inject ToggleAdditionalStatusUseCase toggleUseCase;
+    @Inject
+    CreateAdditionalUseCase createUseCase;
+    @Inject
+    UpdateAdditionalUseCase updateUseCase;
+    @Inject
+    DeleteAdditionalUseCase deleteUseCase;
+    @Inject
+    ListAdditionalsUseCase listUseCase;
+    @Inject
+    ToggleAdditionalStatusUseCase toggleUseCase;
 
     @PermissionsAllowed("produtos")
     @GET
-    public Response list(
-            @QueryParam("page") @DefaultValue("0") int page,
+    public Response list(@QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("10") int size) {
         return Response.ok(listUseCase.execute(getStoreId(), page, size)).build();
     }
@@ -41,8 +44,7 @@ public class AdditionalResource extends BaseResource {
     @POST
     public Response create(@Valid AdditionalRequest request) {
         AdditionalResponse created = createUseCase.execute(getStoreId(), request);
-        return Response.created(URI.create("/api/v1/additionals/" + created.id()))
-            .entity(created).build();
+        return Response.created(URI.create("/api/v1/additionals/" + created.id())).entity(created).build();
     }
 
     @PermissionsAllowed("produtos")

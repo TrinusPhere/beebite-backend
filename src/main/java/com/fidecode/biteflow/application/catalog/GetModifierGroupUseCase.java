@@ -22,7 +22,7 @@ public class GetModifierGroupUseCase {
 
     public ModifierGroupResponse execute(UUID storeId, UUID id) {
         ModifierGroup group = repository.findById(id)
-            .orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
+                .orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
         StoreGuard.enforce(group, storeId);
         return ModifierGroupDtoMapper.toResponse(group);
     }

@@ -29,7 +29,7 @@ class ModifierOptionTest {
     @Test
     void shouldRequireName() {
         assertThrows(IllegalArgumentException.class,
-            () -> new ModifierOption(UUID.randomUUID(), null, BigDecimal.ZERO, 0));
+                () -> new ModifierOption(UUID.randomUUID(), null, BigDecimal.ZERO, 0));
     }
 
 }

@@ -1,0 +1,25 @@
+package com.fidecode.biteflow.application.integration;
+
+import com.fidecode.biteflow.application.integration.dto.*;
+import com.fidecode.biteflow.domain.integration.entity.IntegrationConfig;
+import com.fidecode.biteflow.domain.integration.repository.IntegrationConfigRepository;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.util.UUID;
+
+@ApplicationScoped
+public class ConfigureWhatsappUseCase {
+    private final IntegrationConfigRepository repo;
+
+    @Inject
+    public ConfigureWhatsappUseCase(IntegrationConfigRepository repo) {
+        this.repo = repo;
+    }
+
+    public IntegrationResponse execute(UUID storeId, WhatsappIntegrationRequest request) {
+        var c = repo.findByStoreIdAndProvider(storeId, "WHATSAPP").orElse(new IntegrationConfig(storeId, "WHATSAPP"));
+        c.configureWhatsapp(request.provider(), request.phoneNumber(), request.businessAccountId(),
+                request.accessToken());
+        return IntegrationDtoMapper.toResponse(repo.save(c));
+    }
+}

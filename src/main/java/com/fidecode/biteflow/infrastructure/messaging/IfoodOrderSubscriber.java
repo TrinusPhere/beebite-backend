@@ -38,12 +38,11 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Subscriber do tópico: ifood-order-placed.
- * Recebe novos pedidos do iFood e cria no banco do BiteFlow com status ANALISE.
+ * Subscriber do tópico: ifood-order-placed. Recebe novos pedidos do iFood e cria no banco do BiteFlow com status
+ * ANALISE.
  *
- * Nota: Pedidos iFood chegam sem referência ao catálogo interno.
- * Os itens são criados com nome/preço snapshot do evento (ex: "X-Burger", R$ 25,90).
- * A loja pode opcionalmente mapear depois.
+ * Nota: Pedidos iFood chegam sem referência ao catálogo interno. Os itens são criados com nome/preço snapshot do evento
+ * (ex: "X-Burger", R$ 25,90). A loja pode opcionalmente mapear depois.
  */
 @ApplicationScoped
 public class IfoodOrderSubscriber {
@@ -95,7 +94,8 @@ public class IfoodOrderSubscriber {
     void onStop(@Observes ShutdownEvent event) {
         stopSubscriber(placedSubscriber);
         stopSubscriber(statusSubscriber);
-        if (channel != null) channel.shutdownNow();
+        if (channel != null)
+            channel.shutdownNow();
     }
 
     // ── Handlers ──────────────────────────────────────────────────────────────
@@ -153,12 +153,10 @@ public class IfoodOrderSubscriber {
         // Items
         if (root.has("items")) {
             for (JsonNode item : root.get("items")) {
-                OrderItem orderItem = new OrderItem(
-                        null, // productId null — pedido externo, sem mapeamento de catálogo
-                        item.get("name").asText(),
-                        item.get("quantity").asInt(),
-                        new BigDecimal(item.get("unitPrice").asText()),
-                        null  // observation — não disponível em pedidos iFood externos
+                OrderItem orderItem = new OrderItem(null, // productId null — pedido externo, sem mapeamento de catálogo
+                        item.get("name").asText(), item.get("quantity").asInt(),
+                        new BigDecimal(item.get("unitPrice").asText()), null // observation — não disponível em pedidos
+                                                                             // iFood externos
                 );
                 order.addItem(orderItem);
             }
@@ -179,26 +177,28 @@ public class IfoodOrderSubscriber {
         String ifoodOrderId = root.get("ifoodOrderId").asText();
         String newStatus = root.get("newBiteflowStatus").asText();
 
-        orderRepository.findByExternalOrderId(ifoodOrderId).ifPresentOrElse(
-                order -> {
-                    order.changeStatus(OrderStatus.valueOf(newStatus));
-                    orderRepository.save(order);
-                    LOG.infof("[IFOOD-SUB] Status atualizado: %s → %s", ifoodOrderId, newStatus);
-                },
-                () -> LOG.warnf("[IFOOD-SUB] Pedido não encontrado para atualizar status: %s", ifoodOrderId)
-        );
+        orderRepository.findByExternalOrderId(ifoodOrderId).ifPresentOrElse(order -> {
+            order.changeStatus(OrderStatus.valueOf(newStatus));
+            orderRepository.save(order);
+            LOG.infof("[IFOOD-SUB] Status atualizado: %s → %s", ifoodOrderId, newStatus);
+        }, () -> LOG.warnf("[IFOOD-SUB] Pedido não encontrado para atualizar status: %s", ifoodOrderId));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private String buildAddress(JsonNode root) {
-        if (!root.has("deliveryAddress") || root.get("deliveryAddress").isNull()) return null;
+        if (!root.has("deliveryAddress") || root.get("deliveryAddress").isNull())
+            return null;
         JsonNode addr = root.get("deliveryAddress");
         StringBuilder sb = new StringBuilder();
-        if (addr.has("streetName")) sb.append(addr.get("streetName").asText());
-        if (addr.has("streetNumber")) sb.append(", ").append(addr.get("streetNumber").asText());
-        if (addr.has("neighborhood")) sb.append(" - ").append(addr.get("neighborhood").asText());
-        if (addr.has("city")) sb.append(", ").append(addr.get("city").asText());
+        if (addr.has("streetName"))
+            sb.append(addr.get("streetName").asText());
+        if (addr.has("streetNumber"))
+            sb.append(", ").append(addr.get("streetNumber").asText());
+        if (addr.has("neighborhood"))
+            sb.append(" - ").append(addr.get("neighborhood").asText());
+        if (addr.has("city"))
+            sb.append(", ").append(addr.get("city").asText());
         return sb.toString();
     }
 
@@ -207,10 +207,8 @@ public class IfoodOrderSubscriber {
 
         if (channel != null) {
             var channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
-            return Subscriber.newBuilder(subName, receiver)
-                    .setChannelProvider(channelProvider)
-                    .setCredentialsProvider(NoCredentialsProvider.create())
-                    .build();
+            return Subscriber.newBuilder(subName, receiver).setChannelProvider(channelProvider)
+                    .setCredentialsProvider(NoCredentialsProvider.create()).build();
         }
 
         return Subscriber.newBuilder(subName, receiver).build();
@@ -219,7 +217,10 @@ public class IfoodOrderSubscriber {
     private void stopSubscriber(Subscriber sub) {
         if (sub != null) {
             sub.stopAsync();
-            try { sub.awaitTerminated(5, TimeUnit.SECONDS); } catch (Exception ignored) {}
+            try {
+                sub.awaitTerminated(5, TimeUnit.SECONDS);
+            } catch (Exception ignored) {
+            }
         }
     }
 }

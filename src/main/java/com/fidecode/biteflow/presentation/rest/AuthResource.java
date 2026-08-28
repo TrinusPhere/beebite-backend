@@ -10,23 +10,21 @@ import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.NewCookie;
-import jakarta.ws.rs.core.SecurityContext;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.util.UUID;
 
 @Path("/api/v1/auth")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class AuthResource {
+public class AuthResource extends BaseResource {
 
-    @Inject LoginUseCase loginUseCase;
-    @Inject GetUserUseCase getUserUseCase;
-    @Inject JsonWebToken jwt;
+    @Inject
+    LoginUseCase loginUseCase;
+    @Inject
+    GetUserUseCase getUserUseCase;
 
     private NewCookie createAuthCookie(String token) {
         // secure = false for local development. We set HttpOnly = true.
@@ -64,9 +62,10 @@ public class AuthResource {
     @GET
     @Path("/me")
     @Authenticated
-    public Response me(@Context SecurityContext ctx) {
-        String userId = jwt.getClaim("userId");
-        UserResponse user = getUserUseCase.execute(UUID.fromString(userId));
+    public Response me() {
+        Object rawUserId = jwt.getClaim("userId");
+        String userId = rawUserId.toString().replace("\"", "");
+        UserResponse user = getUserUseCase.execute(getStoreId(), UUID.fromString(userId));
         return Response.ok(user).build();
     }
 }

@@ -34,13 +34,11 @@ class AdditionalTest {
 
     @Test
     void shouldRequireName() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new Additional(storeId, null, BigDecimal.TEN, "cat"));
+        assertThrows(IllegalArgumentException.class, () -> new Additional(storeId, null, BigDecimal.TEN, "cat"));
     }
 
     @Test
     void shouldRequireStoreId() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new Additional(null, "Queijo", BigDecimal.TEN, "cat"));
+        assertThrows(IllegalArgumentException.class, () -> new Additional(null, "Queijo", BigDecimal.TEN, "cat"));
     }
 }

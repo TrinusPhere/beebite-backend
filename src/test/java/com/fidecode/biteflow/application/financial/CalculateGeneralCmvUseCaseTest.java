@@ -42,21 +42,15 @@ class CalculateGeneralCmvUseCaseTest {
         long startEpoch = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endEpoch = endDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-        var request = new GeneralCmvRequest(
-            startEpoch, endEpoch,
-            new BigDecimal("5000.00"),
-            new BigDecimal("3000.00"),
-            new BigDecimal("4200.00")
-        );
+        var request = new GeneralCmvRequest(startEpoch, endEpoch, new BigDecimal("5000.00"), new BigDecimal("3000.00"),
+                new BigDecimal("4200.00"));
 
-        var record = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            startDate, java.time.LocalTime.of(10, 0),
-            new BigDecimal("35600.00"), PaymentMethod.PIX,
-            FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
+        var record = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(), startDate,
+                java.time.LocalTime.of(10, 0), new BigDecimal("35600.00"), PaymentMethod.PIX, FinancialStatus.CONCLUIDO,
+                List.of(), java.time.LocalDateTime.now());
 
         when(financialRecordRepository.findByStoreIdAndDateRange(STORE_ID, startDate, endDate))
-            .thenReturn(List.of(record));
+                .thenReturn(List.of(record));
 
         GeneralCmvResponse response = useCase.execute(STORE_ID, request);
 
@@ -76,17 +70,15 @@ class CalculateGeneralCmvUseCaseTest {
         long startEpoch = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endEpoch = endDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-        var request = new GeneralCmvRequest(startEpoch, endEpoch,
-            new BigDecimal("1000.00"), new BigDecimal("500.00"), new BigDecimal("200.00"));
+        var request = new GeneralCmvRequest(startEpoch, endEpoch, new BigDecimal("1000.00"), new BigDecimal("500.00"),
+                new BigDecimal("200.00"));
 
-        var record = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            startDate, java.time.LocalTime.of(10, 0),
-            new BigDecimal("4000.00"), PaymentMethod.CREDITO,
-            FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
+        var record = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(), startDate,
+                java.time.LocalTime.of(10, 0), new BigDecimal("4000.00"), PaymentMethod.CREDITO,
+                FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
 
         when(financialRecordRepository.findByStoreIdAndDateRange(STORE_ID, startDate, endDate))
-            .thenReturn(List.of(record));
+                .thenReturn(List.of(record));
 
         GeneralCmvResponse response = useCase.execute(STORE_ID, request);
 

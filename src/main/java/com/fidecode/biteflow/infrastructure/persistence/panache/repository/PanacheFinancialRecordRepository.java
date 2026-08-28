@@ -15,8 +15,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Implementação do port FinancialRecordRepository via Panache.
- * Segue o padrão dual-class (FinancialRecordPanacheRepo + este).
+ * Implementação do port FinancialRecordRepository via Panache. Segue o padrão dual-class (FinancialRecordPanacheRepo +
+ * este).
  */
 @ApplicationScoped
 public class PanacheFinancialRecordRepository implements FinancialRecordRepository {
@@ -39,16 +39,12 @@ public class PanacheFinancialRecordRepository implements FinancialRecordReposito
 
     @Override
     public Optional<FinancialRecord> findById(UUID id) {
-        return repo.findByIdOptional(id)
-            .map(FinancialRecordMapper::toDomain);
+        return repo.findByIdOptional(id).map(FinancialRecordMapper::toDomain);
     }
 
     @Override
     public List<FinancialRecord> findByStoreIdAndDateRange(UUID storeId, LocalDate startDate, LocalDate endDate) {
-        return repo.find("storeId = ?1 and recordDate >= ?2 and recordDate <= ?3", storeId, startDate, endDate)
-            .list()
-            .stream()
-            .map(FinancialRecordMapper::toDomain)
-            .toList();
+        return repo.find("storeId = ?1 and recordDate >= ?2 and recordDate <= ?3", storeId, startDate, endDate).list()
+                .stream().map(FinancialRecordMapper::toDomain).toList();
     }
 }

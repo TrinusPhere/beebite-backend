@@ -23,9 +23,11 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class StoreUseCaseTest {
 
-    @Mock StoreRepository storeRepository;
+    @Mock
+    StoreRepository storeRepository;
 
-    @InjectMocks GetStoreInfoUseCase getStoreInfoUseCase;
+    @InjectMocks
+    GetStoreInfoUseCase getStoreInfoUseCase;
 
     private final UUID storeId = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private Store existingStore;
@@ -34,8 +36,8 @@ class StoreUseCaseTest {
     void setUp() {
         existingStore = new Store("BiteFlow");
         existingStore.setId(storeId);
-        existingStore.setAddress("Rua A, 100");
-        existingStore.setOpen(true);
+        existingStore.updateInfo(existingStore.getName(), existingStore.getLogoUrl(), true,
+                existingStore.getOpeningHours(), "Rua A, 100");
     }
 
     @Test
@@ -62,7 +64,8 @@ class StoreUseCaseTest {
     void shouldUpdateStoreAndReturnResponse() {
         UpdateStoreInfoUseCase updateStoreInfoUseCase = new UpdateStoreInfoUseCase(storeRepository);
 
-        StoreInfoRequest request = new StoreInfoRequest("BiteFlow Premium", "https://logo.png", true, "10:00-22:00", "Rua B, 200");
+        StoreInfoRequest request = new StoreInfoRequest("BiteFlow Premium", "https://logo.png", true, "10:00-22:00",
+                "Rua B, 200");
         when(storeRepository.findById(storeId)).thenReturn(Optional.of(existingStore));
         when(storeRepository.save(any(Store.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -80,7 +83,6 @@ class StoreUseCaseTest {
         when(storeRepository.findById(storeId)).thenReturn(Optional.empty());
 
         assertThrows(StoreNotFoundException.class,
-            () -> updateStoreInfoUseCase.execute(storeId,
-                new StoreInfoRequest("Nome", null, false, null, null)));
+                () -> updateStoreInfoUseCase.execute(storeId, new StoreInfoRequest("Nome", null, false, null, null)));
     }
 }

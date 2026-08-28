@@ -15,7 +15,8 @@ import java.util.UUID;
 @ApplicationScoped
 public class PanacheAdditionalRepository implements AdditionalRepository {
 
-    @Inject AdditionalPanacheRepo repo;
+    @Inject
+    AdditionalPanacheRepo repo;
 
     @Override
     public Optional<Additional> findById(UUID id) {
@@ -24,10 +25,12 @@ public class PanacheAdditionalRepository implements AdditionalRepository {
 
     @Override
     @Transactional
-    public com.fidecode.biteflow.domain.shared.PageResult<Additional> findAllByStoreId(UUID storeId, int page, int size) {
+    public com.fidecode.biteflow.domain.shared.PageResult<Additional> findAllByStoreId(UUID storeId, int page,
+            int size) {
         var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
         List<Additional> content = query.list().stream().map(AdditionalMapper::toDomain).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override

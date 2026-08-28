@@ -10,48 +10,42 @@ import java.util.Arrays;
 import java.util.ArrayList;
 
 public final class ProductCategoryMapper {
-    private ProductCategoryMapper() {}
+    private ProductCategoryMapper() {
+    }
 
     public static ProductCategory toDomain(ProductCategoryEntity e) {
-        if (e == null) return null;
-        
+        if (e == null)
+            return null;
+
         List<UUID> modifierGroupIds = new ArrayList<>();
         if (e.defaultModifierGroupIds != null && !e.defaultModifierGroupIds.isBlank()) {
-            modifierGroupIds = Arrays.stream(e.defaultModifierGroupIds.split(","))
-                    .map(String::trim)
-                    .map(UUID::fromString)
-                    .collect(Collectors.toList());
+            modifierGroupIds = Arrays.stream(e.defaultModifierGroupIds.split(",")).map(String::trim)
+                    .map(UUID::fromString).collect(Collectors.toList());
         }
 
-        return new ProductCategory(
-                e.id,
-                e.storeId,
-                e.name,
-                e.isActive,
-                e.displayOrder,
-                modifierGroupIds,
-                e.createdAt != null ? java.time.LocalDateTime.ofInstant(e.createdAt, java.time.ZoneId.systemDefault()) : null
-        );
+        return ProductCategory.reconstitute(e.id, e.storeId, e.name, e.isActive, e.displayOrder, modifierGroupIds,
+                e.createdAt != null ? java.time.LocalDateTime.ofInstant(e.createdAt, java.time.ZoneId.systemDefault())
+                        : null);
     }
 
     public static ProductCategoryEntity toEntity(ProductCategory p) {
-        if (p == null) return null;
-        
+        if (p == null)
+            return null;
+
         ProductCategoryEntity e = new ProductCategoryEntity();
         e.id = p.getId();
         e.storeId = p.getStoreId();
         e.name = p.getName();
         e.isActive = p.isActive();
         e.displayOrder = p.getDisplayOrder();
-        
+
         if (p.getDefaultModifierGroupIds() != null && !p.getDefaultModifierGroupIds().isEmpty()) {
-            e.defaultModifierGroupIds = p.getDefaultModifierGroupIds().stream()
-                    .map(UUID::toString)
+            e.defaultModifierGroupIds = p.getDefaultModifierGroupIds().stream().map(UUID::toString)
                     .collect(Collectors.joining(","));
         } else {
             e.defaultModifierGroupIds = null;
         }
-        
+
         return e;
     }
 }

@@ -20,10 +20,8 @@ public class DeleteOrderUseCase {
     }
 
     public void delete(UUID storeId, UUID id) {
-        StoreGuard.enforce(
-            orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id.toString())),
-            storeId
-        );
+        StoreGuard.enforce(orderRepository.findById(id).orElseThrow(() -> new OrderNotFoundException(id.toString())),
+                storeId);
         orderRepository.deleteById(id);
     }
 }

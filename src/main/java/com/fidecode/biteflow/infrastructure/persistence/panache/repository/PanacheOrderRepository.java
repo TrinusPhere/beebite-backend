@@ -19,8 +19,10 @@ import java.util.UUID;
 @ApplicationScoped
 public class PanacheOrderRepository implements OrderRepository {
 
-    @Inject OrderPanacheRepo repo;
-    @Inject EntityManager em;
+    @Inject
+    OrderPanacheRepo repo;
+    @Inject
+    EntityManager em;
 
     @Override
     @Transactional
@@ -33,30 +35,35 @@ public class PanacheOrderRepository implements OrderRepository {
     public com.fidecode.biteflow.domain.shared.PageResult<Order> findAllByStoreId(UUID storeId, int page, int size) {
         var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
         List<Order> content = query.list().stream().map(this::toDomainFull).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override
     @Transactional
-    public com.fidecode.biteflow.domain.shared.PageResult<Order> findByStoreIdAndStatus(UUID storeId, OrderStatus status, int page, int size) {
-        var query = repo.find("storeId = ?1 and status = ?2", storeId, status.name()).page(io.quarkus.panache.common.Page.of(page, size));
+    public com.fidecode.biteflow.domain.shared.PageResult<Order> findByStoreIdAndStatus(UUID storeId,
+            OrderStatus status, int page, int size) {
+        var query = repo.find("storeId = ?1 and status = ?2", storeId, status.name())
+                .page(io.quarkus.panache.common.Page.of(page, size));
         List<Order> content = query.list().stream().map(this::toDomainFull).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override
     @Transactional
     public List<Order> findActiveKanbanOrdersByStoreId(UUID storeId, java.time.LocalDateTime startOfDay) {
-        return repo.find("SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.storeId = ?1 and (o.status != 'FINALIZADO' or o.createdAt >= ?2)", storeId, startOfDay).list().stream()
-            .map(this::toDomainFull).toList();
+        return repo.find(
+                "SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.storeId = ?1 and (o.status != 'FINALIZADO' or o.createdAt >= ?2)",
+                storeId, startOfDay).list().stream().map(this::toDomainFull).toList();
     }
 
     @Override
     @Transactional
     public List<Order> findAllById(List<UUID> ids) {
-        if (ids == null || ids.isEmpty()) return List.of();
-        return repo.find("id in ?1", ids).list().stream()
-            .map(this::toDomainFull).toList();
+        if (ids == null || ids.isEmpty())
+            return List.of();
+        return repo.find("id in ?1", ids).list().stream().map(this::toDomainFull).toList();
     }
 
     @Override
@@ -94,22 +101,19 @@ public class PanacheOrderRepository implements OrderRepository {
 
     @Override
     public long getNextDisplayIdSequence() {
-        return ((Number) em.createNativeQuery("SELECT nextval('order_display_id_seq')")
-            .getSingleResult()).longValue();
+        return ((Number) em.createNativeQuery("SELECT nextval('order_display_id_seq')").getSingleResult()).longValue();
     }
 
     private Order toDomainFull(OrderEntity e) {
         List<OrderItem> items = new ArrayList<>();
-        
+
         if (e.items != null) {
             for (OrderItemEntity itemEntity : e.items) {
                 List<OrderItemModifier> modifiers = itemEntity.modifiers != null
-                    ? itemEntity.modifiers.stream().map(OrderMapper::toModifierDomain).toList()
-                    : new ArrayList<>();
+                        ? itemEntity.modifiers.stream().map(OrderMapper::toModifierDomain).toList() : new ArrayList<>();
 
                 List<OrderItemRemoval> removals = itemEntity.removals != null
-                    ? itemEntity.removals.stream().map(OrderMapper::toRemovalDomain).toList()
-                    : new ArrayList<>();
+                        ? itemEntity.removals.stream().map(OrderMapper::toRemovalDomain).toList() : new ArrayList<>();
 
                 items.add(OrderMapper.toItemDomain(itemEntity, modifiers, removals));
             }

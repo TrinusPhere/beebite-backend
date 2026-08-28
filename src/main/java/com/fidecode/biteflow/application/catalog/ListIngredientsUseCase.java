@@ -18,11 +18,13 @@ public class ListIngredientsUseCase {
         this.repository = repository;
     }
 
-    public com.fidecode.biteflow.application.shared.PageResponse<IngredientResponse> execute(UUID storeId, int page, int size) {
-        com.fidecode.biteflow.domain.shared.PageResult<com.fidecode.biteflow.domain.catalog.entity.Ingredient> result = repository.findAllByStoreId(storeId, page, size);
-        List<IngredientResponse> content = result.getContent().stream()
-            .map(CreateIngredientUseCase::toResponse)
-            .toList();
-        return new com.fidecode.biteflow.application.shared.PageResponse<>(content, result.getPage(), result.getSize(), result.getTotalElements(), result.getTotalPages());
+    public com.fidecode.biteflow.application.shared.PageResponse<IngredientResponse> execute(UUID storeId, int page,
+            int size) {
+        com.fidecode.biteflow.domain.shared.PageResult<com.fidecode.biteflow.domain.catalog.entity.Ingredient> result = repository
+                .findAllByStoreId(storeId, page, size);
+        List<IngredientResponse> content = result.getContent().stream().map(CreateIngredientUseCase::toResponse)
+                .toList();
+        return new com.fidecode.biteflow.application.shared.PageResponse<>(content, result.getPage(), result.getSize(),
+                result.getTotalElements(), result.getTotalPages());
     }
 }

@@ -7,9 +7,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.util.UUID;
 
 /**
- * Repositório Panache interno para StoreEntity.
- * Não implementa a porta de domínio — apenas fornece acesso Panache a StoreEntity.
- * Injetado em PanacheStoreRepository para uso interno.
+ * Repositório Panache interno para StoreEntity. Não implementa a porta de domínio — apenas fornece acesso Panache a
+ * StoreEntity. Injetado em PanacheStoreRepository para uso interno.
  */
 @ApplicationScoped
 public class StorePanacheRepo implements PanacheRepositoryBase<StoreEntity, UUID> {

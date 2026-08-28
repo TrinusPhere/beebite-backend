@@ -1,0 +1,32 @@
+package com.fidecode.biteflow.presentation.rest;
+
+import com.fidecode.biteflow.application.publicmenu.*;
+import com.fidecode.biteflow.application.publicmenu.dto.PublicOrderRequest;
+import jakarta.annotation.security.PermitAll;
+import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
+
+@Path("/api/v1/public/stores/{identifier}")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@PermitAll
+public class PublicMenuResource extends BaseResource {
+    @Inject
+    GetPublicMenuUseCase getMenuUseCase;
+    @Inject
+    CreatePublicOrderUseCase createOrderUseCase;
+
+    @GET
+    @Path("/menu")
+    public Response menu(@PathParam("identifier") String id) {
+        return Response.ok(getMenuUseCase.execute(id)).build();
+    }
+
+    @POST
+    @Path("/orders")
+    public Response create(@PathParam("identifier") String id, @Valid PublicOrderRequest r) {
+        return Response.status(Response.Status.CREATED).entity(createOrderUseCase.execute(id, r)).build();
+    }
+}

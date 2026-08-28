@@ -15,7 +15,8 @@ import java.util.UUID;
 @ApplicationScoped
 public class PanacheModifierGroupRepository implements ModifierGroupRepository {
 
-    @Inject ModifierGroupPanacheRepo repo;
+    @Inject
+    ModifierGroupPanacheRepo repo;
 
     @Override
     @Transactional
@@ -25,21 +26,24 @@ public class PanacheModifierGroupRepository implements ModifierGroupRepository {
 
     @Override
     @Transactional
-    public com.fidecode.biteflow.domain.shared.PageResult<ModifierGroup> findAllByStoreId(UUID storeId, int page, int size) {
+    public com.fidecode.biteflow.domain.shared.PageResult<ModifierGroup> findAllByStoreId(UUID storeId, int page,
+            int size) {
         var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
         List<ModifierGroup> content = query.list().stream().map(ModifierGroupMapper::toDomain).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override
     @Transactional
     public List<ModifierGroup> findAllById(List<UUID> ids) {
-        if (ids == null || ids.isEmpty()) return List.of();
-        return repo.find("id in ?1", ids).list().stream()
-            .map(this::toDomainFull).toList();
+        if (ids == null || ids.isEmpty())
+            return List.of();
+        return repo.find("id in ?1", ids).list().stream().map(this::toDomainFull).toList();
     }
 
-    @Inject jakarta.persistence.EntityManager em;
+    @Inject
+    jakarta.persistence.EntityManager em;
 
     @Override
     @Transactional

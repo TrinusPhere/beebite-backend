@@ -1,0 +1,39 @@
+package com.fidecode.biteflow.application.publicmenu;
+
+import com.fidecode.biteflow.application.publicmenu.dto.PublicMenuResponse;
+import com.fidecode.biteflow.domain.catalog.repository.*;
+import com.fidecode.biteflow.domain.store.exception.StoreNotFoundException;
+import com.fidecode.biteflow.domain.store.repository.StoreRepository;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.util.*;
+
+@ApplicationScoped
+public class GetPublicMenuUseCase {
+    private final StoreRepository stores;
+    private final ProductRepository products;
+    private final ProductCategoryRepository categories;
+
+    @Inject
+    public GetPublicMenuUseCase(StoreRepository stores, ProductRepository products,
+            ProductCategoryRepository categories) {
+        this.stores = stores;
+        this.products = products;
+        this.categories = categories;
+    }
+
+    public PublicMenuResponse execute(String identifier) {
+        var store = stores.findByPublicIdentifier(identifier).orElseThrow(() -> new StoreNotFoundException(identifier));
+        var cmap = new HashMap<UUID, String>();
+        categories.findAllByStoreId(store.getId()).forEach(c -> cmap.put(c.getId(), c.getName()));
+        var views = products.findAllByStoreId(store.getId()).stream()
+                .filter(p -> p.isActive() && p.isAvailableDigitalMenu())
+                .map(p -> new PublicMenuResponse.ProductView(p.getId().toString(), p.getName(),
+                        p.getCategoryId() != null ? p.getCategoryId().toString() : null,
+                        p.getCategoryId() != null ? cmap.get(p.getCategoryId()) : "Outros", p.getDescription(),
+                        p.getPrice(), p.getImageUrl(), p.getProductType().name(), p.getSaleUnit().name()))
+                .toList();
+        return new PublicMenuResponse(new PublicMenuResponse.StoreView(store.getId().toString(), store.getName(),
+                store.getLogoUrl(), store.isOpen(), store.getOpeningHours(), store.getAddress()), views);
+    }
+}

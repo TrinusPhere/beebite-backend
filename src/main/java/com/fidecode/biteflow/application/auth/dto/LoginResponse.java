@@ -2,16 +2,7 @@ package com.fidecode.biteflow.application.auth.dto;
 
 import java.util.List;
 
-public record LoginResponse(
-    String token,
-    long expiresIn,
-    UserSummary user
-) {
-    public record UserSummary(
-        String id,
-        String name,
-        String login,
-        String role,
-        List<String> permissions
-    ) {}
+public record LoginResponse(String token, long expiresIn, UserSummary user) {
+    public record UserSummary(String id, String name, String login, String role, List<String> permissions) {
+    }
 }

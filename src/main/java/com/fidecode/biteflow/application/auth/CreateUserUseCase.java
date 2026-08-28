@@ -33,8 +33,7 @@ public class CreateUserUseCase {
 
         Role role = Role.valueOf(request.role());
         List<Permission> permissions = request.permissions() != null
-            ? request.permissions().stream().map(Permission::fromValue).toList()
-            : List.of();
+                ? request.permissions().stream().map(Permission::fromValue).toList() : List.of();
 
         String hashed = passwordEncoder.hash(request.password());
         User user = new User(storeId, request.name(), request.login(), hashed, role, permissions);
@@ -44,14 +43,7 @@ public class CreateUserUseCase {
     }
 
     static UserResponse toResponse(User u) {
-        return new UserResponse(
-            u.getId() != null ? u.getId().toString() : null,
-            u.getName(),
-            u.getLogin(),
-            u.getRole().name(),
-            u.getPermissions().stream().map(Permission::getValue).toList(),
-            u.isActive(),
-            null
-        );
+        return new UserResponse(u.getId() != null ? u.getId().toString() : null, u.getName(), u.getLogin(),
+                u.getRole().name(), u.getPermissions().stream().map(Permission::getValue).toList(), u.isActive(), null);
     }
 }

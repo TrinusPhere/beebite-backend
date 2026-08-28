@@ -14,7 +14,8 @@ class TechnicalSheetItemTest {
     void shouldCreateWithCostSnapshot() {
         UUID productId = UUID.randomUUID();
         UUID ingredientId = UUID.randomUUID();
-        TechnicalSheetItem item = new TechnicalSheetItem(productId, ingredientId, BigDecimal.valueOf(2), BigDecimal.valueOf(1.50));
+        TechnicalSheetItem item = new TechnicalSheetItem(productId, ingredientId, BigDecimal.valueOf(2),
+                BigDecimal.valueOf(1.50));
         assertEquals(productId, item.getProductId());
         assertEquals(ingredientId, item.getIngredientId());
         assertEquals(0, BigDecimal.valueOf(2).compareTo(item.getQuantity()));
@@ -23,16 +24,15 @@ class TechnicalSheetItemTest {
 
     @Test
     void shouldCalculateLineCost() {
-        TechnicalSheetItem item = new TechnicalSheetItem(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.valueOf(3), BigDecimal.valueOf(2.00));
+        TechnicalSheetItem item = new TechnicalSheetItem(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.valueOf(3),
+                BigDecimal.valueOf(2.00));
         // lineCost = quantity * costSnapshot = 3 * 2.00 = 6.00
         assertEquals(0, BigDecimal.valueOf(6.00).compareTo(item.getLineCost()));
     }
 
-
-
     @Test
     void shouldRequireIngredientId() {
         assertThrows(IllegalArgumentException.class,
-            () -> new TechnicalSheetItem(UUID.randomUUID(), null, BigDecimal.ONE, BigDecimal.ONE));
+                () -> new TechnicalSheetItem(UUID.randomUUID(), null, BigDecimal.ONE, BigDecimal.ONE));
     }
 }

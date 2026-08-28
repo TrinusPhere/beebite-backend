@@ -22,22 +22,11 @@ public class CreateFinancialRecordUseCase {
     }
 
     public void execute(OrderFinalizedEvent event) {
-        var products = event.getProducts().stream()
-            .map(snapshot -> new FinancialRecordProduct(
-                snapshot.productId(),
-                snapshot.productName(),
-                snapshot.quantity(),
-                snapshot.price()
-            ))
-            .toList();
+        var products = event.getProducts().stream().map(snapshot -> new FinancialRecordProduct(snapshot.productId(),
+                snapshot.productName(), snapshot.quantity(), snapshot.price())).toList();
 
-        var record = new FinancialRecord(
-            event.getStoreId(),
-            event.getOrderId(),
-            event.getTotalValue(),
-            event.getPaymentMethod(),
-            products
-        );
+        var record = new FinancialRecord(event.getStoreId(), event.getOrderId(), event.getTotalValue(),
+                event.getPaymentMethod(), products);
 
         financialRecordRepository.save(record);
     }

@@ -14,11 +14,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Domain entity — Registro Financeiro.
- * POJO puro, sem dependência de framework.
+ * Domain entity — Registro Financeiro. POJO puro, sem dependência de framework.
  *
- * <p>Gerado automaticamente quando um pedido é finalizado.
- * Contém um snapshot dos dados financeiros do pedido naquele momento.
+ * <p>
+ * Gerado automaticamente quando um pedido é finalizado. Contém um snapshot dos dados financeiros do pedido naquele
+ * momento.
  */
 public class FinancialRecord implements StoreGuard.StoreScoped {
 
@@ -37,12 +37,16 @@ public class FinancialRecord implements StoreGuard.StoreScoped {
     // Construtor de criação — usado pelo CreateFinancialRecordUseCase
     // ═══════════════════════════════════════════════════════════════════════
 
-    public FinancialRecord(UUID storeId, UUID orderId, BigDecimal totalValue,
-                           PaymentMethod paymentMethod, List<FinancialRecordProduct> products) {
-        if (storeId == null) throw new IllegalArgumentException("storeId é obrigatório.");
-        if (orderId == null) throw new IllegalArgumentException("orderId é obrigatório.");
-        if (totalValue == null) throw new IllegalArgumentException("totalValue é obrigatório.");
-        if (paymentMethod == null) throw new IllegalArgumentException("paymentMethod é obrigatório.");
+    public FinancialRecord(UUID storeId, UUID orderId, BigDecimal totalValue, PaymentMethod paymentMethod,
+            List<FinancialRecordProduct> products) {
+        if (storeId == null)
+            throw new IllegalArgumentException("storeId é obrigatório.");
+        if (orderId == null)
+            throw new IllegalArgumentException("orderId é obrigatório.");
+        if (totalValue == null)
+            throw new IllegalArgumentException("totalValue é obrigatório.");
+        if (paymentMethod == null)
+            throw new IllegalArgumentException("paymentMethod é obrigatório.");
 
         this.storeId = storeId;
         this.orderId = orderId;
@@ -60,12 +64,9 @@ public class FinancialRecord implements StoreGuard.StoreScoped {
     // ═══════════════════════════════════════════════════════════════════════
 
     @SuppressWarnings("java:S107")
-    public static FinancialRecord reconstitute(
-            UUID id, UUID storeId, UUID orderId,
-            LocalDate recordDate, LocalTime recordTime,
-            BigDecimal totalValue, PaymentMethod paymentMethod,
-            FinancialStatus status, List<FinancialRecordProduct> products,
-            LocalDateTime createdAt) {
+    public static FinancialRecord reconstitute(UUID id, UUID storeId, UUID orderId, LocalDate recordDate,
+            LocalTime recordTime, BigDecimal totalValue, PaymentMethod paymentMethod, FinancialStatus status,
+            List<FinancialRecordProduct> products, LocalDateTime createdAt) {
 
         FinancialRecord record = new FinancialRecord(storeId, orderId, totalValue, paymentMethod, products);
         record.id = id;
@@ -99,18 +100,49 @@ public class FinancialRecord implements StoreGuard.StoreScoped {
     // Getters
     // ═══════════════════════════════════════════════════════════════════════
 
-    public UUID getId()                              { return id; }
+    public UUID getId() {
+        return id;
+    }
+
     @Override
-    public UUID getStoreId()                         { return storeId; }
-    public UUID getOrderId()                         { return orderId; }
-    public LocalDate getRecordDate()                 { return recordDate; }
-    public LocalTime getRecordTime()                 { return recordTime; }
-    public BigDecimal getTotalValue()                { return totalValue; }
-    public PaymentMethod getPaymentMethod()          { return paymentMethod; }
-    public FinancialStatus getStatus()               { return status; }
-    public List<FinancialRecordProduct> getProducts() { return products; }
-    public LocalDateTime getCreatedAt()              { return createdAt; }
+    public UUID getStoreId() {
+        return storeId;
+    }
+
+    public UUID getOrderId() {
+        return orderId;
+    }
+
+    public LocalDate getRecordDate() {
+        return recordDate;
+    }
+
+    public LocalTime getRecordTime() {
+        return recordTime;
+    }
+
+    public BigDecimal getTotalValue() {
+        return totalValue;
+    }
+
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public FinancialStatus getStatus() {
+        return status;
+    }
+
+    public List<FinancialRecordProduct> getProducts() {
+        return products;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
     // ── Setter para persistência ──
-    public void setId(UUID id) { this.id = id; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 }

@@ -41,24 +41,20 @@ class GetSalesSummaryUseCaseTest {
         long startEpoch = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endEpoch = endDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-        var record1 = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            LocalDate.of(2026, 8, 15), java.time.LocalTime.of(10, 0),
-            new BigDecimal("50.00"), PaymentMethod.PIX,
-            FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
+        var record1 = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
+                LocalDate.of(2026, 8, 15), java.time.LocalTime.of(10, 0), new BigDecimal("50.00"), PaymentMethod.PIX,
+                FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
 
-        var record2 = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            LocalDate.of(2026, 8, 16), java.time.LocalTime.of(11, 0),
-            new BigDecimal("30.00"), PaymentMethod.DINHEIRO,
-            FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
+        var record2 = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
+                LocalDate.of(2026, 8, 16), java.time.LocalTime.of(11, 0), new BigDecimal("30.00"),
+                PaymentMethod.DINHEIRO, FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
 
         // Período atual
         when(financialRecordRepository.findByStoreIdAndDateRange(STORE_ID, startDate, endDate))
-            .thenReturn(List.of(record1, record2));
+                .thenReturn(List.of(record1, record2));
         // Período anterior (mesmo tamanho, antes)
-        when(financialRecordRepository.findByStoreIdAndDateRange(eq(STORE_ID), any(LocalDate.class), eq(startDate.minusDays(1))))
-            .thenReturn(Collections.emptyList());
+        when(financialRecordRepository.findByStoreIdAndDateRange(eq(STORE_ID), any(LocalDate.class),
+                eq(startDate.minusDays(1)))).thenReturn(Collections.emptyList());
 
         // Act
         SalesSummaryResponse response = useCase.execute(STORE_ID, startEpoch, endEpoch);
@@ -78,7 +74,7 @@ class GetSalesSummaryUseCaseTest {
         long endEpoch = endDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
         when(financialRecordRepository.findByStoreIdAndDateRange(eq(STORE_ID), any(), any()))
-            .thenReturn(Collections.emptyList());
+                .thenReturn(Collections.emptyList());
 
         SalesSummaryResponse response = useCase.execute(STORE_ID, startEpoch, endEpoch);
 
@@ -93,22 +89,18 @@ class GetSalesSummaryUseCaseTest {
         long startEpoch = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
         long endEpoch = endDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-        var recordOk = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            LocalDate.of(2026, 8, 15), java.time.LocalTime.of(10, 0),
-            new BigDecimal("100.00"), PaymentMethod.PIX,
-            FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
+        var recordOk = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
+                LocalDate.of(2026, 8, 15), java.time.LocalTime.of(10, 0), new BigDecimal("100.00"), PaymentMethod.PIX,
+                FinancialStatus.CONCLUIDO, List.of(), java.time.LocalDateTime.now());
 
-        var recordCanceled = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            LocalDate.of(2026, 8, 16), java.time.LocalTime.of(11, 0),
-            new BigDecimal("50.00"), PaymentMethod.DINHEIRO,
-            FinancialStatus.CANCELADO, List.of(), java.time.LocalDateTime.now());
+        var recordCanceled = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
+                LocalDate.of(2026, 8, 16), java.time.LocalTime.of(11, 0), new BigDecimal("50.00"),
+                PaymentMethod.DINHEIRO, FinancialStatus.CANCELADO, List.of(), java.time.LocalDateTime.now());
 
         when(financialRecordRepository.findByStoreIdAndDateRange(STORE_ID, startDate, endDate))
-            .thenReturn(List.of(recordOk, recordCanceled));
-        when(financialRecordRepository.findByStoreIdAndDateRange(eq(STORE_ID), any(LocalDate.class), eq(startDate.minusDays(1))))
-            .thenReturn(Collections.emptyList());
+                .thenReturn(List.of(recordOk, recordCanceled));
+        when(financialRecordRepository.findByStoreIdAndDateRange(eq(STORE_ID), any(LocalDate.class),
+                eq(startDate.minusDays(1)))).thenReturn(Collections.emptyList());
 
         SalesSummaryResponse response = useCase.execute(STORE_ID, startEpoch, endEpoch);
 

@@ -27,10 +27,14 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class LoginUseCaseTest {
 
-    @Mock UserRepository userRepository;
-    @Mock PasswordHasher passwordHasher;
-    @Mock TokenProvider tokenProvider;
-    @InjectMocks LoginUseCase loginUseCase;
+    @Mock
+    UserRepository userRepository;
+    @Mock
+    PasswordHasher passwordHasher;
+    @Mock
+    TokenProvider tokenProvider;
+    @InjectMocks
+    LoginUseCase loginUseCase;
 
     private User adminUser;
     private static final UUID STORE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
@@ -61,7 +65,7 @@ class LoginUseCaseTest {
         when(userRepository.findByLogin("unknown")).thenReturn(Optional.empty());
 
         assertThrows(InvalidCredentialsException.class,
-            () -> loginUseCase.execute(new LoginRequest("unknown", "pass")));
+                () -> loginUseCase.execute(new LoginRequest("unknown", "pass")));
     }
 
     @Test
@@ -69,8 +73,7 @@ class LoginUseCaseTest {
         when(userRepository.findByLogin("admin")).thenReturn(Optional.of(adminUser));
         when(passwordHasher.matches("wrong", "hashed_password")).thenReturn(false);
 
-        assertThrows(InvalidCredentialsException.class,
-            () -> loginUseCase.execute(new LoginRequest("admin", "wrong")));
+        assertThrows(InvalidCredentialsException.class, () -> loginUseCase.execute(new LoginRequest("admin", "wrong")));
     }
 
     @Test
@@ -93,6 +96,6 @@ class LoginUseCaseTest {
         // Não configura passwordHasher pois a exceção é lançada antes de chegar lá
 
         assertThrows(InvalidCredentialsException.class,
-            () -> loginUseCase.execute(new LoginRequest("admin", "admin123")));
+                () -> loginUseCase.execute(new LoginRequest("admin", "admin123")));
     }
 }

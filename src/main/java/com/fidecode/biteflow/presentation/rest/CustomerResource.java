@@ -19,21 +19,23 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-
-@RolesAllowed({"ADMIN","GERENTE","CAIXA"})
+@RolesAllowed({ "ADMIN", "GERENTE", "CAIXA" })
 public class CustomerResource extends BaseResource {
 
-    @Inject CreateCustomerUseCase createCustomerUseCase;
-    @Inject UpdateCustomerUseCase updateCustomerUseCase;
-    @Inject DeleteCustomerUseCase deleteCustomerUseCase;
-    @Inject GetCustomerUseCase getCustomerUseCase;
-    @Inject ListCustomersUseCase listCustomersUseCase;
+    @Inject
+    CreateCustomerUseCase createCustomerUseCase;
+    @Inject
+    UpdateCustomerUseCase updateCustomerUseCase;
+    @Inject
+    DeleteCustomerUseCase deleteCustomerUseCase;
+    @Inject
+    GetCustomerUseCase getCustomerUseCase;
+    @Inject
+    ListCustomersUseCase listCustomersUseCase;
 
     @PermissionsAllowed("clientes")
     @GET
-    public Response list(
-            @QueryParam("search") String search,
-            @QueryParam("page") @DefaultValue("0") int page,
+    public Response list(@QueryParam("search") String search, @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("10") int size) {
         return Response.ok(listCustomersUseCase.execute(getStoreId(), search, page, size)).build();
     }
@@ -49,8 +51,7 @@ public class CustomerResource extends BaseResource {
     @POST
     public Response create(@Valid CustomerRequest request) {
         CustomerResponse created = createCustomerUseCase.execute(getStoreId(), request);
-        return Response.created(URI.create("/api/v1/customers/" + created.id()))
-            .entity(created).build();
+        return Response.created(URI.create("/api/v1/customers/" + created.id())).entity(created).build();
     }
 
     @PermissionsAllowed("clientes")

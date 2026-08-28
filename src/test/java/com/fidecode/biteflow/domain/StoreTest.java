@@ -22,11 +22,7 @@ class StoreTest {
     @Test
     void shouldAllowUpdatingFields() {
         Store store = new Store("BiteFlow");
-        store.setName("BiteFlow Premium");
-        store.setOpen(true);
-        store.setAddress("Rua A, 100");
-        store.setOpeningHours("10:00 - 22:00");
-        store.setLogoUrl("https://logo.png");
+        store.updateInfo("BiteFlow Premium", "https://logo.png", true, "10:00 - 22:00", "Rua A, 100");
 
         assertEquals("BiteFlow Premium", store.getName());
         assertTrue(store.isOpen());

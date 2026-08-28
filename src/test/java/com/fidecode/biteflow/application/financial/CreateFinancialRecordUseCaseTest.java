@@ -34,18 +34,16 @@ class CreateFinancialRecordUseCaseTest {
         // Arrange
         UUID orderId = UUID.randomUUID();
         UUID storeId = UUID.randomUUID();
-        var products = List.of(
-            new OrderFinalizedEvent.ProductSnapshot(UUID.randomUUID(), "X-Bacon", 2, new BigDecimal("35.00"))
-        );
-        var event = new OrderFinalizedEvent(orderId, storeId,
-            new BigDecimal("70.00"), PaymentMethod.PIX, null, null, products);
+        var products = List
+                .of(new OrderFinalizedEvent.ProductSnapshot(UUID.randomUUID(), "X-Bacon", 2, new BigDecimal("35.00")));
+        var event = new OrderFinalizedEvent(orderId, storeId, new BigDecimal("70.00"), PaymentMethod.PIX, null, null,
+                products);
 
-        when(financialRecordRepository.save(any(FinancialRecord.class)))
-            .thenAnswer(inv -> {
-                FinancialRecord r = inv.getArgument(0);
-                r.setId(UUID.randomUUID());
-                return r;
-            });
+        when(financialRecordRepository.save(any(FinancialRecord.class))).thenAnswer(inv -> {
+            FinancialRecord r = inv.getArgument(0);
+            r.setId(UUID.randomUUID());
+            return r;
+        });
 
         // Act
         useCase.execute(event);
@@ -66,11 +64,10 @@ class CreateFinancialRecordUseCaseTest {
 
     @Test
     void deveCriarRegistroSemProdutosQuandoListaVazia() {
-        var event = new OrderFinalizedEvent(UUID.randomUUID(), UUID.randomUUID(),
-            BigDecimal.TEN, PaymentMethod.DINHEIRO, null, null, List.of());
+        var event = new OrderFinalizedEvent(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.TEN,
+                PaymentMethod.DINHEIRO, null, null, List.of());
 
-        when(financialRecordRepository.save(any(FinancialRecord.class)))
-            .thenAnswer(inv -> inv.getArgument(0));
+        when(financialRecordRepository.save(any(FinancialRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
         useCase.execute(event);
 

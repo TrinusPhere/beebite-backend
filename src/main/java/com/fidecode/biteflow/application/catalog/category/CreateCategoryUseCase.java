@@ -24,15 +24,12 @@ public class CreateCategoryUseCase {
     public CategoryResponse execute(UUID storeId, CategoryRequest request) {
         List<UUID> modifierGroupIds = null;
         if (request.defaultModifierGroupIds() != null) {
-            modifierGroupIds = request.defaultModifierGroupIds().stream().map(UUID::fromString).collect(Collectors.toList());
+            modifierGroupIds = request.defaultModifierGroupIds().stream().map(UUID::fromString)
+                    .collect(Collectors.toList());
         }
 
-        ProductCategory category = ProductCategory.create(
-                storeId,
-                request.name(),
-                request.displayOrder() != null ? request.displayOrder() : 0,
-                modifierGroupIds
-        );
+        ProductCategory category = ProductCategory.create(storeId, request.name(),
+                request.displayOrder() != null ? request.displayOrder() : 0, modifierGroupIds);
 
         ProductCategory saved = categoryRepository.save(category);
         return CategoryDtoMapper.toResponse(saved);

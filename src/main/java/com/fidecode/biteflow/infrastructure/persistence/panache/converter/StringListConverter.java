@@ -15,13 +15,15 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
 
     @Override
     public String[] convertToDatabaseColumn(List<String> attribute) {
-        if (attribute == null) return new String[0];
+        if (attribute == null)
+            return new String[0];
         return attribute.toArray(new String[0]);
     }
 
     @Override
     public List<String> convertToEntityAttribute(String[] dbData) {
-        if (dbData == null) return List.of();
+        if (dbData == null)
+            return List.of();
         return Arrays.asList(dbData);
     }
 }

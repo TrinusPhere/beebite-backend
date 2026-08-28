@@ -15,17 +15,18 @@ import jakarta.ws.rs.core.Response;
 import java.util.UUID;
 
 /**
- * REST Resource — CMV (/api/v1/cmv).
- * Cálculo de Custo da Mercadoria Vendida.
+ * REST Resource — CMV (/api/v1/cmv). Cálculo de Custo da Mercadoria Vendida.
  */
 @Path("/api/v1/cmv")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed({"ADMIN", "GERENTE"})
+@RolesAllowed({ "ADMIN", "GERENTE" })
 public class CmvResource extends BaseResource {
 
-    @Inject CalculateGeneralCmvUseCase calculateGeneralCmvUseCase;
-    @Inject CalculateProductCmvUseCase calculateProductCmvUseCase;
+    @Inject
+    CalculateGeneralCmvUseCase calculateGeneralCmvUseCase;
+    @Inject
+    CalculateProductCmvUseCase calculateProductCmvUseCase;
 
     @PermissionsAllowed("financeiro")
     @POST
