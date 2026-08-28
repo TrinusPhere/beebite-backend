@@ -1,12 +1,14 @@
 package com.fidecode.biteflow.application.order;
 
 import com.fidecode.biteflow.application.order.dto.*;
+import com.fidecode.biteflow.application.order.port.BiteflowEventPublisher;
 import com.fidecode.biteflow.domain.financial.event.OrderFinalizedEvent;
 import com.fidecode.biteflow.domain.order.entity.Order;
 import com.fidecode.biteflow.domain.order.entity.OrderItem;
 import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.service.OrderDomainService;
+import com.fidecode.biteflow.domain.order.valueobject.OrderPlatform;
 import com.fidecode.biteflow.domain.order.valueobject.OrderStatus;
 import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -25,14 +27,17 @@ public class ManageOrderUseCase {
     private final OrderRepository orderRepository;
     private final OrderDomainService orderDomainService;
     private final Event<OrderFinalizedEvent> orderFinalizedEvent;
+    private final BiteflowEventPublisher eventPublisher;
 
     @Inject
     public ManageOrderUseCase(OrderRepository orderRepository,
                               OrderDomainService orderDomainService,
-                              Event<OrderFinalizedEvent> orderFinalizedEvent) {
+                              Event<OrderFinalizedEvent> orderFinalizedEvent,
+                              BiteflowEventPublisher eventPublisher) {
         this.orderRepository = orderRepository;
         this.orderDomainService = orderDomainService;
         this.orderFinalizedEvent = orderFinalizedEvent;
+        this.eventPublisher = eventPublisher;
     }
 
     public OrderResponse advanceStatus(UUID storeId, UUID orderId) {
@@ -45,6 +50,7 @@ public class ManageOrderUseCase {
         if (saved.getStatus() == OrderStatus.FINALIZADO) {
             fireOrderFinalizedEvent(saved);
         }
+        publishIfoodEventIfNeeded(saved);
         return OrderDtoMapper.toResponse(saved);
     }
 
@@ -59,6 +65,7 @@ public class ManageOrderUseCase {
         if (saved.getStatus() == OrderStatus.FINALIZADO) {
             fireOrderFinalizedEvent(saved);
         }
+        publishIfoodEventIfNeeded(saved);
         return OrderDtoMapper.toResponse(saved);
     }
 
@@ -123,6 +130,20 @@ public class ManageOrderUseCase {
             LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
             "AUTORIZADA"
         );
+    }
+
+    /**
+     * Publica evento no Pub/Sub apenas se o pedido veio do iFood.
+     * O publisher (infra) ignora se Pub/Sub não estiver configurado.
+     */
+    private void publishIfoodEventIfNeeded(Order order) {
+        if (order.getPlatform() == OrderPlatform.IFOOD && order.getExternalOrderId() != null) {
+            if (order.getStatus() == OrderStatus.CANCELADO) {
+                eventPublisher.publishCancelled(order, "501", "Cancelado pelo operador");
+            } else {
+                eventPublisher.publishStatusChanged(order);
+            }
+        }
     }
 
     private void fireOrderFinalizedEvent(Order order) {

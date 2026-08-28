@@ -61,6 +61,12 @@ public class PanacheOrderRepository implements OrderRepository {
 
     @Override
     @Transactional
+    public Optional<Order> findByExternalOrderId(String externalOrderId) {
+        return repo.findByExternalOrderId(externalOrderId).map(this::toDomainFull);
+    }
+
+    @Override
+    @Transactional
     public Order save(Order order) {
         OrderEntity entity = OrderMapper.toEntity(order);
         try {

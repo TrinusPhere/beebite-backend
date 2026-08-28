@@ -241,6 +241,18 @@ public class Order implements StoreGuard.StoreScoped {
         this.id = id;
     }
 
+    /** Setter para integração iFood — define a plataforma de origem. */
+    public void setPlatform(OrderPlatform platform) {
+        this.platform = platform;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** Setter para integração iFood — define o ID externo do pedido. */
+    public void setExternalOrderId(String externalOrderId) {
+        this.externalOrderId = externalOrderId;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void markAsNfeEmitted() {
         this.nfeEmitted = true;
         this.updatedAt = LocalDateTime.now();
