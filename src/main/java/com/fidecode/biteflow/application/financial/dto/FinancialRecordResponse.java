@@ -9,20 +9,8 @@ import java.util.UUID;
 /**
  * Response — registro financeiro individual.
  */
-public record FinancialRecordResponse(
-    UUID id,
-    UUID orderId,
-    LocalDate recordDate,
-    LocalTime recordTime,
-    BigDecimal totalValue,
-    String paymentMethod,
-    String status,
-    List<FinancialRecordProductDto> products
-) {
-    public record FinancialRecordProductDto(
-        UUID productId,
-        String productName,
-        int quantity,
-        BigDecimal price
-    ) {}
+public record FinancialRecordResponse(UUID id, UUID orderId, LocalDate recordDate, LocalTime recordTime,
+        BigDecimal totalValue, String paymentMethod, String status, List<FinancialRecordProductDto> products) {
+    public record FinancialRecordProductDto(UUID productId, String productName, int quantity, BigDecimal price) {
+    }
 }

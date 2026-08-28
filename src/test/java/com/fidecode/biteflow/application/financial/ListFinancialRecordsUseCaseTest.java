@@ -41,14 +41,12 @@ class ListFinancialRecordsUseCaseTest {
 
         UUID recordId = UUID.randomUUID();
         var products = List.of(new FinancialRecordProduct(UUID.randomUUID(), "X-Bacon", 2, new BigDecimal("35.00")));
-        var record = FinancialRecord.reconstitute(
-            recordId, STORE_ID, UUID.randomUUID(),
-            startDate, java.time.LocalTime.of(10, 0),
-            new BigDecimal("70.00"), PaymentMethod.PIX,
-            FinancialStatus.CONCLUIDO, products, java.time.LocalDateTime.now());
+        var record = FinancialRecord.reconstitute(recordId, STORE_ID, UUID.randomUUID(), startDate,
+                java.time.LocalTime.of(10, 0), new BigDecimal("70.00"), PaymentMethod.PIX, FinancialStatus.CONCLUIDO,
+                products, java.time.LocalDateTime.now());
 
         when(financialRecordRepository.findByStoreIdAndDateRange(STORE_ID, startDate, endDate))
-            .thenReturn(List.of(record));
+                .thenReturn(List.of(record));
 
         List<FinancialRecordResponse> response = useCase.execute(STORE_ID, startEpoch, endEpoch);
 

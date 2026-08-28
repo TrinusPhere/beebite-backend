@@ -1,1 +1,24 @@
-package com.fidecode.biteflow.infrastructure.persistence.panache.mapper; import com.fidecode.biteflow.domain.printing.entity.Printer; import com.fidecode.biteflow.infrastructure.persistence.panache.entity.PrinterEntity; public final class PrinterMapper{private PrinterMapper(){}public static Printer toDomain(PrinterEntity e){return Printer.reconstitute(e.id,e.storeId,e.name,e.connectionType,e.address,e.active);}public static PrinterEntity toEntity(Printer p){var e=new PrinterEntity();e.id=p.getId();e.storeId=p.getStoreId();e.name=p.getName();e.connectionType=p.getConnectionType();e.address=p.getAddress();e.active=p.isActive();return e;}}
+package com.fidecode.biteflow.infrastructure.persistence.panache.mapper;
+
+import com.fidecode.biteflow.domain.printing.entity.Printer;
+import com.fidecode.biteflow.infrastructure.persistence.panache.entity.PrinterEntity;
+
+public final class PrinterMapper {
+    private PrinterMapper() {
+    }
+
+    public static Printer toDomain(PrinterEntity e) {
+        return Printer.reconstitute(e.id, e.storeId, e.name, e.connectionType, e.address, e.active);
+    }
+
+    public static PrinterEntity toEntity(Printer p) {
+        var e = new PrinterEntity();
+        e.id = p.getId();
+        e.storeId = p.getStoreId();
+        e.name = p.getName();
+        e.connectionType = p.getConnectionType();
+        e.address = p.getAddress();
+        e.active = p.isActive();
+        return e;
+    }
+}

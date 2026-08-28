@@ -20,23 +20,27 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-
-@RolesAllowed({"ADMIN","GERENTE"})
+@RolesAllowed({ "ADMIN", "GERENTE" })
 public class ProductResource extends BaseResource {
 
-    @Inject CreateProductUseCase createProductUseCase;
-    @Inject UpdateProductUseCase updateProductUseCase;
-    @Inject DeleteProductUseCase deleteProductUseCase;
-    @Inject GetProductUseCase getProductUseCase;
-    @Inject ListProductsUseCase listProductsUseCase;
-    @Inject UpdateProductRemovableItemsUseCase updateProductRemovableItemsUseCase;
-    @Inject UpdateProductModifierGroupsUseCase updateProductModifierGroupsUseCase;
+    @Inject
+    CreateProductUseCase createProductUseCase;
+    @Inject
+    UpdateProductUseCase updateProductUseCase;
+    @Inject
+    DeleteProductUseCase deleteProductUseCase;
+    @Inject
+    GetProductUseCase getProductUseCase;
+    @Inject
+    ListProductsUseCase listProductsUseCase;
+    @Inject
+    UpdateProductRemovableItemsUseCase updateProductRemovableItemsUseCase;
+    @Inject
+    UpdateProductModifierGroupsUseCase updateProductModifierGroupsUseCase;
 
     @PermissionsAllowed("produtos")
     @GET
-    public Response list(
-            @QueryParam("categoryId") String categoryId,
-            @QueryParam("page") @DefaultValue("0") int page,
+    public Response list(@QueryParam("categoryId") String categoryId, @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("20") int size) {
         return Response.ok(listProductsUseCase.execute(getStoreId(), categoryId, page, size)).build();
     }
@@ -52,8 +56,7 @@ public class ProductResource extends BaseResource {
     @POST
     public Response create(@Valid ProductRequest request) {
         ProductResponse created = createProductUseCase.execute(getStoreId(), request);
-        return Response.created(URI.create("/api/v1/products/" + created.id()))
-            .entity(created).build();
+        return Response.created(URI.create("/api/v1/products/" + created.id())).entity(created).build();
     }
 
     @PermissionsAllowed("produtos")

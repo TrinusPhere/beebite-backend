@@ -19,8 +19,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-
-@RolesAllowed({"ADMIN","GERENTE","CAIXA"})
+@RolesAllowed({ "ADMIN", "GERENTE", "CAIXA" })
 public class OrderResource extends BaseResource {
 
     @Inject
@@ -31,12 +30,18 @@ public class OrderResource extends BaseResource {
     GetOrderUseCase getOrderUseCase;
     @Inject
     ListOrdersUseCase listOrdersUseCase;
-    @Inject AdvanceOrderStatusUseCase advanceOrderStatusUseCase;
-    @Inject MoveOrderToColumnUseCase moveOrderToColumnUseCase;
-    @Inject AssignOrderDriverUseCase assignOrderDriverUseCase;
-    @Inject BatchMoveOrdersUseCase batchMoveOrdersUseCase;
-    @Inject BatchAssignOrderDriverUseCase batchAssignOrderDriverUseCase;
-    @Inject EmitOrderNfeUseCase emitOrderNfeUseCase;
+    @Inject
+    AdvanceOrderStatusUseCase advanceOrderStatusUseCase;
+    @Inject
+    MoveOrderToColumnUseCase moveOrderToColumnUseCase;
+    @Inject
+    AssignOrderDriverUseCase assignOrderDriverUseCase;
+    @Inject
+    BatchMoveOrdersUseCase batchMoveOrdersUseCase;
+    @Inject
+    BatchAssignOrderDriverUseCase batchAssignOrderDriverUseCase;
+    @Inject
+    EmitOrderNfeUseCase emitOrderNfeUseCase;
     @Inject
     GetOrderKanbanUseCase getOrderKanbanUseCase;
     @Inject
@@ -44,9 +49,7 @@ public class OrderResource extends BaseResource {
 
     @PermissionsAllowed("pedidos")
     @GET
-    public Response list(
-            @QueryParam("status") String status,
-            @QueryParam("page") @DefaultValue("0") int page,
+    public Response list(@QueryParam("status") String status, @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("20") int size) {
         return Response.ok(listOrdersUseCase.list(getStoreId(), status, page, size)).build();
     }
@@ -69,8 +72,7 @@ public class OrderResource extends BaseResource {
     @POST
     public Response create(@Valid CreateOrderRequest request) {
         OrderResponse created = createOrderUseCase.create(getStoreId(), request);
-        return Response.created(URI.create("/api/v1/orders/" + created.id()))
-                .entity(created).build();
+        return Response.created(URI.create("/api/v1/orders/" + created.id())).entity(created).build();
     }
 
     @PermissionsAllowed("pedidos")
@@ -112,8 +114,7 @@ public class OrderResource extends BaseResource {
     @PATCH
     @Path("/batch/move")
     public Response batchMove(@Valid BatchMoveRequest request) {
-        batchMoveOrdersUseCase.execute(getStoreId(), request.orderIds(),
-                new MoveOrderRequest(request.targetStatus()));
+        batchMoveOrdersUseCase.execute(getStoreId(), request.orderIds(), new MoveOrderRequest(request.targetStatus()));
         return Response.noContent().build();
     }
 

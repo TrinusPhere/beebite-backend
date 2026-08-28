@@ -4,10 +4,12 @@ import com.fidecode.biteflow.domain.catalog.entity.Additional;
 import com.fidecode.biteflow.infrastructure.persistence.panache.entity.AdditionalEntity;
 
 public final class AdditionalMapper {
-    private AdditionalMapper() {}
+    private AdditionalMapper() {
+    }
 
     public static Additional toDomain(AdditionalEntity e) {
-        if (e == null) return null;
+        if (e == null)
+            return null;
         return Additional.reconstitute(e.id, e.storeId, e.name, e.price, e.category, e.active);
     }
 

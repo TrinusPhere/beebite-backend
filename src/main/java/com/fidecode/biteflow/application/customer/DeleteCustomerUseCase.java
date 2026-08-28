@@ -22,7 +22,7 @@ public class DeleteCustomerUseCase {
 
     public void execute(UUID storeId, UUID id) {
         Customer customer = customerRepository.findById(id)
-            .orElseThrow(() -> new CustomerNotFoundException(id.toString()));
+                .orElseThrow(() -> new CustomerNotFoundException(id.toString()));
         StoreGuard.enforce(customer, storeId);
         customerRepository.deleteById(id);
     }

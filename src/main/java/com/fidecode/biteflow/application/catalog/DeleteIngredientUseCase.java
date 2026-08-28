@@ -19,8 +19,7 @@ public class DeleteIngredientUseCase {
     }
 
     public void execute(UUID storeId, UUID id) {
-        var ingredient = repository.findById(id)
-            .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
+        var ingredient = repository.findById(id).orElseThrow(() -> new IngredientNotFoundException(id.toString()));
         StoreGuard.enforce(ingredient, storeId);
         repository.deleteById(id);
     }

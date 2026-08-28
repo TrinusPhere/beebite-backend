@@ -19,12 +19,9 @@ class FinancialRecordTest {
 
     @Test
     void deveCriarRegistroFinanceiroComStatusConcluido() {
-        var products = List.of(
-            new FinancialRecordProduct(UUID.randomUUID(), "X-Bacon", 2, new BigDecimal("35.00"))
-        );
+        var products = List.of(new FinancialRecordProduct(UUID.randomUUID(), "X-Bacon", 2, new BigDecimal("35.00")));
 
-        var record = new FinancialRecord(STORE_ID, ORDER_ID,
-            new BigDecimal("70.00"), PaymentMethod.PIX, products);
+        var record = new FinancialRecord(STORE_ID, ORDER_ID, new BigDecimal("70.00"), PaymentMethod.PIX, products);
 
         assertEquals(STORE_ID, record.getStoreId());
         assertEquals(ORDER_ID, record.getOrderId());
@@ -39,32 +36,31 @@ class FinancialRecordTest {
 
     @Test
     void deveLancarExcecaoQuandoStoreIdNulo() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new FinancialRecord(null, ORDER_ID, BigDecimal.TEN, PaymentMethod.PIX, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FinancialRecord(null, ORDER_ID, BigDecimal.TEN, PaymentMethod.PIX, null));
     }
 
     @Test
     void deveLancarExcecaoQuandoOrderIdNulo() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new FinancialRecord(STORE_ID, null, BigDecimal.TEN, PaymentMethod.PIX, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FinancialRecord(STORE_ID, null, BigDecimal.TEN, PaymentMethod.PIX, null));
     }
 
     @Test
     void deveLancarExcecaoQuandoTotalValueNulo() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new FinancialRecord(STORE_ID, ORDER_ID, null, PaymentMethod.PIX, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FinancialRecord(STORE_ID, ORDER_ID, null, PaymentMethod.PIX, null));
     }
 
     @Test
     void deveLancarExcecaoQuandoPaymentMethodNulo() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new FinancialRecord(STORE_ID, ORDER_ID, BigDecimal.TEN, null, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FinancialRecord(STORE_ID, ORDER_ID, BigDecimal.TEN, null, null));
     }
 
     @Test
     void deveCancelarRegistro() {
-        var record = new FinancialRecord(STORE_ID, ORDER_ID,
-            BigDecimal.TEN, PaymentMethod.PIX, null);
+        var record = new FinancialRecord(STORE_ID, ORDER_ID, BigDecimal.TEN, PaymentMethod.PIX, null);
 
         record.cancel();
         assertEquals(FinancialStatus.CANCELADO, record.getStatus());
@@ -72,8 +68,7 @@ class FinancialRecordTest {
 
     @Test
     void deveEstornarRegistro() {
-        var record = new FinancialRecord(STORE_ID, ORDER_ID,
-            BigDecimal.TEN, PaymentMethod.PIX, null);
+        var record = new FinancialRecord(STORE_ID, ORDER_ID, BigDecimal.TEN, PaymentMethod.PIX, null);
 
         record.refund();
         assertEquals(FinancialStatus.ESTORNADO, record.getStatus());
@@ -82,17 +77,11 @@ class FinancialRecordTest {
     @Test
     void deveReconstituirComTodosOsCampos() {
         UUID id = UUID.randomUUID();
-        var products = List.of(
-            new FinancialRecordProduct(UUID.randomUUID(), "Suco", 1, new BigDecimal("8.00"))
-        );
+        var products = List.of(new FinancialRecordProduct(UUID.randomUUID(), "Suco", 1, new BigDecimal("8.00")));
 
-        var record = FinancialRecord.reconstitute(
-            id, STORE_ID, ORDER_ID,
-            java.time.LocalDate.of(2026, 8, 15),
-            java.time.LocalTime.of(14, 30),
-            new BigDecimal("50.00"), PaymentMethod.DINHEIRO,
-            FinancialStatus.CONCLUIDO, products,
-            java.time.LocalDateTime.of(2026, 8, 15, 14, 30));
+        var record = FinancialRecord.reconstitute(id, STORE_ID, ORDER_ID, java.time.LocalDate.of(2026, 8, 15),
+                java.time.LocalTime.of(14, 30), new BigDecimal("50.00"), PaymentMethod.DINHEIRO,
+                FinancialStatus.CONCLUIDO, products, java.time.LocalDateTime.of(2026, 8, 15, 14, 30));
 
         assertEquals(id, record.getId());
         assertEquals(STORE_ID, record.getStoreId());
@@ -104,8 +93,7 @@ class FinancialRecordTest {
 
     @Test
     void deveImplementarStoreScoped() {
-        var record = new FinancialRecord(STORE_ID, ORDER_ID,
-            BigDecimal.TEN, PaymentMethod.PIX, null);
+        var record = new FinancialRecord(STORE_ID, ORDER_ID, BigDecimal.TEN, PaymentMethod.PIX, null);
 
         assertEquals(STORE_ID, record.getStoreId());
     }
@@ -120,13 +108,13 @@ class FinancialRecordTest {
 
     @Test
     void deveLancarExcecaoQuandoProductNameVazio() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new FinancialRecordProduct(UUID.randomUUID(), "", 1, BigDecimal.TEN));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FinancialRecordProduct(UUID.randomUUID(), "", 1, BigDecimal.TEN));
     }
 
     @Test
     void deveLancarExcecaoQuandoQuantidadeZero() {
-        assertThrows(IllegalArgumentException.class, () ->
-            new FinancialRecordProduct(UUID.randomUUID(), "X-Bacon", 0, BigDecimal.TEN));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FinancialRecordProduct(UUID.randomUUID(), "X-Bacon", 0, BigDecimal.TEN));
     }
 }

@@ -16,12 +16,13 @@ import jakarta.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-
 @RolesAllowed("ADMIN")
 public class StoreResource extends BaseResource {
 
-    @Inject GetStoreInfoUseCase getStoreInfoUseCase;
-    @Inject UpdateStoreInfoUseCase updateStoreInfoUseCase;
+    @Inject
+    GetStoreInfoUseCase getStoreInfoUseCase;
+    @Inject
+    UpdateStoreInfoUseCase updateStoreInfoUseCase;
 
     /**
      * GET /api/v1/store — qualquer usuário autenticado

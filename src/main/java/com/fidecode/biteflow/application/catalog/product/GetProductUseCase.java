@@ -26,29 +26,28 @@ public class GetProductUseCase {
     private final ProductResponseAssembler productResponseAssembler;
 
     @Inject
-    public GetProductUseCase(ProductRepository productRepository, 
-                             IngredientRepository ingredientRepository,
-                             ProductResponseAssembler productResponseAssembler) {
+    public GetProductUseCase(ProductRepository productRepository, IngredientRepository ingredientRepository,
+            ProductResponseAssembler productResponseAssembler) {
         this.productRepository = productRepository;
         this.ingredientRepository = ingredientRepository;
         this.productResponseAssembler = productResponseAssembler;
     }
 
     public ProductResponse execute(UUID storeId, UUID id) {
-        Product product = productRepository.findById(id)
-            .orElseThrow(() -> new ProductNotFoundException(id.toString()));
+        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id.toString()));
         StoreGuard.enforce(product, storeId);
-        
+
         List<UUID> ingredientIds = new ArrayList<>();
         if (product.getTechnicalSheet() != null) {
-            ingredientIds.addAll(product.getTechnicalSheet().stream().map(TechnicalSheetItem::getIngredientId).toList());
+            ingredientIds
+                    .addAll(product.getTechnicalSheet().stream().map(TechnicalSheetItem::getIngredientId).toList());
         }
         if (product.getRemovableItemIds() != null) {
             ingredientIds.addAll(product.getRemovableItemIds());
         }
         Map<UUID, Ingredient> ingredientCache = ingredientRepository.findAllById(ingredientIds).stream()
-            .collect(Collectors.toMap(Ingredient::getId, i -> i));
-            
+                .collect(Collectors.toMap(Ingredient::getId, i -> i));
+
         return productResponseAssembler.toResponse(product, ingredientCache, null);
     }
 }

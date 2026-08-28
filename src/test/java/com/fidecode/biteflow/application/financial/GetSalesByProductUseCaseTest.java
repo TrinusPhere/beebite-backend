@@ -43,20 +43,16 @@ class GetSalesByProductUseCaseTest {
         var batata = new FinancialRecordProduct(UUID.randomUUID(), "Batata Frita", 3, new BigDecimal("12.00"));
         var xBacon2 = new FinancialRecordProduct(UUID.randomUUID(), "X-Bacon", 1, new BigDecimal("35.00"));
 
-        var record1 = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            startDate, java.time.LocalTime.of(10, 0),
-            new BigDecimal("106.00"), PaymentMethod.PIX,
-            FinancialStatus.CONCLUIDO, List.of(xBacon, batata), java.time.LocalDateTime.now());
+        var record1 = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(), startDate,
+                java.time.LocalTime.of(10, 0), new BigDecimal("106.00"), PaymentMethod.PIX, FinancialStatus.CONCLUIDO,
+                List.of(xBacon, batata), java.time.LocalDateTime.now());
 
-        var record2 = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            startDate.plusDays(1), java.time.LocalTime.of(11, 0),
-            new BigDecimal("35.00"), PaymentMethod.CREDITO,
-            FinancialStatus.CONCLUIDO, List.of(xBacon2), java.time.LocalDateTime.now());
+        var record2 = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
+                startDate.plusDays(1), java.time.LocalTime.of(11, 0), new BigDecimal("35.00"), PaymentMethod.CREDITO,
+                FinancialStatus.CONCLUIDO, List.of(xBacon2), java.time.LocalDateTime.now());
 
         when(financialRecordRepository.findByStoreIdAndDateRange(STORE_ID, startDate, endDate))
-            .thenReturn(List.of(record1, record2));
+                .thenReturn(List.of(record1, record2));
 
         SalesByProductResponse response = useCase.execute(STORE_ID, startEpoch, endEpoch);
 
@@ -77,14 +73,12 @@ class GetSalesByProductUseCaseTest {
         long endEpoch = endDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
         var product = new FinancialRecordProduct(UUID.randomUUID(), "Suco", 1, new BigDecimal("8.00"));
-        var canceledRecord = FinancialRecord.reconstitute(
-            UUID.randomUUID(), STORE_ID, UUID.randomUUID(),
-            startDate, java.time.LocalTime.of(10, 0),
-            new BigDecimal("8.00"), PaymentMethod.PIX,
-            FinancialStatus.CANCELADO, List.of(product), java.time.LocalDateTime.now());
+        var canceledRecord = FinancialRecord.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(), startDate,
+                java.time.LocalTime.of(10, 0), new BigDecimal("8.00"), PaymentMethod.PIX, FinancialStatus.CANCELADO,
+                List.of(product), java.time.LocalDateTime.now());
 
         when(financialRecordRepository.findByStoreIdAndDateRange(STORE_ID, startDate, endDate))
-            .thenReturn(List.of(canceledRecord));
+                .thenReturn(List.of(canceledRecord));
 
         SalesByProductResponse response = useCase.execute(STORE_ID, startEpoch, endEpoch);
 

@@ -31,15 +31,12 @@ public class UpdateCategoryUseCase {
 
         List<UUID> modifierGroupIds = null;
         if (request.defaultModifierGroupIds() != null) {
-            modifierGroupIds = request.defaultModifierGroupIds().stream().map(UUID::fromString).collect(Collectors.toList());
+            modifierGroupIds = request.defaultModifierGroupIds().stream().map(UUID::fromString)
+                    .collect(Collectors.toList());
         }
 
-        category.update(
-                request.name(),
-                true, // assuming active by default for now
-                request.displayOrder() != null ? request.displayOrder() : category.getDisplayOrder(),
-                modifierGroupIds
-        );
+        category.update(request.name(), true, // assuming active by default for now
+                request.displayOrder() != null ? request.displayOrder() : category.getDisplayOrder(), modifierGroupIds);
 
         return CategoryDtoMapper.toResponse(categoryRepository.save(category));
     }

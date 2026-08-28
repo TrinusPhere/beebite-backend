@@ -30,10 +30,8 @@ public class ManageOrderUseCase {
     private final BiteflowEventPublisher eventPublisher;
 
     @Inject
-    public ManageOrderUseCase(OrderRepository orderRepository,
-                              OrderDomainService orderDomainService,
-                              Event<OrderFinalizedEvent> orderFinalizedEvent,
-                              BiteflowEventPublisher eventPublisher) {
+    public ManageOrderUseCase(OrderRepository orderRepository, OrderDomainService orderDomainService,
+            Event<OrderFinalizedEvent> orderFinalizedEvent, BiteflowEventPublisher eventPublisher) {
         this.orderRepository = orderRepository;
         this.orderDomainService = orderDomainService;
         this.orderFinalizedEvent = orderFinalizedEvent;
@@ -42,9 +40,8 @@ public class ManageOrderUseCase {
 
     public OrderResponse advanceStatus(UUID storeId, UUID orderId) {
         Order order = StoreGuard.enforce(
-            orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
-            storeId
-        );
+                orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
+                storeId);
         orderDomainService.advanceStatus(order);
         Order saved = orderRepository.save(order);
         if (saved.getStatus() == OrderStatus.FINALIZADO) {
@@ -56,9 +53,8 @@ public class ManageOrderUseCase {
 
     public OrderResponse moveToColumn(UUID storeId, UUID orderId, String targetStatus) {
         Order order = StoreGuard.enforce(
-            orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
-            storeId
-        );
+                orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
+                storeId);
         OrderStatus target = OrderStatus.valueOf(targetStatus);
         orderDomainService.moveToColumn(order, target);
         Order saved = orderRepository.save(order);
@@ -71,9 +67,8 @@ public class ManageOrderUseCase {
 
     public OrderResponse assignDriver(UUID storeId, UUID orderId, AssignDriverRequest request) {
         Order order = StoreGuard.enforce(
-            orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
-            storeId
-        );
+                orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
+                storeId);
         UUID driverId = UUID.fromString(request.driverId());
         orderDomainService.assignDriver(order, driverId, request.driverName());
         return OrderDtoMapper.toResponse(orderRepository.save(order));
@@ -81,7 +76,8 @@ public class ManageOrderUseCase {
 
     @jakarta.transaction.Transactional
     public void batchMove(UUID storeId, List<String> orderIds, MoveOrderRequest request) {
-        if (orderIds == null || orderIds.isEmpty()) return;
+        if (orderIds == null || orderIds.isEmpty())
+            return;
         OrderStatus target = OrderStatus.valueOf(request.targetStatus());
         List<UUID> ids = orderIds.stream().map(UUID::fromString).toList();
 
@@ -99,7 +95,8 @@ public class ManageOrderUseCase {
 
     @jakarta.transaction.Transactional
     public void batchAssignDriver(UUID storeId, AssignDriverRequest request) {
-        if (request.orderIds() == null || request.orderIds().isEmpty()) return;
+        if (request.orderIds() == null || request.orderIds().isEmpty())
+            return;
         UUID driverId = UUID.fromString(request.driverId());
         List<UUID> ids = request.orderIds().stream().map(UUID::fromString).toList();
 
@@ -117,24 +114,19 @@ public class ManageOrderUseCase {
 
     public NfeResponse emitNfe(UUID storeId, UUID orderId) {
         Order order = StoreGuard.enforce(
-            orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
-            storeId
-        );
+                orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString())),
+                storeId);
         order.markAsNfeEmitted();
         orderRepository.save(order);
 
-        return new NfeResponse(
-            orderId.toString(),
-            String.format("%09d", new Random().nextInt(999999999)),
-            "35260812345678000195550010001234561234567890",
-            LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-            "AUTORIZADA"
-        );
+        return new NfeResponse(orderId.toString(), String.format("%09d", new Random().nextInt(999999999)),
+                "35260812345678000195550010001234561234567890",
+                LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), "AUTORIZADA");
     }
 
     /**
-     * Publica evento no Pub/Sub apenas se o pedido veio do iFood.
-     * O publisher (infra) ignora se Pub/Sub não estiver configurado.
+     * Publica evento no Pub/Sub apenas se o pedido veio do iFood. O publisher (infra) ignora se Pub/Sub não estiver
+     * configurado.
      */
     private void publishIfoodEventIfNeeded(Order order) {
         if (order.getPlatform() == OrderPlatform.IFOOD && order.getExternalOrderId() != null) {
@@ -148,22 +140,11 @@ public class ManageOrderUseCase {
 
     private void fireOrderFinalizedEvent(Order order) {
         List<OrderFinalizedEvent.ProductSnapshot> products = order.getItems().stream()
-            .map(item -> new OrderFinalizedEvent.ProductSnapshot(
-                item.getProductId(),
-                item.getProductName(),
-                item.getQuantity(),
-                item.getUnitPrice()
-            ))
-            .toList();
+                .map(item -> new OrderFinalizedEvent.ProductSnapshot(item.getProductId(), item.getProductName(),
+                        item.getQuantity(), item.getUnitPrice()))
+                .toList();
 
-        orderFinalizedEvent.fire(new OrderFinalizedEvent(
-            order.getId(),
-            order.getStoreId(),
-            order.getTotalValue(),
-            order.getPaymentMethod(),
-            order.getCustomerId(),
-            order.getDriverId(),
-            products
-        ));
+        orderFinalizedEvent.fire(new OrderFinalizedEvent(order.getId(), order.getStoreId(), order.getTotalValue(),
+                order.getPaymentMethod(), order.getCustomerId(), order.getDriverId(), products));
     }
 }

@@ -17,15 +17,21 @@ import java.util.UUID;
 @Path("/api/v1/categories")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed({"ADMIN", "GERENTE"})
+@RolesAllowed({ "ADMIN", "GERENTE" })
 public class CategoryResource extends BaseResource {
 
-    @Inject CreateCategoryUseCase createCategoryUseCase;
-    @Inject UpdateCategoryUseCase updateCategoryUseCase;
-    @Inject DeleteCategoryUseCase deleteCategoryUseCase;
-    @Inject GetCategoryUseCase getCategoryUseCase;
-    @Inject ListCategoriesUseCase listCategoriesUseCase;
-    @Inject BulkApplyCategoryModifiersUseCase bulkApplyCategoryModifiersUseCase;
+    @Inject
+    CreateCategoryUseCase createCategoryUseCase;
+    @Inject
+    UpdateCategoryUseCase updateCategoryUseCase;
+    @Inject
+    DeleteCategoryUseCase deleteCategoryUseCase;
+    @Inject
+    GetCategoryUseCase getCategoryUseCase;
+    @Inject
+    ListCategoriesUseCase listCategoriesUseCase;
+    @Inject
+    BulkApplyCategoryModifiersUseCase bulkApplyCategoryModifiersUseCase;
 
     @POST
     @PermissionsAllowed("produtos")

@@ -25,7 +25,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CustomerUseCasesTest {
 
-    @Mock private CustomerRepository customerRepository;
+    @Mock
+    private CustomerRepository customerRepository;
 
     private CreateCustomerUseCase createCustomerUseCase;
     private UpdateCustomerUseCase updateCustomerUseCase;
@@ -52,10 +53,8 @@ class CustomerUseCasesTest {
             return c;
         });
 
-        CustomerRequest request = new CustomerRequest(
-            "João Silva", "(11) 98888-7777", "joao@email.com",
-            "01310-100", "Rua das Flores", "123", "Apto 42", "Centro"
-        );
+        CustomerRequest request = new CustomerRequest("João Silva", "(11) 98888-7777", "joao@email.com", "01310-100",
+                "Rua das Flores", "123", "Apto 42", "Centro");
 
         CustomerResponse response = createCustomerUseCase.execute(STORE_ID, request);
 
@@ -74,10 +73,8 @@ class CustomerUseCasesTest {
         when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
         when(customerRepository.save(any(Customer.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        CustomerRequest request = new CustomerRequest(
-            "João Atualizado", "(11) 91111-2222", null,
-            null, null, null, null, null
-        );
+        CustomerRequest request = new CustomerRequest("João Atualizado", "(11) 91111-2222", null, null, null, null,
+                null, null);
 
         CustomerResponse response = updateCustomerUseCase.execute(STORE_ID, customerId, request);
         assertEquals("João Atualizado", response.name());
@@ -89,8 +86,8 @@ class CustomerUseCasesTest {
         UUID id = UUID.randomUUID();
         when(customerRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(CustomerNotFoundException.class,
-            () -> updateCustomerUseCase.execute(STORE_ID, id, new CustomerRequest("X", null, null, null, null, null, null, null)));
+        assertThrows(CustomerNotFoundException.class, () -> updateCustomerUseCase.execute(STORE_ID, id,
+                new CustomerRequest("X", null, null, null, null, null, null, null)));
     }
 
     @Test

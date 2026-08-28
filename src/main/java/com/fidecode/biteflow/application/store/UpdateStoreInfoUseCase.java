@@ -21,10 +21,10 @@ public class UpdateStoreInfoUseCase {
     }
 
     public StoreInfoResponse execute(UUID storeId, StoreInfoRequest request) {
-        Store store = storeRepository.findById(storeId)
-            .orElseThrow(() -> new StoreNotFoundException(storeId));
+        Store store = storeRepository.findById(storeId).orElseThrow(() -> new StoreNotFoundException(storeId));
 
-store.updateInfo(request.name(), request.logoUrl(), request.isOpen(), request.openingHours(), request.address());
+        store.updateInfo(request.name(), request.logoUrl(), request.isOpen(), request.openingHours(),
+                request.address());
 
         Store saved = storeRepository.save(store);
         return GetStoreInfoUseCase.toResponse(saved);

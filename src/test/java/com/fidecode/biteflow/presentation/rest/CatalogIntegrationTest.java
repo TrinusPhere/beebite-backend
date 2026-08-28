@@ -17,38 +17,26 @@ import static org.hamcrest.Matchers.notNullValue;
 public class CatalogIntegrationTest {
 
     private String getToken() {
-        return given()
-            .contentType(ContentType.JSON)
-            .body(Map.of("login", "admin", "password", "admin123"))
-            .when().post("/api/v1/auth/login")
-            .then()
-            .statusCode(200)
-            .extract().path("token");
+        return given().contentType(ContentType.JSON).body(Map.of("login", "admin", "password", "admin123")).when()
+                .post("/api/v1/auth/login").then().statusCode(200).extract().path("token");
     }
 
     @Test
     public void testCreateModifierGroup() {
         String token = getToken();
 
-        given()
-            .header("Authorization", "Bearer " + token)
-            .contentType(ContentType.JSON)
-            .body("""
-                {
-                    "name": "Ponto da Carne",
-                    "type": "RADIO",
-                    "required": true,
-                    "minSelections": 1,
-                    "maxSelections": 1,
-                    "options": [
-                        {"name": "Ao Ponto", "price": 0},
-                        {"name": "Bem Passado", "price": 0}
-                    ]
-                }
-            """)
-            .when().post("/api/v1/modifier-groups")
-            .then()
-            .statusCode(201)
-            .body("id", notNullValue());
+        given().header("Authorization", "Bearer " + token).contentType(ContentType.JSON).body("""
+                    {
+                        "name": "Ponto da Carne",
+                        "type": "RADIO",
+                        "required": true,
+                        "minSelections": 1,
+                        "maxSelections": 1,
+                        "options": [
+                            {"name": "Ao Ponto", "price": 0},
+                            {"name": "Bem Passado", "price": 0}
+                        ]
+                    }
+                """).when().post("/api/v1/modifier-groups").then().statusCode(201).body("id", notNullValue());
     }
 }

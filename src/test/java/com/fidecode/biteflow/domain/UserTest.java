@@ -47,19 +47,19 @@ class UserTest {
     @Test
     void shouldRejectNullStoreId() {
         assertThrows(IllegalArgumentException.class,
-            () -> new User(null, "Nome", "login", "hash", Role.CAIXA, List.of()));
+                () -> new User(null, "Nome", "login", "hash", Role.CAIXA, List.of()));
     }
 
     @Test
     void shouldRejectBlankLogin() {
         assertThrows(IllegalArgumentException.class,
-            () -> new User(STORE_ID, "Nome", "  ", "hash", Role.CAIXA, List.of()));
+                () -> new User(STORE_ID, "Nome", "  ", "hash", Role.CAIXA, List.of()));
     }
 
     @Test
     void shouldRejectBlankName() {
         assertThrows(IllegalArgumentException.class,
-            () -> new User(STORE_ID, "", "login", "hash", Role.CAIXA, List.of()));
+                () -> new User(STORE_ID, "", "login", "hash", Role.CAIXA, List.of()));
     }
 
     @Test

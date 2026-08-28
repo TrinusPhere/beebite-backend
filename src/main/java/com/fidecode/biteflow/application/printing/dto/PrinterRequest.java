@@ -1,1 +1,6 @@
-package com.fidecode.biteflow.application.printing.dto; import jakarta.validation.constraints.NotBlank; public record PrinterRequest(@NotBlank String name, @NotBlank String connectionType, String address, Boolean active){}
+package com.fidecode.biteflow.application.printing.dto;
+
+import jakarta.validation.constraints.NotBlank;
+
+public record PrinterRequest(@NotBlank String name, @NotBlank String connectionType, String address, Boolean active) {
+}

@@ -35,32 +35,39 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderUseCasesTest {
 
-    @Mock private OrderRepository orderRepository;
-    @Mock private ProductRepository productRepository;
-    @Mock private ModifierGroupRepository modifierGroupRepository;
-    @Mock private IngredientRepository ingredientRepository;
-    @Mock private com.fidecode.biteflow.application.order.port.BiteflowEventPublisher biteflowEventPublisher;
-
+    @Mock
+    private OrderRepository orderRepository;
+    @Mock
+    private ProductRepository productRepository;
+    @Mock
+    private ModifierGroupRepository modifierGroupRepository;
+    @Mock
+    private IngredientRepository ingredientRepository;
+    @Mock
+    private com.fidecode.biteflow.application.order.port.BiteflowEventPublisher biteflowEventPublisher;
 
     private CreateOrderUseCase createOrderUseCase;
     private ManageOrderUseCase manageOrderUseCase;
     private UpdateOrderUseCase updateOrderUseCase;
     private GetOrderKanbanUseCase getOrderKanbanUseCase;
     private DeleteOrderUseCase deleteOrderUseCase;
-    
-    @Mock private OrderDomainService orderDomainService;
-    @Mock private Event<OrderFinalizedEvent> orderFinalizedEvent;
+
+    @Mock
+    private OrderDomainService orderDomainService;
+    @Mock
+    private Event<OrderFinalizedEvent> orderFinalizedEvent;
 
     private final UUID STORE_ID = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        createOrderUseCase = new CreateOrderUseCase(orderRepository, productRepository,
-            modifierGroupRepository, ingredientRepository);
-        manageOrderUseCase = new ManageOrderUseCase(orderRepository, orderDomainService, orderFinalizedEvent, biteflowEventPublisher);
+        createOrderUseCase = new CreateOrderUseCase(orderRepository, productRepository, modifierGroupRepository,
+                ingredientRepository);
+        manageOrderUseCase = new ManageOrderUseCase(orderRepository, orderDomainService, orderFinalizedEvent,
+                biteflowEventPublisher);
 
-        updateOrderUseCase = new UpdateOrderUseCase(orderRepository, productRepository,
-            modifierGroupRepository, ingredientRepository);
+        updateOrderUseCase = new UpdateOrderUseCase(orderRepository, productRepository, modifierGroupRepository,
+                ingredientRepository);
         getOrderKanbanUseCase = new GetOrderKanbanUseCase(orderRepository);
         deleteOrderUseCase = new DeleteOrderUseCase(orderRepository);
     }
@@ -81,13 +88,10 @@ class OrderUseCasesTest {
             return o;
         });
 
-        CreateOrderRequest request = new CreateOrderRequest(
-            "DELIVERY",
-            new CreateOrderRequest.CustomerInfo(null, "João", "Rua 1"),
-            "PIX",
-            List.of(new CreateOrderItemDto(productId.toString(), 2, "Capricha", null, null)),
-            new BigDecimal("5.00")
-        );
+        CreateOrderRequest request = new CreateOrderRequest("DELIVERY",
+                new CreateOrderRequest.CustomerInfo(null, "João", "Rua 1"), "PIX",
+                List.of(new CreateOrderItemDto(productId.toString(), 2, "Capricha", null, null)),
+                new BigDecimal("5.00"));
 
         OrderResponse response = createOrderUseCase.create(STORE_ID, request);
 
@@ -127,8 +131,7 @@ class OrderUseCasesTest {
         UUID orderId = UUID.randomUUID();
         when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
-        assertThrows(OrderNotFoundException.class,
-            () -> manageOrderUseCase.advanceStatus(STORE_ID, orderId));
+        assertThrows(OrderNotFoundException.class, () -> manageOrderUseCase.advanceStatus(STORE_ID, orderId));
     }
 
     @Test
@@ -170,7 +173,7 @@ class OrderUseCasesTest {
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         OrderResponse response = manageOrderUseCase.assignDriver(STORE_ID, orderId,
-            new AssignDriverRequest(driverId.toString(), "Carlos", null));
+                new AssignDriverRequest(driverId.toString(), "Carlos", null));
         assertEquals(driverId.toString(), response.driverId());
         assertEquals("Carlos", response.driverName());
     }
@@ -218,10 +221,8 @@ class OrderUseCasesTest {
         when(modifierGroupRepository.findAllById(any())).thenReturn(List.of());
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UpdateOrderRequest request = new UpdateOrderRequest(
-            null, null, null,
-            List.of(new CreateOrderItemDto(productId.toString(), 1, "", null, null))
-        );
+        UpdateOrderRequest request = new UpdateOrderRequest(null, null, null,
+                List.of(new CreateOrderItemDto(productId.toString(), 1, "", null, null)));
 
         OrderResponse response = updateOrderUseCase.update(STORE_ID, orderId, request);
 
@@ -267,38 +268,32 @@ class OrderUseCasesTest {
     @Test
     void deveLancarExcecaoAoEditarPedidoEmRota() {
         UUID orderId = UUID.randomUUID();
-        Order order = Order.reconstitute(
-            orderId, STORE_ID, "#9999", null,
-            null, "João", null,
-            OrderType.DELIVERY, OrderStatus.EM_ROTA, PaymentMethod.PIX,
-            null, null, OrderPlatform.OWN, null,
-            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-            false, List.of(), java.time.LocalDateTime.now(), java.time.LocalDateTime.now(), null);
+        Order order = Order.reconstitute(orderId, STORE_ID, "#9999", null, null, "João", null, OrderType.DELIVERY,
+                OrderStatus.EM_ROTA, PaymentMethod.PIX, null, null, OrderPlatform.OWN, null, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, false, List.of(), java.time.LocalDateTime.now(),
+                java.time.LocalDateTime.now(), null);
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
         UpdateOrderRequest request = new UpdateOrderRequest(null, null, null, null);
 
         assertThrows(InvalidOrderTransitionException.class,
-            () -> updateOrderUseCase.update(STORE_ID, orderId, request));
+                () -> updateOrderUseCase.update(STORE_ID, orderId, request));
     }
 
     @Test
     void deveLancarExcecaoAoEditarPedidoFinalizado() {
         UUID orderId = UUID.randomUUID();
-        Order order = Order.reconstitute(
-            orderId, STORE_ID, "#9998", null,
-            null, "Maria", null,
-            OrderType.BALCAO, OrderStatus.FINALIZADO, PaymentMethod.DINHEIRO,
-            null, null, OrderPlatform.OWN, null,
-            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-            false, List.of(), java.time.LocalDateTime.now(), java.time.LocalDateTime.now(), null);
+        Order order = Order.reconstitute(orderId, STORE_ID, "#9998", null, null, "Maria", null, OrderType.BALCAO,
+                OrderStatus.FINALIZADO, PaymentMethod.DINHEIRO, null, null, OrderPlatform.OWN, null, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, false, List.of(), java.time.LocalDateTime.now(),
+                java.time.LocalDateTime.now(), null);
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
 
         UpdateOrderRequest request = new UpdateOrderRequest(null, null, null, null);
 
         assertThrows(InvalidOrderTransitionException.class,
-            () -> updateOrderUseCase.update(STORE_ID, orderId, request));
+                () -> updateOrderUseCase.update(STORE_ID, orderId, request));
     }
 }

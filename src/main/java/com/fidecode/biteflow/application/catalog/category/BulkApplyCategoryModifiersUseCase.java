@@ -22,7 +22,8 @@ public class BulkApplyCategoryModifiersUseCase {
     private final TransactionExecutor tx;
 
     @Inject
-    public BulkApplyCategoryModifiersUseCase(ProductCategoryRepository categoryRepository, ProductRepository productRepository, TransactionExecutor tx) {
+    public BulkApplyCategoryModifiersUseCase(ProductCategoryRepository categoryRepository,
+            ProductRepository productRepository, TransactionExecutor tx) {
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
         this.tx = tx;
@@ -30,20 +31,20 @@ public class BulkApplyCategoryModifiersUseCase {
 
     public void execute(UUID storeId, UUID categoryId) {
         tx.execute(() -> {
-        ProductCategory category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new CategoryNotFoundException(categoryId.toString()));
-        StoreGuard.enforce(category, storeId);
-        
-        if (category.getDefaultModifierGroupIds() == null) {
-            return null;
-        }
+            ProductCategory category = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new CategoryNotFoundException(categoryId.toString()));
+            StoreGuard.enforce(category, storeId);
 
-        List<Product> products = productRepository.findByStoreIdAndCategoryId(category.getStoreId(), categoryId);
-        for (Product p : products) {
-            p.replaceModifierGroups(category.getDefaultModifierGroupIds());
-            productRepository.save(p);
-        }
-        return null;
+            if (category.getDefaultModifierGroupIds() == null) {
+                return null;
+            }
+
+            List<Product> products = productRepository.findByStoreIdAndCategoryId(category.getStoreId(), categoryId);
+            for (Product p : products) {
+                p.replaceModifierGroups(category.getDefaultModifierGroupIds());
+                productRepository.save(p);
+            }
+            return null;
         });
     }
 }

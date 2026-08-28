@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Item de um pedido — snapshot de preço do produto no momento da criação.
- * totalPrice = (unitPrice + extraPrice) × quantity
+ * Item de um pedido — snapshot de preço do produto no momento da criação. totalPrice = (unitPrice + extraPrice) ×
+ * quantity
  */
 public class OrderItem {
 
@@ -22,8 +22,7 @@ public class OrderItem {
     private List<OrderItemModifier> modifiers;
     private List<OrderItemRemoval> removals;
 
-    public OrderItem(UUID productId, String productName, int quantity,
-                     BigDecimal unitPrice, String observation) {
+    public OrderItem(UUID productId, String productName, int quantity, BigDecimal unitPrice, String observation) {
         if (productName == null || productName.isBlank()) {
             throw new IllegalArgumentException("productName é obrigatório.");
         }
@@ -49,8 +48,8 @@ public class OrderItem {
      */
     public void recalculateTotalPrice() {
         BigDecimal extra = modifiers != null
-            ? modifiers.stream().map(OrderItemModifier::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add)
-            : BigDecimal.ZERO;
+                ? modifiers.stream().map(OrderItemModifier::getPrice).reduce(BigDecimal.ZERO, BigDecimal::add)
+                : BigDecimal.ZERO;
         this.extraPrice = extra;
         this.totalPrice = unitPrice.add(extraPrice).multiply(BigDecimal.valueOf(quantity));
     }
@@ -65,21 +64,64 @@ public class OrderItem {
     }
 
     // ── Getters ──
-    public UUID getId()                         { return id; }
-    public UUID getProductId()                  { return productId; }
-    public String getProductName()              { return productName; }
-    public int getQuantity()                    { return quantity; }
-    public BigDecimal getUnitPrice()            { return unitPrice; }
-    public BigDecimal getExtraPrice()           { return extraPrice; }
-    public BigDecimal getTotalPrice()           { return totalPrice; }
-    public String getObservation()              { return observation; }
-    public List<OrderItemModifier> getModifiers() { return modifiers; }
-    public List<OrderItemRemoval> getRemovals()   { return removals; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getProductId() {
+        return productId;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public BigDecimal getExtraPrice() {
+        return extraPrice;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public String getObservation() {
+        return observation;
+    }
+
+    public List<OrderItemModifier> getModifiers() {
+        return modifiers;
+    }
+
+    public List<OrderItemRemoval> getRemovals() {
+        return removals;
+    }
 
     // ── Setters ──
-    public void setId(UUID id)                                   { this.id = id; }
-    public void setModifiers(List<OrderItemModifier> modifiers)  { this.modifiers = modifiers != null ? modifiers : new ArrayList<>(); }
-    public void setRemovals(List<OrderItemRemoval> removals)     { this.removals = removals != null ? removals : new ArrayList<>(); }
-    public void setExtraPrice(BigDecimal extraPrice)             { this.extraPrice = extraPrice != null ? extraPrice : BigDecimal.ZERO; }
-    public void setTotalPrice(BigDecimal totalPrice)             { this.totalPrice = totalPrice; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public void setModifiers(List<OrderItemModifier> modifiers) {
+        this.modifiers = modifiers != null ? modifiers : new ArrayList<>();
+    }
+
+    public void setRemovals(List<OrderItemRemoval> removals) {
+        this.removals = removals != null ? removals : new ArrayList<>();
+    }
+
+    public void setExtraPrice(BigDecimal extraPrice) {
+        this.extraPrice = extraPrice != null ? extraPrice : BigDecimal.ZERO;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
+    }
 }

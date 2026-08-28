@@ -25,7 +25,7 @@ public class ListOrdersUseCase {
 
     public PageResponse<OrderResponse> list(UUID storeId, String statusFilter, int page, int size) {
         PageResult<Order> orderPage;
-        
+
         if (statusFilter != null && !statusFilter.isBlank()) {
             OrderStatus status = OrderStatus.valueOf(statusFilter);
             orderPage = orderRepository.findByStoreIdAndStatus(storeId, status, page, size);
@@ -33,10 +33,10 @@ public class ListOrdersUseCase {
             orderPage = orderRepository.findAllByStoreId(storeId, page, size);
         }
 
-        List<OrderResponse> content = orderPage.getContent().stream()
-            .map(OrderDtoMapper::toResponse)
-            .collect(Collectors.toList());
+        List<OrderResponse> content = orderPage.getContent().stream().map(OrderDtoMapper::toResponse)
+                .collect(Collectors.toList());
 
-        return new PageResponse<>(content, orderPage.getPage(), orderPage.getSize(), orderPage.getTotalElements(), orderPage.getTotalPages());
+        return new PageResponse<>(content, orderPage.getPage(), orderPage.getSize(), orderPage.getTotalElements(),
+                orderPage.getTotalPages());
     }
 }

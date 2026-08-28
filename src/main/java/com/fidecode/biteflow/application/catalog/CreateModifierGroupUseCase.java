@@ -37,7 +37,7 @@ public class CreateModifierGroupUseCase {
             for (int i = 0; i < request.options().size(); i++) {
                 var optDto = request.options().get(i);
                 options.add(new ModifierOption(null, optDto.name(),
-                    optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i));
+                        optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i));
             }
             group.replaceOptions(options);
         }

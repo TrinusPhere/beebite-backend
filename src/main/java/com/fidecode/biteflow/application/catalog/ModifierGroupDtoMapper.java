@@ -10,19 +10,18 @@ import java.util.List;
  */
 public final class ModifierGroupDtoMapper {
 
-    private ModifierGroupDtoMapper() {}
+    private ModifierGroupDtoMapper() {
+    }
 
     public static ModifierGroupResponse toResponse(ModifierGroup g) {
         List<ModifierGroupResponse.ModifierOptionResponse> opts = g.getOptions() != null
-            ? g.getOptions().stream().map(o -> new ModifierGroupResponse.ModifierOptionResponse(
-                o.getId() != null ? o.getId().toString() : null, o.getName(), o.getPrice()
-            )).toList()
-            : List.of();
+                ? g.getOptions().stream()
+                        .map(o -> new ModifierGroupResponse.ModifierOptionResponse(
+                                o.getId() != null ? o.getId().toString() : null, o.getName(), o.getPrice()))
+                        .toList()
+                : List.of();
 
-        return new ModifierGroupResponse(
-            g.getId() != null ? g.getId().toString() : null,
-            g.getName(), g.getType().name(), g.isRequired(),
-            g.getMinSelections(), g.getMaxSelections(), g.getIcon(), opts
-        );
+        return new ModifierGroupResponse(g.getId() != null ? g.getId().toString() : null, g.getName(),
+                g.getType().name(), g.isRequired(), g.getMinSelections(), g.getMaxSelections(), g.getIcon(), opts);
     }
 }

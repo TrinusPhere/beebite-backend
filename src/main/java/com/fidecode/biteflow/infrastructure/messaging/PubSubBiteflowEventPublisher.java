@@ -30,8 +30,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 /**
- * Implementação do port BiteflowEventPublisher usando Google Cloud Pub/Sub.
- * Publica eventos quando o operador muda o status de pedidos iFood.
+ * Implementação do port BiteflowEventPublisher usando Google Cloud Pub/Sub. Publica eventos quando o operador muda o
+ * status de pedidos iFood.
  *
  * Se Pub/Sub não estiver configurado, o publisher loga um aviso e não falha.
  */
@@ -71,22 +71,23 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
     void shutdown() {
         shutdownPublisher(statusChangedPublisher);
         shutdownPublisher(cancelledPublisher);
-        if (channel != null) channel.shutdownNow();
+        if (channel != null)
+            channel.shutdownNow();
     }
 
     @Override
     public void publishStatusChanged(Order order) {
-        if (order.getPlatform() != OrderPlatform.IFOOD || order.getExternalOrderId() == null) return;
-        if (statusChangedPublisher == null) { LOG.debug("[PUBSUB-BF] Publisher não disponível."); return; }
+        if (order.getPlatform() != OrderPlatform.IFOOD || order.getExternalOrderId() == null)
+            return;
+        if (statusChangedPublisher == null) {
+            LOG.debug("[PUBSUB-BF] Publisher não disponível.");
+            return;
+        }
 
         try {
-            Map<String, Object> event = Map.of(
-                    "storeId", order.getStoreId().toString(),
-                    "orderId", order.getId().toString(),
-                    "ifoodOrderId", order.getExternalOrderId(),
-                    "newStatus", order.getStatus().name(),
-                    "changedAt", Instant.now().toString()
-            );
+            Map<String, Object> event = Map.of("storeId", order.getStoreId().toString(), "orderId",
+                    order.getId().toString(), "ifoodOrderId", order.getExternalOrderId(), "newStatus",
+                    order.getStatus().name(), "changedAt", Instant.now().toString());
             publish(statusChangedPublisher, event, TOPIC_STATUS_CHANGED);
         } catch (Exception e) {
             LOG.errorf(e, "[PUBSUB-BF] Falha ao publicar status change: %s", e.getMessage());
@@ -96,18 +97,17 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
 
     @Override
     public void publishCancelled(Order order, String cancellationCode, String reason) {
-        if (order.getPlatform() != OrderPlatform.IFOOD || order.getExternalOrderId() == null) return;
-        if (cancelledPublisher == null) { LOG.debug("[PUBSUB-BF] Publisher não disponível."); return; }
+        if (order.getPlatform() != OrderPlatform.IFOOD || order.getExternalOrderId() == null)
+            return;
+        if (cancelledPublisher == null) {
+            LOG.debug("[PUBSUB-BF] Publisher não disponível.");
+            return;
+        }
 
         try {
-            Map<String, Object> event = Map.of(
-                    "storeId", order.getStoreId().toString(),
-                    "orderId", order.getId().toString(),
-                    "ifoodOrderId", order.getExternalOrderId(),
-                    "cancellationCode", cancellationCode,
-                    "reason", reason,
-                    "cancelledAt", Instant.now().toString()
-            );
+            Map<String, Object> event = Map.of("storeId", order.getStoreId().toString(), "orderId",
+                    order.getId().toString(), "ifoodOrderId", order.getExternalOrderId(), "cancellationCode",
+                    cancellationCode, "reason", reason, "cancelledAt", Instant.now().toString());
             publish(cancelledPublisher, event, TOPIC_CANCELLED);
         } catch (Exception e) {
             LOG.errorf(e, "[PUBSUB-BF] Falha ao publicar cancelamento: %s", e.getMessage());
@@ -116,9 +116,7 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
 
     private void publish(Publisher publisher, Object payload, String topic) throws Exception {
         String json = objectMapper.writeValueAsString(payload);
-        PubsubMessage message = PubsubMessage.newBuilder()
-                .setData(ByteString.copyFromUtf8(json))
-                .build();
+        PubsubMessage message = PubsubMessage.newBuilder().setData(ByteString.copyFromUtf8(json)).build();
         publisher.publish(message).get(10, TimeUnit.SECONDS);
         LOG.debugf("[PUBSUB-BF] Publicado no tópico: %s", topic);
     }
@@ -131,10 +129,8 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
                 channel = ManagedChannelBuilder.forTarget(emulatorEndpoint.get()).usePlaintext().build();
             }
             var channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
-            return Publisher.newBuilder(topicName)
-                    .setChannelProvider(channelProvider)
-                    .setCredentialsProvider(NoCredentialsProvider.create())
-                    .build();
+            return Publisher.newBuilder(topicName).setChannelProvider(channelProvider)
+                    .setCredentialsProvider(NoCredentialsProvider.create()).build();
         }
 
         return Publisher.newBuilder(topicName).build();
@@ -145,7 +141,8 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
             try {
                 publisher.shutdown();
                 publisher.awaitTermination(5, TimeUnit.SECONDS);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 }

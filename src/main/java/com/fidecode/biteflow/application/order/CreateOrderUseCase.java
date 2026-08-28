@@ -29,10 +29,8 @@ public class CreateOrderUseCase {
     private final IngredientRepository ingredientRepository;
 
     @Inject
-    public CreateOrderUseCase(OrderRepository orderRepository,
-                              ProductRepository productRepository,
-                              ModifierGroupRepository modifierGroupRepository,
-                              IngredientRepository ingredientRepository) {
+    public CreateOrderUseCase(OrderRepository orderRepository, ProductRepository productRepository,
+            ModifierGroupRepository modifierGroupRepository, IngredientRepository ingredientRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.modifierGroupRepository = modifierGroupRepository;
@@ -40,9 +38,10 @@ public class CreateOrderUseCase {
     }
 
     public OrderResponse create(UUID storeId, CreateOrderRequest request) {
-        Order order = new Order(storeId, OrderType.valueOf(request.type()), parsePaymentMethod(request.paymentMethod()));
+        Order order = new Order(storeId, OrderType.valueOf(request.type()),
+                parsePaymentMethod(request.paymentMethod()));
         order.defineContext(request.operation(), request.channel(), request.serviceType(), request.source());
-        
+
         long displayIdNum = orderRepository.getNextDisplayIdSequence();
         order.setDisplayId(String.valueOf(displayIdNum));
 
@@ -51,7 +50,8 @@ public class CreateOrderUseCase {
                 order.linkCustomer(UUID.fromString(request.customer().id()));
             }
             order.updateCustomerInfo(request.customer().name(), request.customer().address());
-            order.updateCustomerContact(request.customer().phone(), request.customer().complement(), request.customer().reference());
+            order.updateCustomerContact(request.customer().phone(), request.customer().complement(),
+                    request.customer().reference());
         }
         order.defineCashChangeFor(request.cashChangeFor());
         order.updateNotes(request.notes());
@@ -63,7 +63,7 @@ public class CreateOrderUseCase {
         List<UUID> productIds = new ArrayList<>();
         List<UUID> groupIds = new ArrayList<>();
         List<UUID> ingredientIds = new ArrayList<>();
-        
+
         for (CreateOrderItemDto itemDto : request.items()) {
             productIds.add(UUID.fromString(itemDto.productId()));
             if (itemDto.modifiers() != null) {
@@ -79,21 +79,20 @@ public class CreateOrderUseCase {
         }
 
         Map<UUID, Product> productCache = productRepository.findAllById(productIds).stream()
-            .collect(Collectors.toMap(Product::getId, p -> p));
+                .collect(Collectors.toMap(Product::getId, p -> p));
         Map<UUID, ModifierGroup> groupCache = modifierGroupRepository.findAllById(groupIds).stream()
-            .collect(Collectors.toMap(ModifierGroup::getId, g -> g));
+                .collect(Collectors.toMap(ModifierGroup::getId, g -> g));
         Map<UUID, Ingredient> ingredientCache = ingredientRepository.findAllById(ingredientIds).stream()
-            .collect(Collectors.toMap(Ingredient::getId, i -> i));
+                .collect(Collectors.toMap(Ingredient::getId, i -> i));
 
         for (CreateOrderItemDto itemDto : request.items()) {
             UUID productId = UUID.fromString(itemDto.productId());
             Product product = productCache.get(productId);
-            if (product == null) throw new ProductNotFoundException(itemDto.productId());
+            if (product == null)
+                throw new ProductNotFoundException(itemDto.productId());
 
-            OrderItem item = new OrderItem(
-                productId, product.getName(), itemDto.quantity(),
-                product.getPrice(), itemDto.observation()
-            );
+            OrderItem item = new OrderItem(productId, product.getName(), itemDto.quantity(), product.getPrice(),
+                    itemDto.observation());
 
             if (itemDto.modifiers() != null) {
                 for (var modDto : itemDto.modifiers()) {
@@ -132,14 +131,16 @@ public class CreateOrderUseCase {
         Order saved = orderRepository.save(order);
         return OrderDtoMapper.toResponse(saved);
     }
+
     static PaymentMethod parsePaymentMethod(String value) {
-        if (value == null) throw new InvalidPaymentMethodException("null");
+        if (value == null)
+            throw new InvalidPaymentMethodException("null");
         try {
             return switch (value.toUpperCase()) {
-                case "CREDIT_CARD", "CREDITO" -> PaymentMethod.CREDITO;
-                case "DEBIT_CARD", "DEBITO" -> PaymentMethod.DEBITO;
-                case "CASH", "DINHEIRO" -> PaymentMethod.DINHEIRO;
-                default -> PaymentMethod.valueOf(value.toUpperCase());
+            case "CREDIT_CARD", "CREDITO" -> PaymentMethod.CREDITO;
+            case "DEBIT_CARD", "DEBITO" -> PaymentMethod.DEBITO;
+            case "CASH", "DINHEIRO" -> PaymentMethod.DINHEIRO;
+            default -> PaymentMethod.valueOf(value.toUpperCase());
             };
         } catch (IllegalArgumentException ex) {
             throw new InvalidPaymentMethodException(value);

@@ -15,7 +15,8 @@ import java.util.UUID;
 @ApplicationScoped
 public class PanacheIngredientRepository implements IngredientRepository {
 
-    @Inject IngredientPanacheRepo repo;
+    @Inject
+    IngredientPanacheRepo repo;
 
     @Override
     public Optional<Ingredient> findById(UUID id) {
@@ -24,23 +25,24 @@ public class PanacheIngredientRepository implements IngredientRepository {
 
     @Override
     public List<Ingredient> findAllByStoreId(UUID storeId) {
-        return repo.find("storeId", storeId).list().stream()
-            .map(IngredientMapper::toDomain).toList();
+        return repo.find("storeId", storeId).list().stream().map(IngredientMapper::toDomain).toList();
     }
 
     @Override
     @Transactional
-    public com.fidecode.biteflow.domain.shared.PageResult<Ingredient> findAllByStoreId(UUID storeId, int page, int size) {
+    public com.fidecode.biteflow.domain.shared.PageResult<Ingredient> findAllByStoreId(UUID storeId, int page,
+            int size) {
         var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
         List<Ingredient> content = query.list().stream().map(IngredientMapper::toDomain).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override
     public List<Ingredient> findAllById(List<UUID> ids) {
-        if (ids == null || ids.isEmpty()) return List.of();
-        return repo.find("id in ?1", ids).list().stream()
-            .map(IngredientMapper::toDomain).toList();
+        if (ids == null || ids.isEmpty())
+            return List.of();
+        return repo.find("id in ?1", ids).list().stream().map(IngredientMapper::toDomain).toList();
     }
 
     @Override

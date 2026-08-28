@@ -28,8 +28,7 @@ public class UpdateUserUseCase {
     }
 
     public UserResponse execute(UUID storeId, UUID id, UpdateUserRequest request) {
-        User user = userRepository.findById(id)
-            .orElseThrow(() -> new UserNotFoundException(id));
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
         StoreGuard.enforce(user, storeId);
 
         if (request.name() != null && !request.name().isBlank()) {
@@ -42,8 +41,7 @@ public class UpdateUserUseCase {
             user.changeRole(Role.valueOf(request.role()));
         }
         if (request.permissions() != null) {
-            List<Permission> perms = request.permissions().stream()
-                .map(Permission::fromValue).toList();
+            List<Permission> perms = request.permissions().stream().map(Permission::fromValue).toList();
             user.replacePermissions(perms);
         }
 

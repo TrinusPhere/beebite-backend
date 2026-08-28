@@ -14,11 +14,18 @@ import java.util.UUID;
 @ApplicationScoped
 public class UpdateIngredientUseCase {
     private final IngredientRepository repository;
-    @Inject public UpdateIngredientUseCase(IngredientRepository repository) { this.repository = repository; }
+
+    @Inject
+    public UpdateIngredientUseCase(IngredientRepository repository) {
+        this.repository = repository;
+    }
+
     public IngredientResponse execute(UUID storeId, UUID id, IngredientRequest request) {
-        Ingredient ingredient = repository.findById(id).orElseThrow(() -> new IngredientNotFoundException(id.toString()));
+        Ingredient ingredient = repository.findById(id)
+                .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
         StoreGuard.enforce(ingredient, storeId);
-        ingredient.updateDetails(request.name(), request.unit() != null ? Unit.valueOf(request.unit()) : null, request.costPrice(), request.minStock(), request.active());
+        ingredient.updateDetails(request.name(), request.unit() != null ? Unit.valueOf(request.unit()) : null,
+                request.costPrice(), request.minStock(), request.active());
         return CreateIngredientUseCase.toResponse(repository.save(ingredient));
     }
 }

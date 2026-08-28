@@ -68,8 +68,7 @@ class OrderDomainServiceTest {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.changeStatus(OrderStatus.CANCELADO);
 
-        assertThrows(InvalidOrderTransitionException.class,
-            () -> service.advanceStatus(order));
+        assertThrows(InvalidOrderTransitionException.class, () -> service.advanceStatus(order));
     }
 
     @Test
@@ -77,8 +76,7 @@ class OrderDomainServiceTest {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.changeStatus(OrderStatus.FINALIZADO);
 
-        assertThrows(InvalidOrderTransitionException.class,
-            () -> service.advanceStatus(order));
+        assertThrows(InvalidOrderTransitionException.class, () -> service.advanceStatus(order));
     }
 
     @Test
@@ -87,8 +85,7 @@ class OrderDomainServiceTest {
         order.changeStatus(OrderStatus.PREPARO);
         // sem driverId
 
-        assertThrows(InvalidOrderTransitionException.class,
-            () -> service.advanceStatus(order));
+        assertThrows(InvalidOrderTransitionException.class, () -> service.advanceStatus(order));
     }
 
     // ── moveToColumn ──
@@ -105,8 +102,7 @@ class OrderDomainServiceTest {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.changeStatus(OrderStatus.CANCELADO);
 
-        assertThrows(InvalidOrderTransitionException.class,
-            () -> service.moveToColumn(order, OrderStatus.PREPARO));
+        assertThrows(InvalidOrderTransitionException.class, () -> service.moveToColumn(order, OrderStatus.PREPARO));
     }
 
     @Test
@@ -114,8 +110,7 @@ class OrderDomainServiceTest {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.changeStatus(OrderStatus.PREPARO);
 
-        assertThrows(InvalidOrderTransitionException.class,
-            () -> service.moveToColumn(order, OrderStatus.EM_ROTA));
+        assertThrows(InvalidOrderTransitionException.class, () -> service.moveToColumn(order, OrderStatus.EM_ROTA));
     }
 
     @Test
@@ -133,8 +128,7 @@ class OrderDomainServiceTest {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.changeStatus(OrderStatus.EM_ROTA);
 
-        assertThrows(InvalidOrderTransitionException.class,
-            () -> service.moveToColumn(order, OrderStatus.CANCELADO));
+        assertThrows(InvalidOrderTransitionException.class, () -> service.moveToColumn(order, OrderStatus.CANCELADO));
     }
 
     @Test
@@ -142,8 +136,7 @@ class OrderDomainServiceTest {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.changeStatus(OrderStatus.FINALIZADO);
 
-        assertThrows(InvalidOrderTransitionException.class,
-            () -> service.moveToColumn(order, OrderStatus.CANCELADO));
+        assertThrows(InvalidOrderTransitionException.class, () -> service.moveToColumn(order, OrderStatus.CANCELADO));
     }
 
     @Test

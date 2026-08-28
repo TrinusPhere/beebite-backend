@@ -19,20 +19,23 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-
-@RolesAllowed({"ADMIN","GERENTE"})
+@RolesAllowed({ "ADMIN", "GERENTE" })
 public class DeliveryDriverResource extends BaseResource {
 
-    @Inject CreateDriverUseCase createUseCase;
-    @Inject UpdateDriverUseCase updateUseCase;
-    @Inject DeleteDriverUseCase deleteUseCase;
-    @Inject GetDriverUseCase getUseCase;
-    @Inject ListDriversUseCase listUseCase;
+    @Inject
+    CreateDriverUseCase createUseCase;
+    @Inject
+    UpdateDriverUseCase updateUseCase;
+    @Inject
+    DeleteDriverUseCase deleteUseCase;
+    @Inject
+    GetDriverUseCase getUseCase;
+    @Inject
+    ListDriversUseCase listUseCase;
 
     @PermissionsAllowed("entregadores")
     @GET
-    public Response list(
-            @QueryParam("page") @DefaultValue("0") int page,
+    public Response list(@QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("10") int size) {
         return Response.ok(listUseCase.execute(getStoreId(), page, size)).build();
     }
@@ -48,8 +51,7 @@ public class DeliveryDriverResource extends BaseResource {
     @POST
     public Response create(@Valid DriverRequest request) {
         DriverResponse created = createUseCase.execute(getStoreId(), request);
-        return Response.created(URI.create("/api/v1/drivers/" + created.id()))
-            .entity(created).build();
+        return Response.created(URI.create("/api/v1/drivers/" + created.id())).entity(created).build();
     }
 
     @PermissionsAllowed("entregadores")

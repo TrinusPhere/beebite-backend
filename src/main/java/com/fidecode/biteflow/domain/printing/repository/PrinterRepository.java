@@ -1,1 +1,14 @@
-package com.fidecode.biteflow.domain.printing.repository; import com.fidecode.biteflow.domain.printing.entity.Printer; import java.util.*; public interface PrinterRepository {List<Printer> findAllByStoreId(UUID storeId);Optional<Printer> findById(UUID id);Printer save(Printer p);void deleteById(UUID id);}
+package com.fidecode.biteflow.domain.printing.repository;
+
+import com.fidecode.biteflow.domain.printing.entity.Printer;
+import java.util.*;
+
+public interface PrinterRepository {
+    List<Printer> findAllByStoreId(UUID storeId);
+
+    Optional<Printer> findById(UUID id);
+
+    Printer save(Printer p);
+
+    void deleteById(UUID id);
+}

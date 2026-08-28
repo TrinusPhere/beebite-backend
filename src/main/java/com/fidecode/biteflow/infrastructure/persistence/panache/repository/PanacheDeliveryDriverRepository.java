@@ -40,10 +40,12 @@ public class PanacheDeliveryDriverRepository implements DeliveryDriverRepository
 
     @Override
     @Transactional
-    public com.fidecode.biteflow.domain.shared.PageResult<DeliveryDriver> findAllByStoreId(UUID storeId, int page, int size) {
+    public com.fidecode.biteflow.domain.shared.PageResult<DeliveryDriver> findAllByStoreId(UUID storeId, int page,
+            int size) {
         var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
         List<DeliveryDriver> content = query.list().stream().map(DeliveryDriverMapper::toDomain).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override

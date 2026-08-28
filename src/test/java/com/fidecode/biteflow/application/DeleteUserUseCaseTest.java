@@ -21,8 +21,10 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DeleteUserUseCaseTest {
 
-    @Mock UserRepository userRepository;
-    @InjectMocks DeleteUserUseCase deleteUserUseCase;
+    @Mock
+    UserRepository userRepository;
+    @InjectMocks
+    DeleteUserUseCase deleteUserUseCase;
 
     private final UUID userId = UUID.randomUUID();
     private final UUID storeId = UUID.fromString("00000000-0000-0000-0000-000000000001");

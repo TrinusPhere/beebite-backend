@@ -20,8 +20,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ListUsersUseCaseTest {
 
-    @Mock UserRepository userRepository;
-    @InjectMocks ListUsersUseCase listUsersUseCase;
+    @Mock
+    UserRepository userRepository;
+    @InjectMocks
+    ListUsersUseCase listUsersUseCase;
 
     private final UUID storeId = UUID.fromString("00000000-0000-0000-0000-000000000001");
 

@@ -17,10 +17,20 @@ public class OrderItemRemoval {
     }
 
     // ── Getters ──
-    public UUID getId()               { return id; }
-    public UUID getIngredientId()     { return ingredientId; }
-    public String getIngredientName() { return ingredientName; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getIngredientId() {
+        return ingredientId;
+    }
+
+    public String getIngredientName() {
+        return ingredientName;
+    }
 
     // ── Setters ──
-    public void setId(UUID id) { this.id = id; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 }

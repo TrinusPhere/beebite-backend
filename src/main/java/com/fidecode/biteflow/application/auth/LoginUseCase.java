@@ -20,17 +20,14 @@ public class LoginUseCase {
     private final TokenProvider tokenProvider;
 
     @Inject
-    public LoginUseCase(UserRepository userRepository,
-                        PasswordEncoder passwordEncoder,
-                        TokenProvider tokenProvider) {
+    public LoginUseCase(UserRepository userRepository, PasswordEncoder passwordEncoder, TokenProvider tokenProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
     }
 
     public LoginResponse execute(LoginRequest request) {
-        User user = userRepository.findByLogin(request.login())
-            .orElseThrow(InvalidCredentialsException::new);
+        User user = userRepository.findByLogin(request.login()).orElseThrow(InvalidCredentialsException::new);
 
         if (!user.isActive()) {
             throw new InvalidCredentialsException();
@@ -42,20 +39,10 @@ public class LoginUseCase {
 
         String token = tokenProvider.generateToken(user);
 
-        List<String> perms = user.getPermissions().stream()
-            .map(p -> p.getValue())
-            .toList();
+        List<String> perms = user.getPermissions().stream().map(p -> p.getValue()).toList();
 
-        return new LoginResponse(
-            token,
-            86400L,
-            new LoginResponse.UserSummary(
-                user.getId() != null ? user.getId().toString() : null,
-                user.getName(),
-                user.getLogin(),
-                user.getRole().name(),
-                perms
-            )
-        );
+        return new LoginResponse(token, 86400L,
+                new LoginResponse.UserSummary(user.getId() != null ? user.getId().toString() : null, user.getName(),
+                        user.getLogin(), user.getRole().name(), perms));
     }
 }

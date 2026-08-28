@@ -24,18 +24,19 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CreateUserUseCaseTest {
 
-    @Mock UserRepository userRepository;
-    @Mock PasswordHasher passwordHasher;
-    @InjectMocks CreateUserUseCase createUserUseCase;
+    @Mock
+    UserRepository userRepository;
+    @Mock
+    PasswordHasher passwordHasher;
+    @InjectMocks
+    CreateUserUseCase createUserUseCase;
 
     private static final UUID STORE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     @Test
     void shouldCreateUserAndReturnResponse() {
-        CreateUserRequest request = new CreateUserRequest(
-            "Gerente", "gerente", "gerente123", "GERENTE",
-            List.of("pedidos", "clientes")
-        );
+        CreateUserRequest request = new CreateUserRequest("Gerente", "gerente", "gerente123", "GERENTE",
+                List.of("pedidos", "clientes"));
         when(userRepository.existsByLogin("gerente")).thenReturn(false);
         when(passwordHasher.hash("gerente123")).thenReturn("hashed_gerente123");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> {
@@ -54,9 +55,7 @@ class CreateUserUseCaseTest {
 
     @Test
     void shouldHashPasswordBeforeSaving() {
-        CreateUserRequest request = new CreateUserRequest(
-            "Caixa", "caixa", "senhaPlain", "CAIXA", List.of()
-        );
+        CreateUserRequest request = new CreateUserRequest("Caixa", "caixa", "senhaPlain", "CAIXA", List.of());
         when(userRepository.existsByLogin("caixa")).thenReturn(false);
         when(passwordHasher.hash("senhaPlain")).thenReturn("$2a$hashed");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -71,9 +70,7 @@ class CreateUserUseCaseTest {
 
     @Test
     void shouldSetActiveTrueByDefault() {
-        CreateUserRequest request = new CreateUserRequest(
-            "Novo", "novo", "pass", "CAIXA", List.of()
-        );
+        CreateUserRequest request = new CreateUserRequest("Novo", "novo", "pass", "CAIXA", List.of());
         when(userRepository.existsByLogin("novo")).thenReturn(false);
         when(passwordHasher.hash("pass")).thenReturn("hash");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -87,13 +84,10 @@ class CreateUserUseCaseTest {
 
     @Test
     void shouldThrowWhenLoginAlreadyExists() {
-        CreateUserRequest request = new CreateUserRequest(
-            "Admin2", "admin", "pass", "ADMIN", List.of()
-        );
+        CreateUserRequest request = new CreateUserRequest("Admin2", "admin", "pass", "ADMIN", List.of());
         when(userRepository.existsByLogin("admin")).thenReturn(true);
 
-        assertThrows(UserAlreadyExistsException.class,
-            () -> createUserUseCase.execute(STORE_ID, request));
+        assertThrows(UserAlreadyExistsException.class, () -> createUserUseCase.execute(STORE_ID, request));
         verify(userRepository, never()).save(any());
     }
 }

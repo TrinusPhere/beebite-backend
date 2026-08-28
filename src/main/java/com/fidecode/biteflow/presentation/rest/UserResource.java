@@ -19,15 +19,19 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-
 @RolesAllowed("ADMIN")
 public class UserResource extends BaseResource {
 
-    @Inject ListUsersUseCase listUsersUseCase;
-    @Inject GetUserUseCase getUserUseCase;
-    @Inject CreateUserUseCase createUserUseCase;
-    @Inject UpdateUserUseCase updateUserUseCase;
-    @Inject DeleteUserUseCase deleteUserUseCase;
+    @Inject
+    ListUsersUseCase listUsersUseCase;
+    @Inject
+    GetUserUseCase getUserUseCase;
+    @Inject
+    CreateUserUseCase createUserUseCase;
+    @Inject
+    UpdateUserUseCase updateUserUseCase;
+    @Inject
+    DeleteUserUseCase deleteUserUseCase;
 
     /**
      * GET /api/v1/users — permissão: usuarios
@@ -57,8 +61,7 @@ public class UserResource extends BaseResource {
     @POST
     public Response createUser(@Valid CreateUserRequest request) {
         UserResponse created = createUserUseCase.execute(getStoreId(), request);
-        return Response.created(URI.create("/api/v1/users/" + created.id()))
-            .entity(created).build();
+        return Response.created(URI.create("/api/v1/users/" + created.id())).entity(created).build();
     }
 
     /**

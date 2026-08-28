@@ -22,20 +22,17 @@ class CustomerTest {
 
     @Test
     void deveLancarExcecaoSeStoreIdNulo() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new Customer(null, "João"));
+        assertThrows(IllegalArgumentException.class, () -> new Customer(null, "João"));
     }
 
     @Test
     void deveLancarExcecaoSeNomeVazio() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new Customer(STORE_ID, ""));
+        assertThrows(IllegalArgumentException.class, () -> new Customer(STORE_ID, ""));
     }
 
     @Test
     void deveLancarExcecaoSeNomeNulo() {
-        assertThrows(IllegalArgumentException.class,
-            () -> new Customer(STORE_ID, null));
+        assertThrows(IllegalArgumentException.class, () -> new Customer(STORE_ID, null));
     }
 
     @Test
@@ -53,7 +50,8 @@ class CustomerTest {
     @Test
     void deveSetarCamposOpcionais() {
         Customer customer = new Customer(STORE_ID, "João");
-        customer.updateProfile(customer.getName(), "(11) 98888-7777", "joao@email.com", "01310-100", "Rua das Flores", "123", "Apto 42", "Centro");
+        customer.updateProfile(customer.getName(), "(11) 98888-7777", "joao@email.com", "01310-100", "Rua das Flores",
+                "123", "Apto 42", "Centro");
 
         assertEquals("(11) 98888-7777", customer.getPhone());
         assertEquals("joao@email.com", customer.getEmail());

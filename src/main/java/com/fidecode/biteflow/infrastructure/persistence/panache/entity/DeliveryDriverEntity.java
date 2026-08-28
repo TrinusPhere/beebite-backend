@@ -53,34 +53,117 @@ public class DeliveryDriverEntity {
     private LocalDateTime updatedAt;
 
     // Getters & Setters
-    public UUID getId()                       { return id; }
-    public void setId(UUID id)                { this.id = id; }
-    public UUID getStoreId()                  { return storeId; }
-    public void setStoreId(UUID storeId)      { this.storeId = storeId; }
-    public String getName()                   { return name; }
-    public void setName(String name)          { this.name = name; }
-    public String getPhone()                  { return phone; }
-    public void setPhone(String phone)        { this.phone = phone; }
-    public String getStatus()                 { return status; }
-    public void setStatus(String status)      { this.status = status; }
-    public boolean isFixed()                  { return isFixed; }
-    public void setFixed(boolean fixed)       { isFixed = fixed; }
-    public boolean isDaily()                  { return isDaily; }
-    public void setDaily(boolean daily)       { isDaily = daily; }
-    public BigDecimal getAllowance()           { return allowance; }
-    public void setAllowance(BigDecimal a)    { this.allowance = a; }
-    public boolean isHasFixedDeliveryValue()  { return hasFixedDeliveryValue; }
-    public void setHasFixedDeliveryValue(boolean v) { this.hasFixedDeliveryValue = v; }
-    public BigDecimal getFixedDeliveryValue() { return fixedDeliveryValue; }
-    public void setFixedDeliveryValue(BigDecimal v) { this.fixedDeliveryValue = v; }
-    public int getTotalDeliveries()           { return totalDeliveries; }
-    public void setTotalDeliveries(int t)     { this.totalDeliveries = t; }
-    public BigDecimal getRating()             { return rating; }
-    public void setRating(BigDecimal r)       { this.rating = r; }
-    public LocalDateTime getCreatedAt()       { return createdAt; }
-    public void setCreatedAt(LocalDateTime c) { this.createdAt = c; }
-    public LocalDateTime getUpdatedAt()       { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime u) { this.updatedAt = u; }
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(UUID storeId) {
+        this.storeId = storeId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public boolean isFixed() {
+        return isFixed;
+    }
+
+    public void setFixed(boolean fixed) {
+        isFixed = fixed;
+    }
+
+    public boolean isDaily() {
+        return isDaily;
+    }
+
+    public void setDaily(boolean daily) {
+        isDaily = daily;
+    }
+
+    public BigDecimal getAllowance() {
+        return allowance;
+    }
+
+    public void setAllowance(BigDecimal a) {
+        this.allowance = a;
+    }
+
+    public boolean isHasFixedDeliveryValue() {
+        return hasFixedDeliveryValue;
+    }
+
+    public void setHasFixedDeliveryValue(boolean v) {
+        this.hasFixedDeliveryValue = v;
+    }
+
+    public BigDecimal getFixedDeliveryValue() {
+        return fixedDeliveryValue;
+    }
+
+    public void setFixedDeliveryValue(BigDecimal v) {
+        this.fixedDeliveryValue = v;
+    }
+
+    public int getTotalDeliveries() {
+        return totalDeliveries;
+    }
+
+    public void setTotalDeliveries(int t) {
+        this.totalDeliveries = t;
+    }
+
+    public BigDecimal getRating() {
+        return rating;
+    }
+
+    public void setRating(BigDecimal r) {
+        this.rating = r;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime c) {
+        this.createdAt = c;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime u) {
+        this.updatedAt = u;
+    }
 
     @Column(name = "deleted_at")
     public LocalDateTime deletedAt;

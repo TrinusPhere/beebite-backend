@@ -21,7 +21,8 @@ public class CreateCustomerUseCase {
 
     public CustomerResponse execute(UUID storeId, CustomerRequest request) {
         Customer customer = new Customer(storeId, request.name());
-        customer.updateProfile(customer.getName(), request.phone(), request.email(), request.zipCode(), request.address(), request.number(), request.complement(), request.neighborhood());
+        customer.updateProfile(customer.getName(), request.phone(), request.email(), request.zipCode(),
+                request.address(), request.number(), request.complement(), request.neighborhood());
 
         Customer saved = customerRepository.save(customer);
         return CustomerDtoMapper.toResponse(saved);

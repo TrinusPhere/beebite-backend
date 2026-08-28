@@ -28,10 +28,14 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RefactoredUseCasesTest {
-    @Mock IntegrationConfigRepository integrationRepository;
-    @Mock ProductionSectorRepository productionSectorRepository;
-    @Mock ConversationRepository conversationRepository;
-    @Mock PrinterRepository printerRepository;
+    @Mock
+    IntegrationConfigRepository integrationRepository;
+    @Mock
+    ProductionSectorRepository productionSectorRepository;
+    @Mock
+    ConversationRepository conversationRepository;
+    @Mock
+    PrinterRepository printerRepository;
 
     @Test
     void configureWhatsappPreservaTokenQuandoRequestNaoTrazNovoToken() {
@@ -42,7 +46,8 @@ class RefactoredUseCasesTest {
         when(integrationRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         var useCase = new ConfigureWhatsappUseCase(integrationRepository);
-        var response = useCase.execute(storeId, new WhatsappIntegrationRequest("META", "85888888888", "business2", "", null));
+        var response = useCase.execute(storeId,
+                new WhatsappIntegrationRequest("META", "85888888888", "business2", "", null));
 
         assertTrue(response.tokenConfigured());
         assertEquals("85888888888", response.phoneNumber());
@@ -51,7 +56,11 @@ class RefactoredUseCasesTest {
     @Test
     void createProductionSectorAplicaCodigoEStatus() {
         UUID storeId = UUID.randomUUID();
-        when(productionSectorRepository.save(any())).thenAnswer(i -> { var s = i.getArgument(0, com.fidecode.biteflow.domain.production.entity.ProductionSector.class); s.setId(UUID.randomUUID()); return s; });
+        when(productionSectorRepository.save(any())).thenAnswer(i -> {
+            var s = i.getArgument(0, com.fidecode.biteflow.domain.production.entity.ProductionSector.class);
+            s.setId(UUID.randomUUID());
+            return s;
+        });
         var useCase = new CreateProductionSectorUseCase(productionSectorRepository);
         var response = useCase.execute(storeId, new ProductionSectorRequest("Cozinha", "KITCHEN", true));
         assertEquals("KITCHEN", response.code());
@@ -63,9 +72,14 @@ class RefactoredUseCasesTest {
         UUID storeId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
         when(conversationRepository.findByStoreOrderChannel(storeId, orderId, "IFOOD")).thenReturn(Optional.empty());
-        when(conversationRepository.save(any())).thenAnswer(i -> { var c = i.getArgument(0, Conversation.class); c.setId(UUID.randomUUID()); return c; });
+        when(conversationRepository.save(any())).thenAnswer(i -> {
+            var c = i.getArgument(0, Conversation.class);
+            c.setId(UUID.randomUUID());
+            return c;
+        });
         var useCase = new ResolveConversationUseCase(conversationRepository);
-        var response = useCase.execute(storeId, new ResolveConversationRequest(orderId.toString(), "IFOOD", "DELIVERY", "João", "85999999999"));
+        var response = useCase.execute(storeId,
+                new ResolveConversationRequest(orderId.toString(), "IFOOD", "DELIVERY", "João", "85999999999"));
         assertEquals("IFOOD", response.channel());
         assertEquals(orderId.toString(), response.orderId());
     }

@@ -25,9 +25,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UpdateUserUseCaseTest {
 
-    @Mock UserRepository userRepository;
-    @Mock PasswordEncoder passwordHasher;
-    @InjectMocks UpdateUserUseCase updateUserUseCase;
+    @Mock
+    UserRepository userRepository;
+    @Mock
+    PasswordEncoder passwordHasher;
+    @InjectMocks
+    UpdateUserUseCase updateUserUseCase;
 
     private User existingUser;
     private final UUID userId = UUID.randomUUID();
@@ -41,9 +44,7 @@ class UpdateUserUseCaseTest {
 
     @Test
     void shouldUpdateUserFields() {
-        UpdateUserRequest request = new UpdateUserRequest(
-            "New Name", null, "GERENTE", List.of("pedidos")
-        );
+        UpdateUserRequest request = new UpdateUserRequest("New Name", null, "GERENTE", List.of("pedidos"));
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -82,6 +83,6 @@ class UpdateUserUseCaseTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class,
-            () -> updateUserUseCase.execute(storeId, userId, new UpdateUserRequest("n", null, "CAIXA", List.of())));
+                () -> updateUserUseCase.execute(storeId, userId, new UpdateUserRequest("n", null, "CAIXA", List.of())));
     }
 }

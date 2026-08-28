@@ -26,10 +26,8 @@ public class ListProductsUseCase {
     private final ProductResponseAssembler productResponseAssembler;
 
     @Inject
-    public ListProductsUseCase(ProductRepository productRepository, 
-                               IngredientRepository ingredientRepository,
-                               ProductCategoryRepository productCategoryRepository,
-                               ProductResponseAssembler productResponseAssembler) {
+    public ListProductsUseCase(ProductRepository productRepository, IngredientRepository ingredientRepository,
+            ProductCategoryRepository productCategoryRepository, ProductResponseAssembler productResponseAssembler) {
         this.productRepository = productRepository;
         this.ingredientRepository = ingredientRepository;
         this.productCategoryRepository = productCategoryRepository;
@@ -38,19 +36,20 @@ public class ListProductsUseCase {
 
     public PageResponse<ProductResponse> execute(UUID storeId, String categoryId, int page, int size) {
         PageResult<Product> productPage = (categoryId != null && !categoryId.isBlank())
-            ? productRepository.findByStoreIdAndCategoryId(storeId, UUID.fromString(categoryId), page, size)
-            : productRepository.findAllByStoreId(storeId, page, size);
+                ? productRepository.findByStoreIdAndCategoryId(storeId, UUID.fromString(categoryId), page, size)
+                : productRepository.findAllByStoreId(storeId, page, size);
 
         // Otimização contra N+1
         Map<UUID, Ingredient> ingredientCache = ingredientRepository.findAllByStoreId(storeId).stream()
-            .collect(Collectors.toMap(Ingredient::getId, i -> i));
-        
+                .collect(Collectors.toMap(Ingredient::getId, i -> i));
+
         Map<UUID, ProductCategory> categoryCache = productCategoryRepository.findAllByStoreId(storeId).stream()
-            .collect(Collectors.toMap(ProductCategory::getId, c -> c));
+                .collect(Collectors.toMap(ProductCategory::getId, c -> c));
 
         List<ProductResponse> content = productPage.getContent().stream()
-            .map(p -> productResponseAssembler.toResponse(p, ingredientCache, categoryCache)).toList();
-            
-        return new PageResponse<>(content, productPage.getPage(), productPage.getSize(), productPage.getTotalElements(), productPage.getTotalPages());
+                .map(p -> productResponseAssembler.toResponse(p, ingredientCache, categoryCache)).toList();
+
+        return new PageResponse<>(content, productPage.getPage(), productPage.getSize(), productPage.getTotalElements(),
+                productPage.getTotalPages());
     }
 }

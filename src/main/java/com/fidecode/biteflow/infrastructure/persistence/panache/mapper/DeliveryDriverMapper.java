@@ -7,7 +7,10 @@ import com.fidecode.biteflow.infrastructure.persistence.panache.entity.DeliveryD
 public class DeliveryDriverMapper {
 
     public static DeliveryDriver toDomain(DeliveryDriverEntity e) {
-        return DeliveryDriver.reconstitute(e.getId(), e.getStoreId(), e.getName(), e.getPhone(), DriverStatus.valueOf(e.getStatus()), e.isFixed(), e.isDaily(), e.getAllowance(), e.isHasFixedDeliveryValue(), e.getFixedDeliveryValue(), e.getTotalDeliveries(), e.getRating(), e.getCreatedAt(), e.getUpdatedAt());
+        return DeliveryDriver.reconstitute(e.getId(), e.getStoreId(), e.getName(), e.getPhone(),
+                DriverStatus.valueOf(e.getStatus()), e.isFixed(), e.isDaily(), e.getAllowance(),
+                e.isHasFixedDeliveryValue(), e.getFixedDeliveryValue(), e.getTotalDeliveries(), e.getRating(),
+                e.getCreatedAt(), e.getUpdatedAt());
     }
 
     public static DeliveryDriverEntity toEntity(DeliveryDriver d) {

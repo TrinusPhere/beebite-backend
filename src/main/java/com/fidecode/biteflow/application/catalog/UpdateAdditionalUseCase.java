@@ -23,7 +23,7 @@ public class UpdateAdditionalUseCase {
 
     public AdditionalResponse execute(UUID storeId, UUID id, AdditionalRequest request) {
         Additional additional = repository.findById(id)
-            .orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
+                .orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
         StoreGuard.enforce(additional, storeId);
         additional.update(request.name(), request.price(), request.category());
         return AdditionalDtoMapper.toResponse(repository.save(additional));

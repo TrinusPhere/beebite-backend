@@ -11,14 +11,10 @@ class PermissionTest {
 
     @Test
     void shouldHaveAllRequiredPermissions() {
-        Set<String> expected = Set.of(
-            "dashboard", "pedidos", "clientes", "ingredientes",
-            "produtos", "entregadores", "acerto_entregadores",
-            "usuarios", "integracoes", "financeiro"
-        );
+        Set<String> expected = Set.of("dashboard", "pedidos", "clientes", "ingredientes", "produtos", "entregadores",
+                "acerto_entregadores", "usuarios", "integracoes", "financeiro");
         for (String perm : expected) {
-            assertDoesNotThrow(() -> Permission.fromValue(perm),
-                "Permission ausente: " + perm);
+            assertDoesNotThrow(() -> Permission.fromValue(perm), "Permission ausente: " + perm);
         }
     }
 
@@ -31,7 +27,6 @@ class PermissionTest {
 
     @Test
     void shouldThrowForUnknownPermission() {
-        assertThrows(IllegalArgumentException.class,
-            () -> Permission.fromValue("permissao_invalida"));
+        assertThrows(IllegalArgumentException.class, () -> Permission.fromValue("permissao_invalida"));
     }
 }

@@ -17,9 +17,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Use Case — Ranking de vendas por produto no período.
- * Agrupa produtos por nome, soma quantidade e valor total.
- * Ordena por valor total (desc).
+ * Use Case — Ranking de vendas por produto no período. Agrupa produtos por nome, soma quantidade e valor total. Ordena
+ * por valor total (desc).
  */
 @ApplicationScoped
 public class GetSalesByProductUseCase {
@@ -35,11 +34,8 @@ public class GetSalesByProductUseCase {
         LocalDate startDate = epochToLocalDate(startEpoch);
         LocalDate endDate = epochToLocalDate(endEpoch);
 
-        List<FinancialRecord> records = financialRecordRepository
-            .findByStoreIdAndDateRange(storeId, startDate, endDate)
-            .stream()
-            .filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO)
-            .toList();
+        List<FinancialRecord> records = financialRecordRepository.findByStoreIdAndDateRange(storeId, startDate, endDate)
+                .stream().filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO).toList();
 
         // Agrega por nome de produto
         Map<String, int[]> quantityMap = new LinkedHashMap<>();
@@ -48,21 +44,15 @@ public class GetSalesByProductUseCase {
         for (FinancialRecord record : records) {
             for (FinancialRecordProduct product : record.getProducts()) {
                 String name = product.getProductName();
-                quantityMap.computeIfAbsent(name, k -> new int[]{0})[0] += product.getQuantity();
-                valueMap.merge(name,
-                    product.getPrice().multiply(BigDecimal.valueOf(product.getQuantity())),
-                    BigDecimal::add);
+                quantityMap.computeIfAbsent(name, k -> new int[] { 0 })[0] += product.getQuantity();
+                valueMap.merge(name, product.getPrice().multiply(BigDecimal.valueOf(product.getQuantity())),
+                        BigDecimal::add);
             }
         }
 
         List<SalesByProductResponse.ProductSale> productSales = quantityMap.entrySet().stream()
-            .map(e -> new SalesByProductResponse.ProductSale(
-                e.getKey(),
-                e.getValue()[0],
-                valueMap.get(e.getKey())
-            ))
-            .sorted(Comparator.comparing(SalesByProductResponse.ProductSale::totalValue).reversed())
-            .toList();
+                .map(e -> new SalesByProductResponse.ProductSale(e.getKey(), e.getValue()[0], valueMap.get(e.getKey())))
+                .sorted(Comparator.comparing(SalesByProductResponse.ProductSale::totalValue).reversed()).toList();
 
         return new SalesByProductResponse(startEpoch, endEpoch, productSales);
     }

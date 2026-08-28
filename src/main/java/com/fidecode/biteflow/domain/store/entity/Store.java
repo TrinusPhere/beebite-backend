@@ -1,1 +1,88 @@
-package com.fidecode.biteflow.domain.store.entity;import java.util.UUID;public class Store{private UUID id;private String name;private String logoUrl;private boolean open;private String openingHours;private String address;private String publicSlug;public Store(String name){validate(name);this.name=name;}public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address, String slug){Store s=new Store(name);s.id=id;s.logoUrl=logoUrl;s.open=open;s.openingHours=hours;s.address=address;s.publicSlug=slug;return s;}private static void validate(String name){if(name==null||name.isBlank())throw new IllegalArgumentException("O nome da loja é obrigatório.");}public void updateInfo(String name, String logoUrl, boolean open, String hours, String address){validate(name);this.name=name;this.logoUrl=logoUrl;this.open=open;this.openingHours=hours;this.address=address;}public void definePublicSlug(String slug){this.publicSlug=slug;}public void open(){this.open=true;}public void close(){this.open=false;}public UUID getId(){return id;}public String getName(){return name;}public String getLogoUrl(){return logoUrl;}public boolean isOpen(){return open;}public String getOpeningHours(){return openingHours;}public String getAddress(){return address;}public String getPublicSlug(){return publicSlug;}public void setId(UUID id){this.id=id;}}
+package com.fidecode.biteflow.domain.store.entity;
+
+import java.util.UUID;
+
+public class Store {
+    private UUID id;
+    private String name;
+    private String logoUrl;
+    private boolean open;
+    private String openingHours;
+    private String address;
+    private String publicSlug;
+
+    public Store(String name) {
+        validate(name);
+        this.name = name;
+    }
+
+    public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
+            String slug) {
+        Store s = new Store(name);
+        s.id = id;
+        s.logoUrl = logoUrl;
+        s.open = open;
+        s.openingHours = hours;
+        s.address = address;
+        s.publicSlug = slug;
+        return s;
+    }
+
+    private static void validate(String name) {
+        if (name == null || name.isBlank())
+            throw new IllegalArgumentException("O nome da loja é obrigatório.");
+    }
+
+    public void updateInfo(String name, String logoUrl, boolean open, String hours, String address) {
+        validate(name);
+        this.name = name;
+        this.logoUrl = logoUrl;
+        this.open = open;
+        this.openingHours = hours;
+        this.address = address;
+    }
+
+    public void definePublicSlug(String slug) {
+        this.publicSlug = slug;
+    }
+
+    public void open() {
+        this.open = true;
+    }
+
+    public void close() {
+        this.open = false;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public boolean isOpen() {
+        return open;
+    }
+
+    public String getOpeningHours() {
+        return openingHours;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public String getPublicSlug() {
+        return publicSlug;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+}

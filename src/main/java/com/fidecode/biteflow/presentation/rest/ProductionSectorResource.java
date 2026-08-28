@@ -1,2 +1,44 @@
-package com.fidecode.biteflow.presentation.rest;import com.fidecode.biteflow.application.production.*;import com.fidecode.biteflow.application.production.dto.ProductionSectorRequest;import io.quarkus.security.PermissionsAllowed;import jakarta.annotation.security.RolesAllowed;import jakarta.inject.Inject;import jakarta.validation.Valid;import jakarta.ws.rs.*;import jakarta.ws.rs.core.*;import java.util.UUID;
-@Path("/api/v1/production-sectors") @Produces(MediaType.APPLICATION_JSON) @Consumes(MediaType.APPLICATION_JSON) @RolesAllowed({"ADMIN","GERENTE"}) public class ProductionSectorResource extends BaseResource{@Inject ListProductionSectorsUseCase listUseCase;@Inject CreateProductionSectorUseCase createUseCase;@Inject DeleteProductionSectorUseCase deleteUseCase;@GET @PermissionsAllowed("produtos") public Response list(){return Response.ok(listUseCase.execute(getStoreId())).build();}@POST @PermissionsAllowed("produtos") public Response save(@Valid ProductionSectorRequest r){return Response.status(Response.Status.CREATED).entity(createUseCase.execute(getStoreId(),r)).build();}@DELETE @Path("/{id}") @PermissionsAllowed("produtos") public Response delete(@PathParam("id")UUID id){deleteUseCase.execute(getStoreId(),id);return Response.noContent().build();}}
+package com.fidecode.biteflow.presentation.rest;
+
+import com.fidecode.biteflow.application.production.*;
+import com.fidecode.biteflow.application.production.dto.ProductionSectorRequest;
+import io.quarkus.security.PermissionsAllowed;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
+import java.util.UUID;
+
+@Path("/api/v1/production-sectors")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "ADMIN", "GERENTE" })
+public class ProductionSectorResource extends BaseResource {
+    @Inject
+    ListProductionSectorsUseCase listUseCase;
+    @Inject
+    CreateProductionSectorUseCase createUseCase;
+    @Inject
+    DeleteProductionSectorUseCase deleteUseCase;
+
+    @GET
+    @PermissionsAllowed("produtos")
+    public Response list() {
+        return Response.ok(listUseCase.execute(getStoreId())).build();
+    }
+
+    @POST
+    @PermissionsAllowed("produtos")
+    public Response save(@Valid ProductionSectorRequest r) {
+        return Response.status(Response.Status.CREATED).entity(createUseCase.execute(getStoreId(), r)).build();
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @PermissionsAllowed("produtos")
+    public Response delete(@PathParam("id") UUID id) {
+        deleteUseCase.execute(getStoreId(), id);
+        return Response.noContent().build();
+    }
+}

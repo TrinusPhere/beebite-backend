@@ -19,8 +19,6 @@ public class ListUsersUseCase {
     }
 
     public List<UserResponse> execute(UUID storeId) {
-        return userRepository.findAllByStoreId(storeId).stream()
-            .map(CreateUserUseCase::toResponse)
-            .toList();
+        return userRepository.findAllByStoreId(storeId).stream().map(CreateUserUseCase::toResponse).toList();
     }
 }

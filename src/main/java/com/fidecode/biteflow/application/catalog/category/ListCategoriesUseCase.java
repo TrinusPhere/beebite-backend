@@ -20,8 +20,7 @@ public class ListCategoriesUseCase {
     }
 
     public List<CategoryResponse> execute(UUID storeId) {
-        return categoryRepository.findAllByStoreId(storeId).stream()
-                .map(CategoryDtoMapper::toResponse)
+        return categoryRepository.findAllByStoreId(storeId).stream().map(CategoryDtoMapper::toResponse)
                 .collect(Collectors.toList());
     }
 }

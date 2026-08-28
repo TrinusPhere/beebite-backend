@@ -20,20 +20,12 @@ public class GetStoreInfoUseCase {
     }
 
     public StoreInfoResponse execute(UUID storeId) {
-        Store store = storeRepository.findById(storeId)
-            .orElseThrow(() -> new StoreNotFoundException(storeId));
+        Store store = storeRepository.findById(storeId).orElseThrow(() -> new StoreNotFoundException(storeId));
         return toResponse(store);
     }
 
     static StoreInfoResponse toResponse(Store s) {
-        return new StoreInfoResponse(
-            s.getId() != null ? s.getId().toString() : null,
-            s.getName(),
-            s.getLogoUrl(),
-            s.isOpen(),
-            s.getOpeningHours(),
-            s.getAddress(),
-            s.getPublicSlug()
-        );
+        return new StoreInfoResponse(s.getId() != null ? s.getId().toString() : null, s.getName(), s.getLogoUrl(),
+                s.isOpen(), s.getOpeningHours(), s.getAddress(), s.getPublicSlug());
     }
 }

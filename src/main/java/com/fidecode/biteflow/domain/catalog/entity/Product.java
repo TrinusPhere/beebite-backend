@@ -1,14 +1,216 @@
 package com.fidecode.biteflow.domain.catalog.entity;
-import com.fidecode.biteflow.domain.catalog.valueobject.ProductType;import com.fidecode.biteflow.domain.catalog.valueobject.Unit;import com.fidecode.biteflow.domain.shared.StoreGuard;import java.math.BigDecimal;import java.util.*;
+
+import com.fidecode.biteflow.domain.catalog.valueobject.ProductType;
+import com.fidecode.biteflow.domain.catalog.valueobject.Unit;
+import com.fidecode.biteflow.domain.shared.StoreGuard;
+import java.math.BigDecimal;
+import java.util.*;
+
 public class Product implements StoreGuard.StoreScoped {
- private UUID id;private Long version;private final UUID storeId;private String name;private UUID categoryId;private String description;private BigDecimal price;private String imageUrl;private int stock;private boolean active;private ProductType productType;private boolean trackStock;private UUID productionSectorId;private Unit saleUnit;private boolean availableDigitalMenu;private boolean availablePdv;private List<TechnicalSheetItem> technicalSheet;private List<UUID> removableItemIds;private List<UUID> modifierGroupIds;
- public Product(UUID storeId,String name,UUID categoryId,BigDecimal price){if(storeId==null)throw new IllegalArgumentException("storeId é obrigatório.");if(name==null||name.isBlank())throw new IllegalArgumentException("name é obrigatório.");this.storeId=storeId;this.name=name;this.categoryId=categoryId;this.price=price!=null?price:BigDecimal.ZERO;active=true;productType=ProductType.PRODUCED;saleUnit=Unit.UN;availableDigitalMenu=true;availablePdv=true;technicalSheet=new ArrayList<>();removableItemIds=new ArrayList<>();modifierGroupIds=new ArrayList<>();}
- public static Product reconstitute(UUID id,Long version,UUID storeId,String name,UUID categoryId,String description,BigDecimal price,String imageUrl,int stock,boolean active,ProductType productType,boolean trackStock,UUID productionSectorId,Unit saleUnit,boolean availableDigitalMenu,boolean availablePdv,List<TechnicalSheetItem> technicalSheet,List<UUID> removableItemIds,List<UUID> modifierGroupIds){Product p=new Product(storeId,name,categoryId,price);p.id=id;p.version=version;p.description=description;p.imageUrl=imageUrl;p.initializeStock(stock);p.active=active;p.productType=productType!=null?productType:ProductType.PRODUCED;p.trackStock=trackStock;p.productionSectorId=productionSectorId;p.saleUnit=saleUnit!=null?saleUnit:Unit.UN;p.availableDigitalMenu=availableDigitalMenu;p.availablePdv=availablePdv;p.replaceTechnicalSheet(technicalSheet);p.replaceRemovableItems(removableItemIds);p.replaceModifierGroups(modifierGroupIds);return p;}
- public void updateBasicInfo(String name,UUID categoryId,String description,BigDecimal price,String imageUrl){if(name!=null&&!name.isBlank())this.name=name;this.categoryId=categoryId;this.description=description;if(price!=null)this.price=price;this.imageUrl=imageUrl;}
- public void configureInventory(ProductType type,boolean trackStock,UUID sector,Unit unit){this.productType=type!=null?type:ProductType.PRODUCED;this.trackStock=trackStock;this.productionSectorId=sector;this.saleUnit=unit!=null?unit:Unit.UN;}
- public void configureAvailability(boolean active,boolean digital,boolean pdv){this.active=active;this.availableDigitalMenu=digital;this.availablePdv=pdv;}
- public void initializeStock(int value){if(value<0)throw new IllegalArgumentException("Estoque não pode ser negativo.");stock=value;} public void decreaseStock(int q){if(q<=0)throw new IllegalArgumentException("Quantidade deve ser maior que zero.");if(stock-q<0)throw new IllegalArgumentException("Estoque insuficiente para o produto "+name+".");stock-=q;} public void increaseStock(int q){if(q<=0)throw new IllegalArgumentException("Quantidade deve ser maior que zero.");stock+=q;}
- public void replaceTechnicalSheet(List<TechnicalSheetItem> list){technicalSheet=list!=null?new ArrayList<>(list):new ArrayList<>();}public void replaceRemovableItems(List<UUID> ids){removableItemIds=ids!=null?new ArrayList<>(ids):new ArrayList<>();}public void replaceModifierGroups(List<UUID> ids){modifierGroupIds=ids!=null?new ArrayList<>(ids):new ArrayList<>();}
- public BigDecimal calculateTotalCost(){return technicalSheet==null||technicalSheet.isEmpty()?BigDecimal.ZERO:technicalSheet.stream().map(TechnicalSheetItem::getLineCost).reduce(BigDecimal.ZERO,BigDecimal::add);}public BigDecimal calculateProfit(){return price.subtract(calculateTotalCost());}
- public UUID getId(){return id;}public Long getVersion(){return version;}public UUID getStoreId(){return storeId;}public String getName(){return name;}public UUID getCategoryId(){return categoryId;}public String getDescription(){return description;}public BigDecimal getPrice(){return price;}public String getImageUrl(){return imageUrl;}public int getStock(){return stock;}public boolean isActive(){return active;}public ProductType getProductType(){return productType;}public boolean isTrackStock(){return trackStock;}public UUID getProductionSectorId(){return productionSectorId;}public Unit getSaleUnit(){return saleUnit;}public boolean isAvailableDigitalMenu(){return availableDigitalMenu;}public boolean isAvailablePdv(){return availablePdv;}public List<TechnicalSheetItem> getTechnicalSheet(){return Collections.unmodifiableList(technicalSheet);}public List<UUID> getRemovableItemIds(){return Collections.unmodifiableList(removableItemIds);}public List<UUID> getModifierGroupIds(){return Collections.unmodifiableList(modifierGroupIds);}public void setId(UUID id){this.id=id;}
+    private UUID id;
+    private Long version;
+    private final UUID storeId;
+    private String name;
+    private UUID categoryId;
+    private String description;
+    private BigDecimal price;
+    private String imageUrl;
+    private int stock;
+    private boolean active;
+    private ProductType productType;
+    private boolean trackStock;
+    private UUID productionSectorId;
+    private Unit saleUnit;
+    private boolean availableDigitalMenu;
+    private boolean availablePdv;
+    private List<TechnicalSheetItem> technicalSheet;
+    private List<UUID> removableItemIds;
+    private List<UUID> modifierGroupIds;
+
+    public Product(UUID storeId, String name, UUID categoryId, BigDecimal price) {
+        if (storeId == null)
+            throw new IllegalArgumentException("storeId é obrigatório.");
+        if (name == null || name.isBlank())
+            throw new IllegalArgumentException("name é obrigatório.");
+        this.storeId = storeId;
+        this.name = name;
+        this.categoryId = categoryId;
+        this.price = price != null ? price : BigDecimal.ZERO;
+        active = true;
+        productType = ProductType.PRODUCED;
+        saleUnit = Unit.UN;
+        availableDigitalMenu = true;
+        availablePdv = true;
+        technicalSheet = new ArrayList<>();
+        removableItemIds = new ArrayList<>();
+        modifierGroupIds = new ArrayList<>();
+    }
+
+    public static Product reconstitute(UUID id, Long version, UUID storeId, String name, UUID categoryId,
+            String description, BigDecimal price, String imageUrl, int stock, boolean active, ProductType productType,
+            boolean trackStock, UUID productionSectorId, Unit saleUnit, boolean availableDigitalMenu,
+            boolean availablePdv, List<TechnicalSheetItem> technicalSheet, List<UUID> removableItemIds,
+            List<UUID> modifierGroupIds) {
+        Product p = new Product(storeId, name, categoryId, price);
+        p.id = id;
+        p.version = version;
+        p.description = description;
+        p.imageUrl = imageUrl;
+        p.initializeStock(stock);
+        p.active = active;
+        p.productType = productType != null ? productType : ProductType.PRODUCED;
+        p.trackStock = trackStock;
+        p.productionSectorId = productionSectorId;
+        p.saleUnit = saleUnit != null ? saleUnit : Unit.UN;
+        p.availableDigitalMenu = availableDigitalMenu;
+        p.availablePdv = availablePdv;
+        p.replaceTechnicalSheet(technicalSheet);
+        p.replaceRemovableItems(removableItemIds);
+        p.replaceModifierGroups(modifierGroupIds);
+        return p;
+    }
+
+    public void updateBasicInfo(String name, UUID categoryId, String description, BigDecimal price, String imageUrl) {
+        if (name != null && !name.isBlank())
+            this.name = name;
+        this.categoryId = categoryId;
+        this.description = description;
+        if (price != null)
+            this.price = price;
+        this.imageUrl = imageUrl;
+    }
+
+    public void configureInventory(ProductType type, boolean trackStock, UUID sector, Unit unit) {
+        this.productType = type != null ? type : ProductType.PRODUCED;
+        this.trackStock = trackStock;
+        this.productionSectorId = sector;
+        this.saleUnit = unit != null ? unit : Unit.UN;
+    }
+
+    public void configureAvailability(boolean active, boolean digital, boolean pdv) {
+        this.active = active;
+        this.availableDigitalMenu = digital;
+        this.availablePdv = pdv;
+    }
+
+    public void initializeStock(int value) {
+        if (value < 0)
+            throw new IllegalArgumentException("Estoque não pode ser negativo.");
+        stock = value;
+    }
+
+    public void decreaseStock(int q) {
+        if (q <= 0)
+            throw new IllegalArgumentException("Quantidade deve ser maior que zero.");
+        if (stock - q < 0)
+            throw new IllegalArgumentException("Estoque insuficiente para o produto " + name + ".");
+        stock -= q;
+    }
+
+    public void increaseStock(int q) {
+        if (q <= 0)
+            throw new IllegalArgumentException("Quantidade deve ser maior que zero.");
+        stock += q;
+    }
+
+    public void replaceTechnicalSheet(List<TechnicalSheetItem> list) {
+        technicalSheet = list != null ? new ArrayList<>(list) : new ArrayList<>();
+    }
+
+    public void replaceRemovableItems(List<UUID> ids) {
+        removableItemIds = ids != null ? new ArrayList<>(ids) : new ArrayList<>();
+    }
+
+    public void replaceModifierGroups(List<UUID> ids) {
+        modifierGroupIds = ids != null ? new ArrayList<>(ids) : new ArrayList<>();
+    }
+
+    public BigDecimal calculateTotalCost() {
+        return technicalSheet == null || technicalSheet.isEmpty() ? BigDecimal.ZERO
+                : technicalSheet.stream().map(TechnicalSheetItem::getLineCost).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal calculateProfit() {
+        return price.subtract(calculateTotalCost());
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public UUID getStoreId() {
+        return storeId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public UUID getCategoryId() {
+        return categoryId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public ProductType getProductType() {
+        return productType;
+    }
+
+    public boolean isTrackStock() {
+        return trackStock;
+    }
+
+    public UUID getProductionSectorId() {
+        return productionSectorId;
+    }
+
+    public Unit getSaleUnit() {
+        return saleUnit;
+    }
+
+    public boolean isAvailableDigitalMenu() {
+        return availableDigitalMenu;
+    }
+
+    public boolean isAvailablePdv() {
+        return availablePdv;
+    }
+
+    public List<TechnicalSheetItem> getTechnicalSheet() {
+        return Collections.unmodifiableList(technicalSheet);
+    }
+
+    public List<UUID> getRemovableItemIds() {
+        return Collections.unmodifiableList(removableItemIds);
+    }
+
+    public List<UUID> getModifierGroupIds() {
+        return Collections.unmodifiableList(modifierGroupIds);
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
 }

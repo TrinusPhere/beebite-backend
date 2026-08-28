@@ -17,8 +17,10 @@ import java.util.UUID;
 @ApplicationScoped
 public class PanacheProductRepository implements ProductRepository {
 
-    @Inject ProductPanacheRepo repo;
-    @Inject EntityManager em;
+    @Inject
+    ProductPanacheRepo repo;
+    @Inject
+    EntityManager em;
 
     @Override
     @Transactional
@@ -29,13 +31,12 @@ public class PanacheProductRepository implements ProductRepository {
     @Override
     public List<Product> findByStoreIdAndCategoryId(UUID storeId, UUID categoryId) {
         return repo.find("storeId = ?1 and categoryId = ?2", storeId, categoryId).list().stream()
-            .map(ProductMapper::toDomain).toList();
+                .map(ProductMapper::toDomain).toList();
     }
 
     @Override
     public List<Product> findAllByStoreId(UUID storeId) {
-        return repo.find("storeId", storeId).list().stream()
-            .map(ProductMapper::toDomain).toList();
+        return repo.find("storeId", storeId).list().stream().map(ProductMapper::toDomain).toList();
     }
 
     @Override
@@ -43,23 +44,27 @@ public class PanacheProductRepository implements ProductRepository {
     public com.fidecode.biteflow.domain.shared.PageResult<Product> findAllByStoreId(UUID storeId, int page, int size) {
         var query = repo.find("storeId", storeId).page(io.quarkus.panache.common.Page.of(page, size));
         List<Product> content = query.list().stream().map(ProductMapper::toDomain).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override
     @Transactional
-    public com.fidecode.biteflow.domain.shared.PageResult<Product> findByStoreIdAndCategoryId(UUID storeId, UUID categoryId, int page, int size) {
-        var query = repo.find("storeId = ?1 and categoryId = ?2", storeId, categoryId).page(io.quarkus.panache.common.Page.of(page, size));
+    public com.fidecode.biteflow.domain.shared.PageResult<Product> findByStoreIdAndCategoryId(UUID storeId,
+            UUID categoryId, int page, int size) {
+        var query = repo.find("storeId = ?1 and categoryId = ?2", storeId, categoryId)
+                .page(io.quarkus.panache.common.Page.of(page, size));
         List<Product> content = query.list().stream().map(ProductMapper::toDomain).toList();
-        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(), query.pageCount());
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
     }
 
     @Override
     @Transactional
     public List<Product> findAllById(List<UUID> ids) {
-        if (ids == null || ids.isEmpty()) return List.of();
-        return repo.find("id in ?1", ids).list().stream()
-            .map(ProductMapper::toDomain).toList();
+        if (ids == null || ids.isEmpty())
+            return List.of();
+        return repo.find("id in ?1", ids).list().stream().map(ProductMapper::toDomain).toList();
     }
 
     @Override
@@ -104,9 +109,11 @@ public class PanacheProductRepository implements ProductRepository {
         if (product.getTechnicalSheet() == null) {
             entity.technicalSheet.clear();
         } else {
-            entity.technicalSheet.removeIf(tse -> product.getTechnicalSheet().stream().noneMatch(i -> i.getIngredientId().equals(tse.ingredientId)));
+            entity.technicalSheet.removeIf(tse -> product.getTechnicalSheet().stream()
+                    .noneMatch(i -> i.getIngredientId().equals(tse.ingredientId)));
             for (var item : product.getTechnicalSheet()) {
-                var existing = entity.technicalSheet.stream().filter(tse -> tse.ingredientId.equals(item.getIngredientId())).findFirst();
+                var existing = entity.technicalSheet.stream()
+                        .filter(tse -> tse.ingredientId.equals(item.getIngredientId())).findFirst();
                 if (existing.isPresent()) {
                     existing.get().quantity = item.getQuantity();
                     existing.get().costSnapshot = item.getCostSnapshot();

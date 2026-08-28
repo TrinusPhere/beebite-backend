@@ -8,22 +8,13 @@ import com.fidecode.biteflow.domain.delivery.entity.DeliveryDriver;
  */
 public final class DriverDtoMapper {
 
-    private DriverDtoMapper() {}
+    private DriverDtoMapper() {
+    }
 
     public static DriverResponse toResponse(DeliveryDriver d) {
-        return new DriverResponse(
-            d.getId() != null ? d.getId().toString() : null,
-            d.getName(),
-            d.getPhone(),
-            d.getStatus().name(),
-            d.isFixed(),
-            d.isDaily(),
-            d.getAllowance(),
-            d.isHasFixedDeliveryValue(),
-            d.getFixedDeliveryValue(),
-            d.getTotalDeliveries(),
-            d.getRating(),
-            d.getCreatedAt() != null ? d.getCreatedAt().toString() : null
-        );
+        return new DriverResponse(d.getId() != null ? d.getId().toString() : null, d.getName(), d.getPhone(),
+                d.getStatus().name(), d.isFixed(), d.isDaily(), d.getAllowance(), d.isHasFixedDeliveryValue(),
+                d.getFixedDeliveryValue(), d.getTotalDeliveries(), d.getRating(),
+                d.getCreatedAt() != null ? d.getCreatedAt().toString() : null);
     }
 }

@@ -28,8 +28,7 @@ public class PanacheProductCategoryRepository implements ProductCategoryReposito
     @Override
     public List<ProductCategory> findAllByStoreId(UUID storeId) {
         return repo.list("storeId = ?1 ORDER BY displayOrder ASC, name ASC", storeId).stream()
-                .map(ProductCategoryMapper::toDomain)
-                .collect(Collectors.toList());
+                .map(ProductCategoryMapper::toDomain).collect(Collectors.toList());
     }
 
     @Override

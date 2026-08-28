@@ -21,7 +21,7 @@ public class DeleteAdditionalUseCase {
 
     public void execute(UUID storeId, UUID id) {
         Additional additional = repository.findById(id)
-            .orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
+                .orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
         StoreGuard.enforce(additional, storeId);
         repository.deleteById(id);
     }

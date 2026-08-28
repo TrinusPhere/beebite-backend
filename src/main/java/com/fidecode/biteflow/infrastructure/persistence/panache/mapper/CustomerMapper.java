@@ -5,7 +5,8 @@ import com.fidecode.biteflow.infrastructure.persistence.panache.entity.CustomerE
 
 public class CustomerMapper {
 
-    private CustomerMapper() {}
+    private CustomerMapper() {
+    }
 
     public static CustomerEntity toEntity(Customer c) {
         CustomerEntity e = new CustomerEntity();
@@ -24,6 +25,7 @@ public class CustomerMapper {
     }
 
     public static Customer toDomain(CustomerEntity e) {
-        return Customer.reconstitute(e.id, e.storeId, e.name, e.phone, e.email, e.zipCode, e.addressStreet, e.addressNumber, e.addressComplement, e.addressNeighborhood, e.totalOrders);
+        return Customer.reconstitute(e.id, e.storeId, e.name, e.phone, e.email, e.zipCode, e.addressStreet,
+                e.addressNumber, e.addressComplement, e.addressNeighborhood, e.totalOrders);
     }
 }

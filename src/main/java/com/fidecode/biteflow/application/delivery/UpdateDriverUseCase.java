@@ -23,12 +23,13 @@ public class UpdateDriverUseCase {
     }
 
     public DriverResponse execute(UUID storeId, UUID id, DriverRequest request) {
-        DeliveryDriver driver = repository.findById(id)
-            .orElseThrow(() -> new DriverNotFoundException(id.toString()));
+        DeliveryDriver driver = repository.findById(id).orElseThrow(() -> new DriverNotFoundException(id.toString()));
         StoreGuard.enforce(driver, storeId);
 
         driver.updateProfile(request.name(), request.phone());
-        driver.configureWork(request.status() != null ? DriverStatus.valueOf(request.status()) : null, request.isFixed(), request.isDaily(), request.allowance(), request.hasFixedDeliveryValue(), request.fixedDeliveryValue());
+        driver.configureWork(request.status() != null ? DriverStatus.valueOf(request.status()) : null,
+                request.isFixed(), request.isDaily(), request.allowance(), request.hasFixedDeliveryValue(),
+                request.fixedDeliveryValue());
 
         return DriverDtoMapper.toResponse(repository.save(driver));
     }

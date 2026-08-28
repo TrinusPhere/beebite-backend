@@ -15,4 +15,3 @@ public class OrderPanacheRepo implements PanacheRepositoryBase<OrderEntity, UUID
         return find("externalOrderId", externalOrderId).firstResultOptional();
     }
 }
-

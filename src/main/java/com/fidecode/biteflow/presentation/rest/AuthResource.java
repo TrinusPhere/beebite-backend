@@ -21,8 +21,10 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 public class AuthResource extends BaseResource {
 
-    @Inject LoginUseCase loginUseCase;
-    @Inject GetUserUseCase getUserUseCase;
+    @Inject
+    LoginUseCase loginUseCase;
+    @Inject
+    GetUserUseCase getUserUseCase;
 
     private NewCookie createAuthCookie(String token) {
         // secure = false for local development. We set HttpOnly = true.

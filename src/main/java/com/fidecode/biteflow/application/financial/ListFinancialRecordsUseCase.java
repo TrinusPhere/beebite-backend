@@ -29,10 +29,8 @@ public class ListFinancialRecordsUseCase {
         LocalDate startDate = epochToLocalDate(startEpoch);
         LocalDate endDate = epochToLocalDate(endEpoch);
 
-        return financialRecordRepository.findByStoreIdAndDateRange(storeId, startDate, endDate)
-            .stream()
-            .map(FinancialDtoMapper::toResponse)
-            .toList();
+        return financialRecordRepository.findByStoreIdAndDateRange(storeId, startDate, endDate).stream()
+                .map(FinancialDtoMapper::toResponse).toList();
     }
 
     private LocalDate epochToLocalDate(long epochMillis) {

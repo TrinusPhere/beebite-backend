@@ -1,8 +1,7 @@
 package com.fidecode.biteflow.domain.shared.exception;
 
 /**
- * Base para exceções de autenticação — HTTP 401.
- * Ex: credenciais inválidas.
+ * Base para exceções de autenticação — HTTP 401. Ex: credenciais inválidas.
  */
 public abstract class UnauthorizedException extends DomainException {
 

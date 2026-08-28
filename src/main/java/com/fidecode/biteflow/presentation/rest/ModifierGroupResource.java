@@ -19,20 +19,23 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-
-@RolesAllowed({"ADMIN","GERENTE"})
+@RolesAllowed({ "ADMIN", "GERENTE" })
 public class ModifierGroupResource extends BaseResource {
 
-    @Inject CreateModifierGroupUseCase createUseCase;
-    @Inject UpdateModifierGroupUseCase updateUseCase;
-    @Inject DeleteModifierGroupUseCase deleteUseCase;
-    @Inject GetModifierGroupUseCase getUseCase;
-    @Inject ListModifierGroupsUseCase listUseCase;
+    @Inject
+    CreateModifierGroupUseCase createUseCase;
+    @Inject
+    UpdateModifierGroupUseCase updateUseCase;
+    @Inject
+    DeleteModifierGroupUseCase deleteUseCase;
+    @Inject
+    GetModifierGroupUseCase getUseCase;
+    @Inject
+    ListModifierGroupsUseCase listUseCase;
 
     @PermissionsAllowed("produtos")
     @GET
-    public Response list(
-            @QueryParam("page") @DefaultValue("0") int page,
+    public Response list(@QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("10") int size) {
         return Response.ok(listUseCase.execute(getStoreId(), page, size)).build();
     }
@@ -48,8 +51,7 @@ public class ModifierGroupResource extends BaseResource {
     @POST
     public Response create(@Valid ModifierGroupRequest request) {
         ModifierGroupResponse created = createUseCase.execute(getStoreId(), request);
-        return Response.created(URI.create("/api/v1/modifier-groups/" + created.id()))
-            .entity(created).build();
+        return Response.created(URI.create("/api/v1/modifier-groups/" + created.id())).entity(created).build();
     }
 
     @PermissionsAllowed("produtos")

@@ -5,8 +5,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 
 /**
- * Custom CORS filter to ensure PATCH method is included in Access-Control-Allow-Methods.
- * Replaces the default Quarkus CORS handler which doesn't include PATCH properly.
+ * Custom CORS filter to ensure PATCH method is included in Access-Control-Allow-Methods. Replaces the default Quarkus
+ * CORS handler which doesn't include PATCH properly.
  */
 @ApplicationScoped
 public class CorsFilter {
@@ -40,12 +40,11 @@ public class CorsFilter {
 
             if ("OPTIONS".equalsIgnoreCase(ctx.request().method().name())) {
                 if (origin != null) {
-                    ctx.response()
-                        .putHeader("Access-Control-Allow-Origin", origin)
-                        .putHeader("Access-Control-Allow-Methods", ALLOW_METHODS)
-                        .putHeader("Access-Control-Allow-Headers", ALLOW_HEADERS)
-                        .putHeader("Access-Control-Allow-Credentials", "true")
-                        .putHeader("Access-Control-Max-Age", "86400");
+                    ctx.response().putHeader("Access-Control-Allow-Origin", origin)
+                            .putHeader("Access-Control-Allow-Methods", ALLOW_METHODS)
+                            .putHeader("Access-Control-Allow-Headers", ALLOW_HEADERS)
+                            .putHeader("Access-Control-Allow-Credentials", "true")
+                            .putHeader("Access-Control-Max-Age", "86400");
                 }
                 ctx.response().setStatusCode(204).end();
                 return;

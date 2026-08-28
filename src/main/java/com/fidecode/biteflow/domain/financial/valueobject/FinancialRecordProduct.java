@@ -4,8 +4,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * Value Object — snapshot de um produto vendido dentro de um registro financeiro.
- * POJO puro, imutável.
+ * Value Object — snapshot de um produto vendido dentro de um registro financeiro. POJO puro, imutável.
  */
 public class FinancialRecordProduct {
 
@@ -29,12 +28,28 @@ public class FinancialRecordProduct {
     }
 
     // ── Getters ──
-    public UUID getId()             { return id; }
-    public UUID getProductId()      { return productId; }
-    public String getProductName()  { return productName; }
-    public int getQuantity()        { return quantity; }
-    public BigDecimal getPrice()    { return price; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getProductId() {
+        return productId;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
 
     // ── Setter para persistência ──
-    public void setId(UUID id)      { this.id = id; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 }

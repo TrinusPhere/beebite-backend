@@ -13,8 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Implementação do port UserRepository (domínio).
- * Usa UserPanacheRepo internamente — padrão Repository do Panache.
+ * Implementação do port UserRepository (domínio). Usa UserPanacheRepo internamente — padrão Repository do Panache.
  */
 @ApplicationScoped
 public class PanacheUserRepository implements UserRepository {
@@ -29,8 +28,7 @@ public class PanacheUserRepository implements UserRepository {
 
     @Override
     public Optional<User> findByLogin(String login) {
-        return repo.find("login", login).firstResultOptional()
-            .map(UserMapper::toDomain);
+        return repo.find("login", login).firstResultOptional().map(UserMapper::toDomain);
     }
 
     @Override

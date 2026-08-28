@@ -1,8 +1,7 @@
 package com.fidecode.biteflow.domain.shared.exception;
 
 /**
- * Base para exceções de "recurso não encontrado" — HTTP 404.
- * Todas as {@code *NotFoundException} herdam desta classe.
+ * Base para exceções de "recurso não encontrado" — HTTP 404. Todas as {@code *NotFoundException} herdam desta classe.
  */
 public abstract class EntityNotFoundException extends DomainException {
 

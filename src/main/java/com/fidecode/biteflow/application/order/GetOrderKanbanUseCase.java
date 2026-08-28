@@ -31,55 +31,43 @@ public class GetOrderKanbanUseCase {
         List<Order> activeOrders = orderRepository.findActiveKanbanOrdersByStoreId(storeId, startOfDay);
 
         if (typeFilter != null && !typeFilter.isBlank()) {
-            Set<String> types = Arrays.stream(typeFilter.split(","))
-                .map(String::trim).map(String::toUpperCase)
-                .collect(Collectors.toSet());
-            activeOrders = activeOrders.stream()
-                .filter(o -> types.contains(o.getType().name()))
-                .toList();
+            Set<String> types = Arrays.stream(typeFilter.split(",")).map(String::trim).map(String::toUpperCase)
+                    .collect(Collectors.toSet());
+            activeOrders = activeOrders.stream().filter(o -> types.contains(o.getType().name())).toList();
         }
 
-        Map<OrderStatus, List<Order>> grouped = activeOrders.stream()
-            .collect(Collectors.groupingBy(Order::getStatus));
+        Map<OrderStatus, List<Order>> grouped = activeOrders.stream().collect(Collectors.groupingBy(Order::getStatus));
 
         List<OrderKanbanResponse.KanbanColumn> columns = List.of(
-            buildColumn("ANALISE", "Pedido em Análise", "Search", grouped.getOrDefault(OrderStatus.ANALISE, List.of())),
-            buildColumn("PREPARO", "Em Preparo", "ChefHat", grouped.getOrDefault(OrderStatus.PREPARO, List.of())),
-            buildColumn("EM_ROTA", "Saiu para Entrega", "Truck", grouped.getOrDefault(OrderStatus.EM_ROTA, List.of())),
-            buildColumn("FINALIZADO", "Finalizado", "CheckCircle2", grouped.getOrDefault(OrderStatus.FINALIZADO, List.of()))
-        );
+                buildColumn("ANALISE", "Pedido em Análise", "Search",
+                        grouped.getOrDefault(OrderStatus.ANALISE, List.of())),
+                buildColumn("PREPARO", "Em Preparo", "ChefHat", grouped.getOrDefault(OrderStatus.PREPARO, List.of())),
+                buildColumn("EM_ROTA", "Saiu para Entrega", "Truck",
+                        grouped.getOrDefault(OrderStatus.EM_ROTA, List.of())),
+                buildColumn("FINALIZADO", "Finalizado", "CheckCircle2",
+                        grouped.getOrDefault(OrderStatus.FINALIZADO, List.of())));
 
         return new OrderKanbanResponse(columns);
     }
 
     private OrderKanbanResponse.KanbanColumn buildColumn(String id, String title, String icon, List<Order> orders) {
-        List<OrderKanbanResponse.KanbanOrder> kanbanOrders = orders.stream()
-            .map(o -> new OrderKanbanResponse.KanbanOrder(
-                o.getId().toString(),
-                o.getDisplayId(),
-                o.getCustomerName(),
-                o.getCustomerPhone(),
-                buildItemsSummary(o),
-                o.getTotalValue(),
-                o.getStatus().name(),
-                o.getType().name(),
-                o.getOperation(),
-                o.getChannel(),
-                o.getServiceType(),
-                o.getSource(),
-                o.getDriverName(),
-                o.getPlatform().name(),
-                o.getExternalOrderId(),
-                o.isNfeEmitted(),
-                o.getCreatedAt() != null ? o.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null
-            )).toList();
+        List<OrderKanbanResponse.KanbanOrder> kanbanOrders = orders
+                .stream().map(
+                        o -> new OrderKanbanResponse.KanbanOrder(o.getId().toString(), o.getDisplayId(),
+                                o.getCustomerName(), o.getCustomerPhone(), buildItemsSummary(o), o.getTotalValue(),
+                                o.getStatus().name(), o.getType().name(), o.getOperation(), o.getChannel(),
+                                o.getServiceType(), o.getSource(), o.getDriverName(), o.getPlatform().name(),
+                                o.getExternalOrderId(), o.isNfeEmitted(),
+                                o.getCreatedAt() != null
+                                        ? o.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null))
+                .toList();
         return new OrderKanbanResponse.KanbanColumn(id, title, icon, kanbanOrders);
     }
 
     private String buildItemsSummary(Order order) {
-        if (order.getItems() == null || order.getItems().isEmpty()) return "";
-        return order.getItems().stream()
-            .map(i -> i.getQuantity() + "x " + i.getProductName())
-            .collect(Collectors.joining(", "));
+        if (order.getItems() == null || order.getItems().isEmpty())
+            return "";
+        return order.getItems().stream().map(i -> i.getQuantity() + "x " + i.getProductName())
+                .collect(Collectors.joining(", "));
     }
 }

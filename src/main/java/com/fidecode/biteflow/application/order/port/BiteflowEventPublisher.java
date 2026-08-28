@@ -3,9 +3,8 @@ package com.fidecode.biteflow.application.order.port;
 import com.fidecode.biteflow.domain.order.entity.Order;
 
 /**
- * Port — BiteflowEventPublisher.
- * Abstrai a publicação de eventos de pedidos iFood no Pub/Sub.
- * Implementado em infrastructure por PubSubBiteflowEventPublisher.
+ * Port — BiteflowEventPublisher. Abstrai a publicação de eventos de pedidos iFood no Pub/Sub. Implementado em
+ * infrastructure por PubSubBiteflowEventPublisher.
  *
  * Regra: apenas pedidos com platform == IFOOD publicam eventos.
  */
@@ -16,8 +15,11 @@ public interface BiteflowEventPublisher {
 
     /**
      * Publica evento de cancelamento no tópico biteflow-order-cancelled.
-     * @param cancellationCode código de cancelamento do iFood
-     * @param reason descrição do motivo
+     *
+     * @param cancellationCode
+     *            código de cancelamento do iFood
+     * @param reason
+     *            descrição do motivo
      */
     void publishCancelled(Order order, String cancellationCode, String reason);
 }

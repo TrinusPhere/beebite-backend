@@ -30,44 +30,63 @@ public class UpdateProductUseCase {
     private final ProductResponseAssembler productResponseAssembler;
 
     @Inject
-    public UpdateProductUseCase(ProductRepository productRepository, 
-                                IngredientRepository ingredientRepository,
-                                ProductResponseAssembler productResponseAssembler) {
+    public UpdateProductUseCase(ProductRepository productRepository, IngredientRepository ingredientRepository,
+            ProductResponseAssembler productResponseAssembler) {
         this.productRepository = productRepository;
         this.ingredientRepository = ingredientRepository;
         this.productResponseAssembler = productResponseAssembler;
     }
 
     public ProductResponse execute(UUID storeId, UUID id, ProductRequest request) {
-        Product product = productRepository.findById(id)
-            .orElseThrow(() -> new ProductNotFoundException(id.toString()));
+        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id.toString()));
         StoreGuard.enforce(product, storeId);
 
-        product.updateBasicInfo(request.name(), product.getCategoryId(), product.getDescription(), product.getPrice(), product.getImageUrl());
-        UUID categoryId = request.categoryId() != null && !request.categoryId().isBlank() ? UUID.fromString(request.categoryId()) : null;
-        product.updateBasicInfo(product.getName(), categoryId, product.getDescription(), product.getPrice(), product.getImageUrl());
-        product.updateBasicInfo(product.getName(), product.getCategoryId(), request.description(), product.getPrice(), product.getImageUrl());
-        if (request.price() != null) product.updateBasicInfo(product.getName(), product.getCategoryId(), product.getDescription(), request.price(), product.getImageUrl());
-        product.updateBasicInfo(product.getName(), product.getCategoryId(), product.getDescription(), product.getPrice(), request.imageUrl());
-        if (request.stock() != null) product.initializeStock(request.stock());
-        if (request.active() != null) product.configureAvailability(request.active(), product.isAvailableDigitalMenu(), product.isAvailablePdv());
-        if (request.productType() != null) product.configureInventory(ProductType.valueOf(request.productType()), product.isTrackStock(), product.getProductionSectorId(), product.getSaleUnit());
-        if (request.trackStock() != null) product.configureInventory(product.getProductType(), request.trackStock(), product.getProductionSectorId(), product.getSaleUnit());
-        product.configureInventory(product.getProductType(), product.isTrackStock(), request.productionSectorId() != null && !request.productionSectorId().isBlank() ? UUID.fromString(request.productionSectorId()) : null, product.getSaleUnit());
-        if (request.saleUnit() != null) product.configureInventory(product.getProductType(), product.isTrackStock(), product.getProductionSectorId(), Unit.valueOf(request.saleUnit()));
-        if (request.availableDigitalMenu() != null) product.configureAvailability(product.isActive(), request.availableDigitalMenu(), product.isAvailablePdv());
-        if (request.availablePdv() != null) product.configureAvailability(product.isActive(), product.isAvailableDigitalMenu(), request.availablePdv());
+        product.updateBasicInfo(request.name(), product.getCategoryId(), product.getDescription(), product.getPrice(),
+                product.getImageUrl());
+        UUID categoryId = request.categoryId() != null && !request.categoryId().isBlank()
+                ? UUID.fromString(request.categoryId()) : null;
+        product.updateBasicInfo(product.getName(), categoryId, product.getDescription(), product.getPrice(),
+                product.getImageUrl());
+        product.updateBasicInfo(product.getName(), product.getCategoryId(), request.description(), product.getPrice(),
+                product.getImageUrl());
+        if (request.price() != null)
+            product.updateBasicInfo(product.getName(), product.getCategoryId(), product.getDescription(),
+                    request.price(), product.getImageUrl());
+        product.updateBasicInfo(product.getName(), product.getCategoryId(), product.getDescription(),
+                product.getPrice(), request.imageUrl());
+        if (request.stock() != null)
+            product.initializeStock(request.stock());
+        if (request.active() != null)
+            product.configureAvailability(request.active(), product.isAvailableDigitalMenu(), product.isAvailablePdv());
+        if (request.productType() != null)
+            product.configureInventory(ProductType.valueOf(request.productType()), product.isTrackStock(),
+                    product.getProductionSectorId(), product.getSaleUnit());
+        if (request.trackStock() != null)
+            product.configureInventory(product.getProductType(), request.trackStock(), product.getProductionSectorId(),
+                    product.getSaleUnit());
+        product.configureInventory(product.getProductType(), product.isTrackStock(),
+                request.productionSectorId() != null && !request.productionSectorId().isBlank()
+                        ? UUID.fromString(request.productionSectorId()) : null,
+                product.getSaleUnit());
+        if (request.saleUnit() != null)
+            product.configureInventory(product.getProductType(), product.isTrackStock(),
+                    product.getProductionSectorId(), Unit.valueOf(request.saleUnit()));
+        if (request.availableDigitalMenu() != null)
+            product.configureAvailability(product.isActive(), request.availableDigitalMenu(), product.isAvailablePdv());
+        if (request.availablePdv() != null)
+            product.configureAvailability(product.isActive(), product.isAvailableDigitalMenu(), request.availablePdv());
 
         List<UUID> ingredientIds = new ArrayList<>();
         if (request.technicalSheet() != null) {
-            ingredientIds.addAll(request.technicalSheet().stream().map(i -> UUID.fromString(i.ingredientId())).toList());
+            ingredientIds
+                    .addAll(request.technicalSheet().stream().map(i -> UUID.fromString(i.ingredientId())).toList());
         }
         if (request.removableItemIds() != null) {
             ingredientIds.addAll(request.removableItemIds().stream().map(UUID::fromString).toList());
         }
 
         Map<UUID, Ingredient> ingredientCache = ingredientRepository.findAllById(ingredientIds).stream()
-            .collect(Collectors.toMap(Ingredient::getId, i -> i));
+                .collect(Collectors.toMap(Ingredient::getId, i -> i));
 
         if (request.technicalSheet() != null) {
             List<TechnicalSheetItem> sheet = new ArrayList<>();

@@ -5,11 +5,13 @@ import com.fidecode.biteflow.infrastructure.persistence.panache.entity.StoreEnti
 
 public final class StoreMapper {
 
-    private StoreMapper() {}
+    private StoreMapper() {
+    }
 
     public static Store toDomain(StoreEntity e) {
-        if (e == null) return null;
-return Store.reconstitute(e.id, e.name, e.logoUrl, e.isOpen, e.openingHours, e.address, e.publicSlug);
+        if (e == null)
+            return null;
+        return Store.reconstitute(e.id, e.name, e.logoUrl, e.isOpen, e.openingHours, e.address, e.publicSlug);
     }
 
     public static StoreEntity toEntity(Store s) {

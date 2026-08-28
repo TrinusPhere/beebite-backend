@@ -16,11 +16,8 @@ import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
 /**
- * Observador CDI — reage ao evento de pedido finalizado.
- * Responsabilidades:
- * 1. Criar FinancialRecord
- * 2. Incrementar totalDeliveries do driver (se presente)
- * 3. Incrementar totalOrders do customer (se presente)
+ * Observador CDI — reage ao evento de pedido finalizado. Responsabilidades: 1. Criar FinancialRecord 2. Incrementar
+ * totalDeliveries do driver (se presente) 3. Incrementar totalOrders do customer (se presente)
  */
 @ApplicationScoped
 public class OrderFinalizedObserver {
@@ -34,9 +31,8 @@ public class OrderFinalizedObserver {
 
     @Inject
     public OrderFinalizedObserver(CreateFinancialRecordUseCase createFinancialRecordUseCase,
-                                   DeliveryDriverRepository deliveryDriverRepository,
-                                   CustomerRepository customerRepository,
-                                   DeductOrderInventoryUseCase deductOrderInventoryUseCase) {
+            DeliveryDriverRepository deliveryDriverRepository, CustomerRepository customerRepository,
+            DeductOrderInventoryUseCase deductOrderInventoryUseCase) {
         this.createFinancialRecordUseCase = createFinancialRecordUseCase;
         this.deliveryDriverRepository = deliveryDriverRepository;
         this.customerRepository = customerRepository;

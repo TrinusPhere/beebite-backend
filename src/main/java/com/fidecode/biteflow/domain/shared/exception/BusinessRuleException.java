@@ -1,8 +1,7 @@
 package com.fidecode.biteflow.domain.shared.exception;
 
 /**
- * Base para exceções de regras de negócio violadas — HTTP 422.
- * Ex: transição de status inválida no pedido.
+ * Base para exceções de regras de negócio violadas — HTTP 422. Ex: transição de status inválida no pedido.
  */
 public abstract class BusinessRuleException extends DomainException {
 
