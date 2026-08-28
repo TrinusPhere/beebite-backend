@@ -39,12 +39,11 @@ class OrderUseCasesTest {
     @Mock private ProductRepository productRepository;
     @Mock private ModifierGroupRepository modifierGroupRepository;
     @Mock private IngredientRepository ingredientRepository;
+    @Mock private com.fidecode.biteflow.application.order.port.BiteflowEventPublisher biteflowEventPublisher;
+
 
     private CreateOrderUseCase createOrderUseCase;
-    private AdvanceOrderStatusUseCase advanceOrderStatusUseCase;
-    private MoveOrderToColumnUseCase moveOrderToColumnUseCase;
-    private AssignOrderDriverUseCase assignOrderDriverUseCase;
-    private EmitOrderNfeUseCase emitOrderNfeUseCase;
+    private ManageOrderUseCase manageOrderUseCase;
     private UpdateOrderUseCase updateOrderUseCase;
     private GetOrderKanbanUseCase getOrderKanbanUseCase;
     private DeleteOrderUseCase deleteOrderUseCase;
@@ -58,14 +57,8 @@ class OrderUseCasesTest {
     void setUp() {
         createOrderUseCase = new CreateOrderUseCase(orderRepository, productRepository,
             modifierGroupRepository, ingredientRepository);
-        var publisher = new OrderFinalizationPublisher(orderFinalizedEvent);
-        var tx = new com.fidecode.biteflow.application.shared.port.TransactionExecutor() {
-            public <T> T execute(java.util.function.Supplier<T> action) { return action.get(); }
-        };
-        advanceOrderStatusUseCase = new AdvanceOrderStatusUseCase(orderRepository, orderDomainService, publisher, tx);
-        moveOrderToColumnUseCase = new MoveOrderToColumnUseCase(orderRepository, orderDomainService, publisher, tx);
-        assignOrderDriverUseCase = new AssignOrderDriverUseCase(orderRepository, orderDomainService);
-        emitOrderNfeUseCase = new EmitOrderNfeUseCase(orderRepository);
+        manageOrderUseCase = new ManageOrderUseCase(orderRepository, orderDomainService, orderFinalizedEvent, biteflowEventPublisher);
+
         updateOrderUseCase = new UpdateOrderUseCase(orderRepository, productRepository,
             modifierGroupRepository, ingredientRepository);
         getOrderKanbanUseCase = new GetOrderKanbanUseCase(orderRepository);
@@ -125,7 +118,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        OrderResponse response = advanceOrderStatusUseCase.execute(STORE_ID, orderId);
+        OrderResponse response = manageOrderUseCase.advanceStatus(STORE_ID, orderId);
         assertEquals("PREPARO", response.status());
     }
 
@@ -135,7 +128,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
         assertThrows(OrderNotFoundException.class,
-            () -> advanceOrderStatusUseCase.execute(STORE_ID, orderId));
+            () -> manageOrderUseCase.advanceStatus(STORE_ID, orderId));
     }
 
     @Test
@@ -154,7 +147,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        OrderResponse response = moveOrderToColumnUseCase.execute(STORE_ID, orderId, "PREPARO");
+        OrderResponse response = manageOrderUseCase.moveToColumn(STORE_ID, orderId, "PREPARO");
         assertEquals("PREPARO", response.status());
     }
 
@@ -176,7 +169,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        OrderResponse response = assignOrderDriverUseCase.execute(STORE_ID, orderId,
+        OrderResponse response = manageOrderUseCase.assignDriver(STORE_ID, orderId,
             new AssignDriverRequest(driverId.toString(), "Carlos", null));
         assertEquals(driverId.toString(), response.driverId());
         assertEquals("Carlos", response.driverName());
@@ -244,7 +237,7 @@ class OrderUseCasesTest {
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        NfeResponse nfe = emitOrderNfeUseCase.execute(STORE_ID, orderId);
+        NfeResponse nfe = manageOrderUseCase.emitNfe(STORE_ID, orderId);
 
         assertEquals(orderId.toString(), nfe.orderId());
         assertEquals("AUTORIZADA", nfe.status());
