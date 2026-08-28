@@ -25,9 +25,7 @@ public class UpdateAdditionalUseCase {
         Additional additional = repository.findById(id)
             .orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
         StoreGuard.enforce(additional, storeId);
-        additional.setName(request.name());
-        if (request.price() != null) additional.setPrice(request.price());
-        additional.setCategory(request.category());
+        additional.update(request.name(), request.price(), request.category());
         return AdditionalDtoMapper.toResponse(repository.save(additional));
     }
 }

@@ -34,6 +34,9 @@ public class StoreEntity extends PanacheEntityBase {
     @Column(name = "address")
     public String address;
 
+    @Column(name = "public_slug")
+    public String publicSlug;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     public Instant createdAt;
@@ -42,6 +45,6 @@ public class StoreEntity extends PanacheEntityBase {
     @Column(name = "updated_at", nullable = false)
     public Instant updatedAt;
 
-    @jakarta.persistence.Column(name = "deleted_at")
+    @Column(name = "deleted_at")
     public LocalDateTime deletedAt;
 }

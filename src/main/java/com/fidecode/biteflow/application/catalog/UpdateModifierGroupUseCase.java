@@ -31,12 +31,7 @@ public class UpdateModifierGroupUseCase {
             .orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
         StoreGuard.enforce(group, storeId);
 
-        group.setName(request.name());
-        if (request.type() != null) group.setType(ModifierType.valueOf(request.type()));
-        if (request.required() != null) group.setRequired(request.required());
-        if (request.minSelections() != null) group.setMinSelections(request.minSelections());
-        if (request.maxSelections() != null) group.setMaxSelections(request.maxSelections());
-        group.setIcon(request.icon());
+        group.update(request.name(), request.type() != null ? ModifierType.valueOf(request.type()) : null, request.required(), request.minSelections(), request.maxSelections(), request.icon());
 
         if (request.options() != null) {
             List<ModifierOption> options = new ArrayList<>();
@@ -45,7 +40,7 @@ public class UpdateModifierGroupUseCase {
                 options.add(new ModifierOption(group.getId(), optDto.name(),
                     optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i));
             }
-            group.setOptions(options);
+            group.replaceOptions(options);
         }
 
         return ModifierGroupDtoMapper.toResponse(repository.save(group));

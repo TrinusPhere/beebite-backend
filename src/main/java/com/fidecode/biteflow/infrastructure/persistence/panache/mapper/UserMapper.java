@@ -16,10 +16,7 @@ public final class UserMapper {
         List<Permission> perms = e.permissions != null
             ? e.permissions.stream().map(Permission::fromValue).toList()
             : List.of();
-        User user = new User(e.storeId, e.name, e.login, e.passwordHash, Role.valueOf(e.role), perms);
-        user.setId(e.id);
-        user.setActive(e.active);
-        return user;
+        return User.reconstitute(e.id, e.storeId, e.name, e.login, e.passwordHash, Role.valueOf(e.role), perms, e.active);
     }
 
     public static UserEntity toEntity(User u) {

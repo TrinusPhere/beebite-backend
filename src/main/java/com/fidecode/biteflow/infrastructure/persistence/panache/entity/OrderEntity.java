@@ -34,6 +34,15 @@ public class OrderEntity {
     @Column(name = "customer_address")
     public String customerAddress;
 
+    @Column(name = "customer_phone")
+    public String customerPhone;
+
+    @Column(name = "customer_address_complement")
+    public String customerAddressComplement;
+
+    @Column(name = "customer_address_reference")
+    public String customerAddressReference;
+
     @Column(name = "type", nullable = false)
     public String type;
 
@@ -54,6 +63,24 @@ public class OrderEntity {
 
     @Column(name = "external_order_id")
     public String externalOrderId;
+
+    @Column(name = "operation", nullable = false)
+    public String operation;
+
+    @Column(name = "channel", nullable = false)
+    public String channel;
+
+    @Column(name = "service_type", nullable = false)
+    public String serviceType;
+
+    @Column(name = "source", nullable = false)
+    public String source;
+
+    @Column(name = "cash_change_for")
+    public BigDecimal cashChangeFor;
+
+    @Column(name = "notes", columnDefinition = "TEXT")
+    public String notes;
 
     @Column(name = "subtotal", nullable = false)
     public BigDecimal subtotal;
@@ -80,6 +107,6 @@ public class OrderEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<OrderItemEntity> items = new ArrayList<>();
 
-    @jakarta.persistence.Column(name = "deleted_at")
+    @Column(name = "deleted_at")
     public LocalDateTime deletedAt;
 }

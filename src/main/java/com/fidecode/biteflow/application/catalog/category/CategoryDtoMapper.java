@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class CategoryDtoMapper {
+public final class CategoryDtoMapper {
+    private CategoryDtoMapper() {}
     public static CategoryResponse toResponse(ProductCategory category) {
         List<String> modifierGroupIds = null;
         if (category.getDefaultModifierGroupIds() != null) {

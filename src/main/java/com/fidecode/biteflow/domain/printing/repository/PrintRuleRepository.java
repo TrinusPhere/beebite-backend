@@ -1,0 +1,1 @@
+package com.fidecode.biteflow.domain.printing.repository; import com.fidecode.biteflow.domain.printing.entity.PrintRule; import java.util.*; public interface PrintRuleRepository {List<PrintRule> findAllByStoreId(UUID storeId);PrintRule save(PrintRule r);}

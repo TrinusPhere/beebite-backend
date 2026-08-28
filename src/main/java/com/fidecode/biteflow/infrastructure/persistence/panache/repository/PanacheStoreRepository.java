@@ -27,6 +27,13 @@ public class PanacheStoreRepository implements StoreRepository {
     }
 
     @Override
+    public Optional<Store> findByPublicIdentifier(String identifier) {
+        if (identifier == null || identifier.isBlank()) return Optional.empty();
+        return repo.find("lower(publicSlug) = ?1 or lower(name) = ?1", identifier.toLowerCase())
+            .firstResultOptional().map(StoreMapper::toDomain);
+    }
+
+    @Override
     @Transactional
     public Store save(Store store) {
         StoreEntity entity = StoreMapper.toEntity(store);

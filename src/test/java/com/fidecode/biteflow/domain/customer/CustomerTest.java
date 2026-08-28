@@ -53,13 +53,7 @@ class CustomerTest {
     @Test
     void deveSetarCamposOpcionais() {
         Customer customer = new Customer(STORE_ID, "João");
-        customer.setPhone("(11) 98888-7777");
-        customer.setEmail("joao@email.com");
-        customer.setZipCode("01310-100");
-        customer.setAddress("Rua das Flores");
-        customer.setNumber("123");
-        customer.setComplement("Apto 42");
-        customer.setNeighborhood("Centro");
+        customer.updateProfile(customer.getName(), "(11) 98888-7777", "joao@email.com", "01310-100", "Rua das Flores", "123", "Apto 42", "Centro");
 
         assertEquals("(11) 98888-7777", customer.getPhone());
         assertEquals("joao@email.com", customer.getEmail());

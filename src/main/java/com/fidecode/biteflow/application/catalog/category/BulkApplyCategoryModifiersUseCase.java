@@ -8,7 +8,8 @@ import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
 import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
+import com.fidecode.biteflow.application.shared.port.TransactionExecutor;
+import com.fidecode.biteflow.domain.catalog.exception.CategoryNotFoundException;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,27 +19,31 @@ public class BulkApplyCategoryModifiersUseCase {
 
     private final ProductCategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final TransactionExecutor tx;
 
     @Inject
-    public BulkApplyCategoryModifiersUseCase(ProductCategoryRepository categoryRepository, ProductRepository productRepository) {
+    public BulkApplyCategoryModifiersUseCase(ProductCategoryRepository categoryRepository, ProductRepository productRepository, TransactionExecutor tx) {
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
+        this.tx = tx;
     }
 
-    @Transactional
     public void execute(UUID storeId, UUID categoryId) {
+        tx.execute(() -> {
         ProductCategory category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                .orElseThrow(() -> new CategoryNotFoundException(categoryId.toString()));
         StoreGuard.enforce(category, storeId);
         
         if (category.getDefaultModifierGroupIds() == null) {
-            return;
+            return null;
         }
 
         List<Product> products = productRepository.findByStoreIdAndCategoryId(category.getStoreId(), categoryId);
         for (Product p : products) {
-            p.setModifierGroupIds(category.getDefaultModifierGroupIds());
+            p.replaceModifierGroups(category.getDefaultModifierGroupIds());
             productRepository.save(p);
         }
+        return null;
+        });
     }
 }

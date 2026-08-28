@@ -23,15 +23,15 @@ public class GetProductUseCase {
 
     private final ProductRepository productRepository;
     private final IngredientRepository ingredientRepository;
-    private final ProductDtoMapper productDtoMapper;
+    private final ProductResponseAssembler productResponseAssembler;
 
     @Inject
     public GetProductUseCase(ProductRepository productRepository, 
                              IngredientRepository ingredientRepository,
-                             ProductDtoMapper productDtoMapper) {
+                             ProductResponseAssembler productResponseAssembler) {
         this.productRepository = productRepository;
         this.ingredientRepository = ingredientRepository;
-        this.productDtoMapper = productDtoMapper;
+        this.productResponseAssembler = productResponseAssembler;
     }
 
     public ProductResponse execute(UUID storeId, UUID id) {
@@ -49,6 +49,6 @@ public class GetProductUseCase {
         Map<UUID, Ingredient> ingredientCache = ingredientRepository.findAllById(ingredientIds).stream()
             .collect(Collectors.toMap(Ingredient::getId, i -> i));
             
-        return productDtoMapper.toResponse(product, ingredientCache, null);
+        return productResponseAssembler.toResponse(product, ingredientCache, null);
     }
 }

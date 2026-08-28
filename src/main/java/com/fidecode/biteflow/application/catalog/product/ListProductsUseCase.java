@@ -23,17 +23,17 @@ public class ListProductsUseCase {
     private final ProductRepository productRepository;
     private final IngredientRepository ingredientRepository;
     private final ProductCategoryRepository productCategoryRepository;
-    private final ProductDtoMapper productDtoMapper;
+    private final ProductResponseAssembler productResponseAssembler;
 
     @Inject
     public ListProductsUseCase(ProductRepository productRepository, 
                                IngredientRepository ingredientRepository,
                                ProductCategoryRepository productCategoryRepository,
-                               ProductDtoMapper productDtoMapper) {
+                               ProductResponseAssembler productResponseAssembler) {
         this.productRepository = productRepository;
         this.ingredientRepository = ingredientRepository;
         this.productCategoryRepository = productCategoryRepository;
-        this.productDtoMapper = productDtoMapper;
+        this.productResponseAssembler = productResponseAssembler;
     }
 
     public PageResponse<ProductResponse> execute(UUID storeId, String categoryId, int page, int size) {
@@ -49,7 +49,7 @@ public class ListProductsUseCase {
             .collect(Collectors.toMap(ProductCategory::getId, c -> c));
 
         List<ProductResponse> content = productPage.getContent().stream()
-            .map(p -> productDtoMapper.toResponse(p, ingredientCache, categoryCache)).toList();
+            .map(p -> productResponseAssembler.toResponse(p, ingredientCache, categoryCache)).toList();
             
         return new PageResponse<>(content, productPage.getPage(), productPage.getSize(), productPage.getTotalElements(), productPage.getTotalPages());
     }

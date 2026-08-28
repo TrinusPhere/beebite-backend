@@ -44,7 +44,7 @@ class ProductTest {
         Product product = new Product(storeId, "X-Bacon", UUID.randomUUID(), BigDecimal.valueOf(35.00));
         TechnicalSheetItem item1 = new TechnicalSheetItem(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.valueOf(1), BigDecimal.valueOf(1.50));
         TechnicalSheetItem item2 = new TechnicalSheetItem(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.valueOf(2), BigDecimal.valueOf(3.00));
-        product.setTechnicalSheet(List.of(item1, item2));
+        product.replaceTechnicalSheet(List.of(item1, item2));
         // totalCost = (1 * 1.50) + (2 * 3.00) = 1.50 + 6.00 = 7.50
         assertEquals(0, BigDecimal.valueOf(7.50).compareTo(product.calculateTotalCost()));
     }
@@ -53,7 +53,7 @@ class ProductTest {
     void shouldCalculateProfit() {
         Product product = new Product(storeId, "X-Bacon", UUID.randomUUID(), BigDecimal.valueOf(35.00));
         TechnicalSheetItem item = new TechnicalSheetItem(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.valueOf(1), BigDecimal.valueOf(8.40));
-        product.setTechnicalSheet(List.of(item));
+        product.replaceTechnicalSheet(List.of(item));
         // profit = 35.00 - 8.40 = 26.60
         assertEquals(0, BigDecimal.valueOf(26.60).compareTo(product.calculateProfit()));
     }

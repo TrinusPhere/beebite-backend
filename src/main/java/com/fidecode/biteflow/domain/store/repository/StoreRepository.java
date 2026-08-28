@@ -11,5 +11,6 @@ import java.util.UUID;
  */
 public interface StoreRepository {
     Optional<Store> findById(UUID id);
+    Optional<Store> findByPublicIdentifier(String identifier);
     Store save(Store store);
 }

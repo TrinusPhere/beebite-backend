@@ -27,14 +27,7 @@ public class UpdateCustomerUseCase {
             .orElseThrow(() -> new CustomerNotFoundException(id.toString()));
         StoreGuard.enforce(customer, storeId);
 
-        customer.setName(request.name());
-        customer.setPhone(request.phone());
-        customer.setEmail(request.email());
-        customer.setZipCode(request.zipCode());
-        customer.setAddress(request.address());
-        customer.setNumber(request.number());
-        customer.setComplement(request.complement());
-        customer.setNeighborhood(request.neighborhood());
+        customer.updateProfile(request.name(), request.phone(), request.email(), request.zipCode(), request.address(), request.number(), request.complement(), request.neighborhood());
 
         return CustomerDtoMapper.toResponse(customerRepository.save(customer));
     }

@@ -84,6 +84,12 @@ public class PanacheProductRepository implements ProductRepository {
         entity.imageUrl = product.getImageUrl();
         entity.stock = product.getStock();
         entity.active = product.isActive();
+        entity.productType = product.getProductType().name();
+        entity.trackStock = product.isTrackStock();
+        entity.productionSectorId = product.getProductionSectorId();
+        entity.saleUnit = product.getSaleUnit().name();
+        entity.availableDigitalMenu = product.isAvailableDigitalMenu();
+        entity.availablePdv = product.isAvailablePdv();
 
         entity.removableItemIds.clear();
         if (product.getRemovableItemIds() != null) {
@@ -105,7 +111,7 @@ public class PanacheProductRepository implements ProductRepository {
                     existing.get().quantity = item.getQuantity();
                     existing.get().costSnapshot = item.getCostSnapshot();
                 } else {
-                    var tse = new com.fidecode.biteflow.infrastructure.persistence.panache.entity.TechnicalSheetItemEntity();
+                    var tse = new TechnicalSheetItemEntity();
                     tse.id = item.getId();
                     tse.product = entity;
                     tse.ingredientId = item.getIngredientId();

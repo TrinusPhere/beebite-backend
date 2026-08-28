@@ -35,7 +35,7 @@ public class UserResource extends BaseResource {
     @PermissionsAllowed("usuarios")
     @GET
     public Response listUsers() {
-        List<UserResponse> users = listUsersUseCase.execute();
+        List<UserResponse> users = listUsersUseCase.execute(getStoreId());
         return Response.ok(users).build();
     }
 
@@ -46,7 +46,7 @@ public class UserResource extends BaseResource {
     @GET
     @Path("/{id}")
     public Response getUser(@PathParam("id") UUID id) {
-        UserResponse user = getUserUseCase.execute(id);
+        UserResponse user = getUserUseCase.execute(getStoreId(), id);
         return Response.ok(user).build();
     }
 
@@ -68,7 +68,7 @@ public class UserResource extends BaseResource {
     @PUT
     @Path("/{id}")
     public Response updateUser(@PathParam("id") UUID id, @Valid UpdateUserRequest request) {
-        UserResponse updated = updateUserUseCase.execute(id, request);
+        UserResponse updated = updateUserUseCase.execute(getStoreId(), id, request);
         return Response.ok(updated).build();
     }
 
@@ -79,7 +79,7 @@ public class UserResource extends BaseResource {
     @DELETE
     @Path("/{id}")
     public Response deleteUser(@PathParam("id") UUID id) {
-        deleteUserUseCase.execute(id);
+        deleteUserUseCase.execute(getStoreId(), id);
         return Response.noContent().build();
     }
 }

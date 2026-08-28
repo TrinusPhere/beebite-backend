@@ -33,7 +33,7 @@ class DeleteUserUseCaseTest {
         user.setId(userId);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-        deleteUserUseCase.execute(userId);
+        deleteUserUseCase.execute(storeId, userId);
 
         verify(userRepository).delete(userId);
     }
@@ -42,7 +42,7 @@ class DeleteUserUseCaseTest {
     void shouldThrowWhenUserNotFound() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(UserNotFoundException.class, () -> deleteUserUseCase.execute(userId));
+        assertThrows(UserNotFoundException.class, () -> deleteUserUseCase.execute(storeId, userId));
         verify(userRepository, never()).delete(any());
     }
 }

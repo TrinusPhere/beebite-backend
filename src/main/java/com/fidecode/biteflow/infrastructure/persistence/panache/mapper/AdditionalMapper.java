@@ -8,10 +8,7 @@ public final class AdditionalMapper {
 
     public static Additional toDomain(AdditionalEntity e) {
         if (e == null) return null;
-        Additional a = new Additional(e.storeId, e.name, e.price, e.category);
-        a.setId(e.id);
-        a.setActive(e.active);
-        return a;
+        return Additional.reconstitute(e.id, e.storeId, e.name, e.price, e.category, e.active);
     }
 
     public static AdditionalEntity toEntity(Additional a) {

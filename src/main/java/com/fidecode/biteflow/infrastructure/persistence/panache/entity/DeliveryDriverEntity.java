@@ -82,6 +82,6 @@ public class DeliveryDriverEntity {
     public LocalDateTime getUpdatedAt()       { return updatedAt; }
     public void setUpdatedAt(LocalDateTime u) { this.updatedAt = u; }
 
-    @jakarta.persistence.Column(name = "deleted_at")
+    @Column(name = "deleted_at")
     public LocalDateTime deletedAt;
 }

@@ -1,5 +1,6 @@
 package com.fidecode.biteflow.application.catalog.category;
 
+import com.fidecode.biteflow.domain.catalog.exception.CategoryNotFoundException;
 import com.fidecode.biteflow.domain.catalog.entity.ProductCategory;
 import com.fidecode.biteflow.domain.catalog.repository.ProductCategoryRepository;
 import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
@@ -21,7 +22,7 @@ public class DeleteCategoryUseCase {
 
     public void execute(UUID storeId, UUID id) {
         ProductCategory category = categoryRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                .orElseThrow(() -> new CategoryNotFoundException(id.toString()));
         StoreGuard.enforce(category, storeId);
         categoryRepository.deleteById(id);
     }

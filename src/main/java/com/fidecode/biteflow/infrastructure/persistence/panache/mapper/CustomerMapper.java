@@ -24,16 +24,6 @@ public class CustomerMapper {
     }
 
     public static Customer toDomain(CustomerEntity e) {
-        Customer c = new Customer(e.storeId, e.name);
-        c.setId(e.id);
-        c.setPhone(e.phone);
-        c.setEmail(e.email);
-        c.setZipCode(e.zipCode);
-        c.setAddress(e.addressStreet);
-        c.setNumber(e.addressNumber);
-        c.setComplement(e.addressComplement);
-        c.setNeighborhood(e.addressNeighborhood);
-        c.setTotalOrders(e.totalOrders);
-        return c;
+        return Customer.reconstitute(e.id, e.storeId, e.name, e.phone, e.email, e.zipCode, e.addressStreet, e.addressNumber, e.addressComplement, e.addressNeighborhood, e.totalOrders);
     }
 }

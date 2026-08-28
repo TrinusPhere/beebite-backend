@@ -46,6 +46,24 @@ public class ProductEntity extends PanacheEntityBase {
 
     public boolean active;
 
+    @Column(name = "product_type", nullable = false)
+    public String productType;
+
+    @Column(name = "track_stock", nullable = false)
+    public boolean trackStock;
+
+    @Column(name = "production_sector_id")
+    public UUID productionSectorId;
+
+    @Column(name = "sale_unit", nullable = false)
+    public String saleUnit;
+
+    @Column(name = "available_digital_menu", nullable = false)
+    public boolean availableDigitalMenu;
+
+    @Column(name = "available_pdv", nullable = false)
+    public boolean availablePdv;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     public Instant createdAt;
@@ -68,6 +86,6 @@ public class ProductEntity extends PanacheEntityBase {
     @Column(name = "modifier_group_id")
     public List<UUID> modifierGroupIds = new ArrayList<>();
 
-    @jakarta.persistence.Column(name = "deleted_at")
+    @Column(name = "deleted_at")
     public LocalDateTime deletedAt;
 }

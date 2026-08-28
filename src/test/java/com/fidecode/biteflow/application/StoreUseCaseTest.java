@@ -34,8 +34,7 @@ class StoreUseCaseTest {
     void setUp() {
         existingStore = new Store("BiteFlow");
         existingStore.setId(storeId);
-        existingStore.setAddress("Rua A, 100");
-        existingStore.setOpen(true);
+        existingStore.updateInfo(existingStore.getName(), existingStore.getLogoUrl(), true, existingStore.getOpeningHours(), "Rua A, 100");
     }
 
     @Test

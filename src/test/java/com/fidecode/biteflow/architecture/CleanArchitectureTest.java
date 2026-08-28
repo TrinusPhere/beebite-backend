@@ -320,4 +320,7 @@ public class CleanArchitectureTest {
             .allowEmptyShould(true)
             .because("Mappers de infra (domain ↔ JPA entity) devem estar em " +
                      "infrastructure.persistence.panache.mapper, não espalhados pela infraestrutura.");
+
+
+
 }

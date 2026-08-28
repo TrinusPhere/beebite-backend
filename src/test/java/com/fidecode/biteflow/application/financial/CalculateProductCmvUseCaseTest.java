@@ -54,7 +54,7 @@ class CalculateProductCmvUseCaseTest {
 
         var product = new Product(STORE_ID, "X-Bacon Especial", null, new BigDecimal("35.00"));
         product.setId(productId);
-        product.setTechnicalSheet(List.of(
+        product.replaceTechnicalSheet(List.of(
             new TechnicalSheetItem(productId, ingredientPaoId, BigDecimal.ONE, new BigDecimal("1.50")),
             new TechnicalSheetItem(productId, ingredientCarneId, new BigDecimal("2"), new BigDecimal("3.00"))
         ));

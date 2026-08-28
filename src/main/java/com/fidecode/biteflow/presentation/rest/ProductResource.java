@@ -29,7 +29,8 @@ public class ProductResource extends BaseResource {
     @Inject DeleteProductUseCase deleteProductUseCase;
     @Inject GetProductUseCase getProductUseCase;
     @Inject ListProductsUseCase listProductsUseCase;
-    @Inject ManageProductModifiersUseCase manageProductModifiersUseCase;
+    @Inject UpdateProductRemovableItemsUseCase updateProductRemovableItemsUseCase;
+    @Inject UpdateProductModifierGroupsUseCase updateProductModifierGroupsUseCase;
 
     @PermissionsAllowed("produtos")
     @GET
@@ -74,13 +75,13 @@ public class ProductResource extends BaseResource {
     @PUT
     @Path("/{id}/removable-items")
     public Response updateRemovableItems(@PathParam("id") UUID id, List<String> ingredientIds) {
-        return Response.ok(manageProductModifiersUseCase.updateRemovableItems(getStoreId(), id, ingredientIds)).build();
+        return Response.ok(updateProductRemovableItemsUseCase.execute(getStoreId(), id, ingredientIds)).build();
     }
 
     @PermissionsAllowed("produtos")
     @PUT
     @Path("/{id}/modifier-groups")
     public Response updateModifierGroups(@PathParam("id") UUID id, List<String> groupIds) {
-        return Response.ok(manageProductModifiersUseCase.updateModifierGroups(getStoreId(), id, groupIds)).build();
+        return Response.ok(updateProductModifierGroupsUseCase.execute(getStoreId(), id, groupIds)).build();
     }
 }

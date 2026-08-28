@@ -50,7 +50,7 @@ public class PanacheDeliveryDriverRepository implements DeliveryDriverRepository
     @Transactional
     public void deleteById(UUID id) {
         repo.findByIdOptional(id).ifPresent(entity -> {
-            entity.deletedAt = java.time.LocalDateTime.now();
+            entity.deletedAt = LocalDateTime.now();
             repo.getEntityManager().merge(entity);
         });
     }

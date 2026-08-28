@@ -58,7 +58,12 @@ public class OrderDomainService {
         if (current == OrderStatus.CANCELADO) {
             throw new InvalidOrderTransitionException("Pedido cancelado não pode ser movido.");
         }
-        if (current == OrderStatus.FINALIZADO && targetStatus != OrderStatus.CANCELADO) {
+        if (targetStatus == OrderStatus.CANCELADO
+                && (current == OrderStatus.EM_ROTA || current == OrderStatus.FINALIZADO)) {
+            throw new InvalidOrderTransitionException(
+                "Pedido em rota ou finalizado não pode ser cancelado.");
+        }
+        if (current == OrderStatus.FINALIZADO) {
             throw new InvalidOrderTransitionException("Pedido finalizado não pode ser movido.");
         }
 

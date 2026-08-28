@@ -2,6 +2,7 @@ package com.fidecode.biteflow.application.catalog.category;
 
 import com.fidecode.biteflow.application.catalog.dto.CategoryRequest;
 import com.fidecode.biteflow.application.catalog.dto.CategoryResponse;
+import com.fidecode.biteflow.domain.catalog.exception.CategoryNotFoundException;
 import com.fidecode.biteflow.domain.catalog.entity.ProductCategory;
 import com.fidecode.biteflow.domain.catalog.repository.ProductCategoryRepository;
 import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
@@ -25,7 +26,7 @@ public class UpdateCategoryUseCase {
 
     public CategoryResponse execute(UUID storeId, UUID id, CategoryRequest request) {
         ProductCategory category = categoryRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+                .orElseThrow(() -> new CategoryNotFoundException(id.toString()));
         StoreGuard.enforce(category, storeId);
 
         List<UUID> modifierGroupIds = null;

@@ -10,6 +10,7 @@ public record IngredientResponse(
     String unit,
     BigDecimal costPrice,
     BigDecimal minStock,
+    boolean active,
     boolean lowStock,
     Instant createdAt
 ) {}

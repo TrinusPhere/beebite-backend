@@ -1,6 +1,7 @@
 package com.fidecode.biteflow.infrastructure.event;
 
 import com.fidecode.biteflow.application.financial.CreateFinancialRecordUseCase;
+import com.fidecode.biteflow.application.inventory.DeductOrderInventoryUseCase;
 import com.fidecode.biteflow.domain.customer.entity.Customer;
 import com.fidecode.biteflow.domain.customer.repository.CustomerRepository;
 import com.fidecode.biteflow.domain.delivery.entity.DeliveryDriver;
@@ -29,24 +30,30 @@ public class OrderFinalizedObserver {
     private final CreateFinancialRecordUseCase createFinancialRecordUseCase;
     private final DeliveryDriverRepository deliveryDriverRepository;
     private final CustomerRepository customerRepository;
+    private final DeductOrderInventoryUseCase deductOrderInventoryUseCase;
 
     @Inject
     public OrderFinalizedObserver(CreateFinancialRecordUseCase createFinancialRecordUseCase,
                                    DeliveryDriverRepository deliveryDriverRepository,
-                                   CustomerRepository customerRepository) {
+                                   CustomerRepository customerRepository,
+                                   DeductOrderInventoryUseCase deductOrderInventoryUseCase) {
         this.createFinancialRecordUseCase = createFinancialRecordUseCase;
         this.deliveryDriverRepository = deliveryDriverRepository;
         this.customerRepository = customerRepository;
+        this.deductOrderInventoryUseCase = deductOrderInventoryUseCase;
     }
 
     @Transactional
     public void onOrderFinalized(@Observes OrderFinalizedEvent event) {
         LOG.infof("OrderFinalizedEvent recebido — orderId=%s, storeId=%s", event.getOrderId(), event.getStoreId());
 
-        // 1. Criar registro financeiro
+        // 1. Baixar estoque usando a mesma fonte de verdade do pedido
+        deductOrderInventoryUseCase.execute(event);
+
+        // 2. Criar registro financeiro
         createFinancialRecordUseCase.execute(event);
 
-        // 2. Incrementar totalDeliveries do driver
+        // 3. Incrementar totalDeliveries do driver
         if (event.getDriverId() != null) {
             deliveryDriverRepository.findById(event.getDriverId()).ifPresent(driver -> {
                 driver.incrementDeliveries();
@@ -55,7 +62,7 @@ public class OrderFinalizedObserver {
             });
         }
 
-        // 3. Incrementar totalOrders do customer
+        // 4. Incrementar totalOrders do customer
         if (event.getCustomerId() != null) {
             customerRepository.findById(event.getCustomerId()).ifPresent(customer -> {
                 customer.incrementTotalOrders();

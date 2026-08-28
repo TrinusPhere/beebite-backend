@@ -23,7 +23,7 @@ public final class ProductCategoryMapper {
                     .collect(Collectors.toList());
         }
 
-        return new ProductCategory(
+        return ProductCategory.reconstitute(
                 e.id,
                 e.storeId,
                 e.name,

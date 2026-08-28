@@ -57,18 +57,19 @@ public class UpdateOrderUseCase {
             order.changeType(OrderType.valueOf(request.type()));
         }
         if (request.paymentMethod() != null) {
-            order.changePaymentMethod(PaymentMethod.valueOf(request.paymentMethod()));
+            order.changePaymentMethod(CreateOrderUseCase.parsePaymentMethod(request.paymentMethod()));
         }
         if (request.customer() != null) {
             order.updateCustomerInfo(request.customer().name(), request.customer().address());
         }
+        order.defineContext(request.operation(), request.channel(), request.serviceType(), request.source());
 
-        if (request.additionalItems() != null && !request.additionalItems().isEmpty()) {
+        if (request.newItems() != null && !request.newItems().isEmpty()) {
             List<UUID> productIds = new ArrayList<>();
             List<UUID> groupIds = new ArrayList<>();
             List<UUID> ingredientIds = new ArrayList<>();
             
-            for (CreateOrderItemDto itemDto : request.additionalItems()) {
+            for (CreateOrderItemDto itemDto : request.newItems()) {
                 productIds.add(UUID.fromString(itemDto.productId()));
                 if (itemDto.modifiers() != null) {
                     for (var modDto : itemDto.modifiers()) {
@@ -89,7 +90,7 @@ public class UpdateOrderUseCase {
             Map<UUID, Ingredient> ingredientCache = ingredientRepository.findAllById(ingredientIds).stream()
                 .collect(Collectors.toMap(Ingredient::getId, i -> i));
 
-            for (CreateOrderItemDto itemDto : request.additionalItems()) {
+            for (CreateOrderItemDto itemDto : request.newItems()) {
                 UUID productId = UUID.fromString(itemDto.productId());
                 Product product = productCache.get(productId);
                 if (product == null) throw new ProductNotFoundException(itemDto.productId());

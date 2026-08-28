@@ -68,7 +68,7 @@ class OrderTest {
     @Test
     void deveCalcularTotalValueComDeliveryCost() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
-        order.setDeliveryCost(new BigDecimal("10.00"));
+        order.changeDeliveryCost(new BigDecimal("10.00"));
 
         OrderItem item = new OrderItem(UUID.randomUUID(), "X-Bacon", 1,
             new BigDecimal("25.00"), null);

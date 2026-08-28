@@ -39,7 +39,7 @@ public class CreateModifierGroupUseCase {
                 options.add(new ModifierOption(null, optDto.name(),
                     optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i));
             }
-            group.setOptions(options);
+            group.replaceOptions(options);
         }
 
         return ModifierGroupDtoMapper.toResponse(repository.save(group));

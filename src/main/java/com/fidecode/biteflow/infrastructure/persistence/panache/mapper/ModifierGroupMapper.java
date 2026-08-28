@@ -14,18 +14,10 @@ public final class ModifierGroupMapper {
 
     public static ModifierGroup toDomain(ModifierGroupEntity e) {
         if (e == null) return null;
-        ModifierGroup g = new ModifierGroup(e.storeId, e.name,
-            ModifierType.valueOf(e.type), e.required, e.minSelections, e.maxSelections, e.icon);
-        g.setId(e.id);
-        if (e.options != null) {
-            List<ModifierOption> opts = e.options.stream().map(o -> {
-                ModifierOption opt = new ModifierOption(e.id, o.name, o.price, o.sortOrder);
-                opt.setId(o.id);
-                return opt;
-            }).toList();
-            g.setOptions(opts);
-        }
-        return g;
+        List<ModifierOption> opts = e.options != null ? e.options.stream().map(o -> {
+            ModifierOption opt = new ModifierOption(e.id, o.name, o.price, o.sortOrder); opt.setId(o.id); return opt;
+        }).toList() : List.of();
+        return ModifierGroup.reconstitute(e.id, e.storeId, e.name, ModifierType.valueOf(e.type), e.required, e.minSelections, e.maxSelections, e.icon, opts);
     }
 
     public static ModifierGroupEntity toEntity(ModifierGroup g) {

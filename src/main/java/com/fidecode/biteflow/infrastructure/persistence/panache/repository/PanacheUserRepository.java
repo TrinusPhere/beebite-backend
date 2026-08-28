@@ -34,10 +34,8 @@ public class PanacheUserRepository implements UserRepository {
     }
 
     @Override
-    public List<User> findAll() {
-        return repo.listAll().stream()
-            .map(UserMapper::toDomain)
-            .toList();
+    public List<User> findAllByStoreId(UUID storeId) {
+        return repo.find("storeId", storeId).list().stream().map(UserMapper::toDomain).toList();
     }
 
     @Override

@@ -10,6 +10,7 @@ import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ModifierGroupRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
 import com.fidecode.biteflow.domain.order.entity.*;
+import com.fidecode.biteflow.domain.order.exception.InvalidPaymentMethodException;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.valueobject.*;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -39,7 +40,8 @@ public class CreateOrderUseCase {
     }
 
     public OrderResponse create(UUID storeId, CreateOrderRequest request) {
-        Order order = new Order(storeId, OrderType.valueOf(request.type()), PaymentMethod.valueOf(request.paymentMethod()));
+        Order order = new Order(storeId, OrderType.valueOf(request.type()), parsePaymentMethod(request.paymentMethod()));
+        order.defineContext(request.operation(), request.channel(), request.serviceType(), request.source());
         
         long displayIdNum = orderRepository.getNextDisplayIdSequence();
         order.setDisplayId(String.valueOf(displayIdNum));
@@ -49,10 +51,13 @@ public class CreateOrderUseCase {
                 order.linkCustomer(UUID.fromString(request.customer().id()));
             }
             order.updateCustomerInfo(request.customer().name(), request.customer().address());
+            order.updateCustomerContact(request.customer().phone(), request.customer().complement(), request.customer().reference());
         }
+        order.defineCashChangeFor(request.cashChangeFor());
+        order.updateNotes(request.notes());
 
         if (request.deliveryCost() != null) {
-            order.setDeliveryCost(request.deliveryCost());
+            order.changeDeliveryCost(request.deliveryCost());
         }
 
         List<UUID> productIds = new ArrayList<>();
@@ -127,4 +132,18 @@ public class CreateOrderUseCase {
         Order saved = orderRepository.save(order);
         return OrderDtoMapper.toResponse(saved);
     }
+    static PaymentMethod parsePaymentMethod(String value) {
+        if (value == null) throw new InvalidPaymentMethodException("null");
+        try {
+            return switch (value.toUpperCase()) {
+                case "CREDIT_CARD", "CREDITO" -> PaymentMethod.CREDITO;
+                case "DEBIT_CARD", "DEBITO" -> PaymentMethod.DEBITO;
+                case "CASH", "DINHEIRO" -> PaymentMethod.DINHEIRO;
+                default -> PaymentMethod.valueOf(value.toUpperCase());
+            };
+        } catch (IllegalArgumentException ex) {
+            throw new InvalidPaymentMethodException(value);
+        }
+    }
+
 }

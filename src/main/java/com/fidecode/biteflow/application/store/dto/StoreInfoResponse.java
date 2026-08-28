@@ -6,5 +6,6 @@ public record StoreInfoResponse(
     String logoUrl,
     boolean isOpen,
     String openingHours,
-    String address
+    String address,
+    String publicSlug
 ) {}

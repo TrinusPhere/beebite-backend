@@ -7,7 +7,7 @@ import com.fidecode.biteflow.domain.auth.entity.User;
 import com.fidecode.biteflow.domain.auth.exception.UserNotFoundException;
 import com.fidecode.biteflow.domain.auth.repository.UserRepository;
 import com.fidecode.biteflow.domain.auth.valueobject.Role;
-import com.fidecode.biteflow.infrastructure.security.PasswordHasher;
+import com.fidecode.biteflow.application.auth.port.PasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 class UpdateUserUseCaseTest {
 
     @Mock UserRepository userRepository;
-    @Mock PasswordHasher passwordHasher;
+    @Mock PasswordEncoder passwordHasher;
     @InjectMocks UpdateUserUseCase updateUserUseCase;
 
     private User existingUser;
@@ -47,7 +47,7 @@ class UpdateUserUseCaseTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        UserResponse response = updateUserUseCase.execute(userId, request);
+        UserResponse response = updateUserUseCase.execute(storeId, userId, request);
 
         assertEquals("New Name", response.name());
         assertEquals("GERENTE", response.role());
@@ -61,7 +61,7 @@ class UpdateUserUseCaseTest {
         when(passwordHasher.hash("newPass123")).thenReturn("newHash");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        updateUserUseCase.execute(userId, request);
+        updateUserUseCase.execute(storeId, userId, request);
 
         verify(passwordHasher).hash("newPass123");
     }
@@ -72,7 +72,7 @@ class UpdateUserUseCaseTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        updateUserUseCase.execute(userId, request);
+        updateUserUseCase.execute(storeId, userId, request);
 
         verify(passwordHasher, never()).hash(any());
     }
@@ -82,6 +82,6 @@ class UpdateUserUseCaseTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class,
-            () -> updateUserUseCase.execute(userId, new UpdateUserRequest("n", null, "CAIXA", List.of())));
+            () -> updateUserUseCase.execute(storeId, userId, new UpdateUserRequest("n", null, "CAIXA", List.of())));
     }
 }

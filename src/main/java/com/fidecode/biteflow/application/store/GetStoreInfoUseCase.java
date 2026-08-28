@@ -32,7 +32,8 @@ public class GetStoreInfoUseCase {
             s.getLogoUrl(),
             s.isOpen(),
             s.getOpeningHours(),
-            s.getAddress()
+            s.getAddress(),
+            s.getPublicSlug()
         );
     }
 }

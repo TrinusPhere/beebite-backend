@@ -129,6 +129,24 @@ class OrderDomainServiceTest {
     }
 
     @Test
+    void naoDeveCancelarPedidoQueJaSaiuParaEntrega() {
+        Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.changeStatus(OrderStatus.EM_ROTA);
+
+        assertThrows(InvalidOrderTransitionException.class,
+            () -> service.moveToColumn(order, OrderStatus.CANCELADO));
+    }
+
+    @Test
+    void naoDeveCancelarPedidoFinalizado() {
+        Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.changeStatus(OrderStatus.FINALIZADO);
+
+        assertThrows(InvalidOrderTransitionException.class,
+            () -> service.moveToColumn(order, OrderStatus.CANCELADO));
+    }
+
+    @Test
     void deveSetarFinishedAtAoMoverParaFinalizado() {
         Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
         order.changeStatus(OrderStatus.PREPARO);

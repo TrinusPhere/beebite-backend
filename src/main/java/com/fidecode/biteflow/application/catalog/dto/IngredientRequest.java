@@ -1,7 +1,6 @@
 package com.fidecode.biteflow.application.catalog.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public record IngredientRequest(
@@ -9,5 +8,11 @@ public record IngredientRequest(
     BigDecimal stock,
     String unit,
     BigDecimal costPrice,
-    BigDecimal minStock
-) {}
+    BigDecimal minStock,
+    Boolean active
+) {
+    /** Compatibilidade com o contrato anterior. */
+    public IngredientRequest(String name, BigDecimal stock, String unit, BigDecimal costPrice, BigDecimal minStock) {
+        this(name, stock, unit, costPrice, minStock, null);
+    }
+}

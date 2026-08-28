@@ -3,7 +3,8 @@ package com.fidecode.biteflow.application.customer;
 import com.fidecode.biteflow.application.customer.dto.CustomerResponse;
 import com.fidecode.biteflow.domain.customer.entity.Customer;
 
-public class CustomerDtoMapper {
+public final class CustomerDtoMapper {
+    private CustomerDtoMapper() {}
     public static CustomerResponse toResponse(Customer c) {
         return new CustomerResponse(
             c.getId() != null ? c.getId().toString() : null,

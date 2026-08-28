@@ -1,12 +1,6 @@
 package com.fidecode.biteflow.presentation.rest;
 
-import com.fidecode.biteflow.application.order.CreateOrderUseCase;
-import com.fidecode.biteflow.application.order.UpdateOrderUseCase;
-import com.fidecode.biteflow.application.order.GetOrderUseCase;
-import com.fidecode.biteflow.application.order.ListOrdersUseCase;
-import com.fidecode.biteflow.application.order.ManageOrderUseCase;
-import com.fidecode.biteflow.application.order.GetOrderKanbanUseCase;
-import com.fidecode.biteflow.application.order.DeleteOrderUseCase;
+import com.fidecode.biteflow.application.order.*;
 import com.fidecode.biteflow.application.order.dto.*;
 
 import jakarta.annotation.security.RolesAllowed;
@@ -37,8 +31,12 @@ public class OrderResource extends BaseResource {
     GetOrderUseCase getOrderUseCase;
     @Inject
     ListOrdersUseCase listOrdersUseCase;
-    @Inject
-    ManageOrderUseCase manageOrderUseCase;
+    @Inject AdvanceOrderStatusUseCase advanceOrderStatusUseCase;
+    @Inject MoveOrderToColumnUseCase moveOrderToColumnUseCase;
+    @Inject AssignOrderDriverUseCase assignOrderDriverUseCase;
+    @Inject BatchMoveOrdersUseCase batchMoveOrdersUseCase;
+    @Inject BatchAssignOrderDriverUseCase batchAssignOrderDriverUseCase;
+    @Inject EmitOrderNfeUseCase emitOrderNfeUseCase;
     @Inject
     GetOrderKanbanUseCase getOrderKanbanUseCase;
     @Inject
@@ -86,35 +84,35 @@ public class OrderResource extends BaseResource {
     @PATCH
     @Path("/{id}/advance")
     public Response advanceStatus(@PathParam("id") UUID id) {
-        return Response.ok(manageOrderUseCase.advanceStatus(getStoreId(), id)).build();
+        return Response.ok(advanceOrderStatusUseCase.execute(getStoreId(), id)).build();
     }
 
     @PermissionsAllowed("pedidos")
     @PATCH
     @Path("/{id}/move")
     public Response moveToColumn(@PathParam("id") UUID id, @Valid MoveOrderRequest request) {
-        return Response.ok(manageOrderUseCase.moveToColumn(getStoreId(), id, request.targetStatus())).build();
+        return Response.ok(moveOrderToColumnUseCase.execute(getStoreId(), id, request.targetStatus())).build();
     }
 
     @PermissionsAllowed("pedidos")
     @PATCH
     @Path("/{id}/assign-driver")
     public Response assignDriver(@PathParam("id") UUID id, @Valid AssignDriverRequest request) {
-        return Response.ok(manageOrderUseCase.assignDriver(getStoreId(), id, request)).build();
+        return Response.ok(assignOrderDriverUseCase.execute(getStoreId(), id, request)).build();
     }
 
     @PermissionsAllowed("pedidos")
     @POST
     @Path("/{id}/nfe")
     public Response emitNfe(@PathParam("id") UUID id) {
-        return Response.ok(manageOrderUseCase.emitNfe(getStoreId(), id)).build();
+        return Response.ok(emitOrderNfeUseCase.execute(getStoreId(), id)).build();
     }
 
     @PermissionsAllowed("pedidos")
     @PATCH
     @Path("/batch/move")
     public Response batchMove(@Valid BatchMoveRequest request) {
-        manageOrderUseCase.batchMove(getStoreId(), request.orderIds(),
+        batchMoveOrdersUseCase.execute(getStoreId(), request.orderIds(),
                 new MoveOrderRequest(request.targetStatus()));
         return Response.noContent().build();
     }
@@ -123,7 +121,7 @@ public class OrderResource extends BaseResource {
     @PATCH
     @Path("/batch/assign-driver")
     public Response batchAssignDriver(@Valid AssignDriverRequest request) {
-        manageOrderUseCase.batchAssignDriver(getStoreId(), request);
+        batchAssignOrderDriverUseCase.execute(getStoreId(), request);
         return Response.noContent().build();
     }
 
