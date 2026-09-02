@@ -13,6 +13,7 @@ public class ModifierOption {
     private String name;
     private BigDecimal price;
     private int sortOrder;
+    private UUID linkedProductId;
 
     public ModifierOption(UUID modifierGroupId, String name, BigDecimal price, int sortOrder) {
         if (name == null || name.isBlank())
@@ -44,6 +45,10 @@ public class ModifierOption {
         return sortOrder;
     }
 
+    public UUID getLinkedProductId() {
+        return linkedProductId;
+    }
+
     // ── Setters ──
     public void setId(UUID id) {
         this.id = id;
@@ -59,5 +64,9 @@ public class ModifierOption {
 
     public void setSortOrder(int sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public void setLinkedProductId(UUID linkedProductId) {
+        this.linkedProductId = linkedProductId;
     }
 }

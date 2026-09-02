@@ -4,6 +4,7 @@ import com.fidecode.biteflow.application.catalog.dto.CategoryRequest;
 import com.fidecode.biteflow.application.catalog.dto.CategoryResponse;
 import com.fidecode.biteflow.domain.catalog.exception.CategoryNotFoundException;
 import com.fidecode.biteflow.domain.catalog.entity.ProductCategory;
+import com.fidecode.biteflow.domain.catalog.valueobject.ProductStatus;
 import com.fidecode.biteflow.domain.catalog.repository.ProductCategoryRepository;
 import com.fidecode.biteflow.domain.shared.exception.ForbiddenAccessException;
 import com.fidecode.biteflow.domain.shared.StoreGuard;
@@ -35,7 +36,7 @@ public class UpdateCategoryUseCase {
                     .collect(Collectors.toList());
         }
 
-        category.update(request.name(), true, // assuming active by default for now
+        category.update(request.name(), request.status() != null ? ProductStatus.valueOf(request.status()) : category.getStatus(),
                 request.displayOrder() != null ? request.displayOrder() : category.getDisplayOrder(), modifierGroupIds);
 
         return CategoryDtoMapper.toResponse(categoryRepository.save(category));

@@ -88,7 +88,9 @@ public class PanacheProductRepository implements ProductRepository {
         entity.price = product.getPrice();
         entity.imageUrl = product.getImageUrl();
         entity.stock = product.getStock();
-        entity.active = product.isActive();
+        entity.status = product.getStatus().name();
+        entity.externalCode = product.getExternalCode();
+        entity.catalogItemType = product.getCatalogItemType().name();
         entity.productType = product.getProductType().name();
         entity.trackStock = product.isTrackStock();
         entity.productionSectorId = product.getProductionSectorId();

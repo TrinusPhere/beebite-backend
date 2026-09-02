@@ -3,6 +3,7 @@ package com.fidecode.biteflow.application.catalog.category;
 import com.fidecode.biteflow.application.catalog.dto.CategoryRequest;
 import com.fidecode.biteflow.application.catalog.dto.CategoryResponse;
 import com.fidecode.biteflow.domain.catalog.entity.ProductCategory;
+import com.fidecode.biteflow.domain.catalog.valueobject.ProductStatus;
 import com.fidecode.biteflow.domain.catalog.repository.ProductCategoryRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -30,6 +31,10 @@ public class CreateCategoryUseCase {
 
         ProductCategory category = ProductCategory.create(storeId, request.name(),
                 request.displayOrder() != null ? request.displayOrder() : 0, modifierGroupIds);
+
+        if (request.status() != null) {
+            category.update(category.getName(), ProductStatus.valueOf(request.status()), category.getDisplayOrder(), modifierGroupIds);
+        }
 
         ProductCategory saved = categoryRepository.save(category);
         return CategoryDtoMapper.toResponse(saved);

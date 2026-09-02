@@ -1,6 +1,7 @@
 package com.fidecode.biteflow.infrastructure.persistence.panache.mapper;
 
 import com.fidecode.biteflow.domain.catalog.entity.ProductCategory;
+import com.fidecode.biteflow.domain.catalog.valueobject.ProductStatus;
 import com.fidecode.biteflow.infrastructure.persistence.panache.entity.ProductCategoryEntity;
 
 import java.util.UUID;
@@ -23,7 +24,9 @@ public final class ProductCategoryMapper {
                     .map(UUID::fromString).collect(Collectors.toList());
         }
 
-        return ProductCategory.reconstitute(e.id, e.storeId, e.name, e.isActive, e.displayOrder, modifierGroupIds,
+        return ProductCategory.reconstitute(e.id, e.storeId, e.name, 
+                e.status != null ? ProductStatus.valueOf(e.status) : ProductStatus.AVAILABLE, 
+                e.displayOrder, modifierGroupIds,
                 e.createdAt != null ? java.time.LocalDateTime.ofInstant(e.createdAt, java.time.ZoneId.systemDefault())
                         : null);
     }
@@ -36,7 +39,7 @@ public final class ProductCategoryMapper {
         e.id = p.getId();
         e.storeId = p.getStoreId();
         e.name = p.getName();
-        e.isActive = p.isActive();
+        e.status = p.getStatus().name();
         e.displayOrder = p.getDisplayOrder();
 
         if (p.getDefaultModifierGroupIds() != null && !p.getDefaultModifierGroupIds().isEmpty()) {

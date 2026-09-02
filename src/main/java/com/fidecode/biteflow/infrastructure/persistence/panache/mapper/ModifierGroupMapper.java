@@ -3,6 +3,7 @@ package com.fidecode.biteflow.infrastructure.persistence.panache.mapper;
 import com.fidecode.biteflow.domain.catalog.entity.ModifierGroup;
 import com.fidecode.biteflow.domain.catalog.entity.ModifierOption;
 import com.fidecode.biteflow.domain.catalog.valueobject.ModifierType;
+import com.fidecode.biteflow.domain.catalog.valueobject.ModifierGroupSemanticType;
 import com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierGroupEntity;
 import com.fidecode.biteflow.infrastructure.persistence.panache.entity.ModifierOptionEntity;
 
@@ -19,10 +20,13 @@ public final class ModifierGroupMapper {
         List<ModifierOption> opts = e.options != null ? e.options.stream().map(o -> {
             ModifierOption opt = new ModifierOption(e.id, o.name, o.price, o.sortOrder);
             opt.setId(o.id);
+            opt.setLinkedProductId(o.linkedProductId);
             return opt;
         }).toList() : List.of();
         return ModifierGroup.reconstitute(e.id, e.storeId, e.name, ModifierType.valueOf(e.type), e.required,
-                e.minSelections, e.maxSelections, e.icon, opts);
+                e.minSelections, e.maxSelections, e.icon, 
+                e.semanticType != null ? ModifierGroupSemanticType.valueOf(e.semanticType) : null,
+                opts);
     }
 
     public static ModifierGroupEntity toEntity(ModifierGroup g) {
@@ -35,6 +39,7 @@ public final class ModifierGroupMapper {
         e.minSelections = g.getMinSelections();
         e.maxSelections = g.getMaxSelections();
         e.icon = g.getIcon();
+        e.semanticType = g.getSemanticType() != null ? g.getSemanticType().name() : null;
 
         if (g.getOptions() != null) {
             for (ModifierOption opt : g.getOptions()) {
@@ -44,6 +49,7 @@ public final class ModifierGroupMapper {
                 oe.name = opt.getName();
                 oe.price = opt.getPrice();
                 oe.sortOrder = opt.getSortOrder();
+                oe.linkedProductId = opt.getLinkedProductId();
                 e.options.add(oe);
             }
         }

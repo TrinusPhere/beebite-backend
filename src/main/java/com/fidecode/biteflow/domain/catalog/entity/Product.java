@@ -1,5 +1,8 @@
 package com.fidecode.biteflow.domain.catalog.entity;
 
+import com.fidecode.biteflow.domain.catalog.valueobject.CatalogItemType;
+import com.fidecode.biteflow.domain.catalog.valueobject.ChannelPrice;
+import com.fidecode.biteflow.domain.catalog.valueobject.ProductStatus;
 import com.fidecode.biteflow.domain.catalog.valueobject.ProductType;
 import com.fidecode.biteflow.domain.catalog.valueobject.Unit;
 import com.fidecode.biteflow.domain.shared.StoreGuard;
@@ -16,7 +19,10 @@ public class Product implements StoreGuard.StoreScoped {
     private BigDecimal price;
     private String imageUrl;
     private int stock;
-    private boolean active;
+    private ProductStatus status;
+    private String externalCode;
+    private CatalogItemType catalogItemType;
+    private List<ChannelPrice> channelPrices;
     private ProductType productType;
     private boolean trackStock;
     private UUID productionSectorId;
@@ -36,7 +42,9 @@ public class Product implements StoreGuard.StoreScoped {
         this.name = name;
         this.categoryId = categoryId;
         this.price = price != null ? price : BigDecimal.ZERO;
-        active = true;
+        status = ProductStatus.AVAILABLE;
+        catalogItemType = CatalogItemType.DEFAULT;
+        channelPrices = new ArrayList<>();
         productType = ProductType.PRODUCED;
         saleUnit = Unit.UN;
         availableDigitalMenu = true;
@@ -47,7 +55,8 @@ public class Product implements StoreGuard.StoreScoped {
     }
 
     public static Product reconstitute(UUID id, Long version, UUID storeId, String name, UUID categoryId,
-            String description, BigDecimal price, String imageUrl, int stock, boolean active, ProductType productType,
+            String description, BigDecimal price, String imageUrl, int stock, ProductStatus status, String externalCode,
+            CatalogItemType catalogItemType, List<ChannelPrice> channelPrices, ProductType productType,
             boolean trackStock, UUID productionSectorId, Unit saleUnit, boolean availableDigitalMenu,
             boolean availablePdv, List<TechnicalSheetItem> technicalSheet, List<UUID> removableItemIds,
             List<UUID> modifierGroupIds) {
@@ -57,7 +66,10 @@ public class Product implements StoreGuard.StoreScoped {
         p.description = description;
         p.imageUrl = imageUrl;
         p.initializeStock(stock);
-        p.active = active;
+        p.status = status != null ? status : ProductStatus.AVAILABLE;
+        p.externalCode = externalCode;
+        p.catalogItemType = catalogItemType != null ? catalogItemType : CatalogItemType.DEFAULT;
+        p.channelPrices = channelPrices != null ? new ArrayList<>(channelPrices) : new ArrayList<>();
         p.productType = productType != null ? productType : ProductType.PRODUCED;
         p.trackStock = trackStock;
         p.productionSectorId = productionSectorId;
@@ -87,8 +99,17 @@ public class Product implements StoreGuard.StoreScoped {
         this.saleUnit = unit != null ? unit : Unit.UN;
     }
 
-    public void configureAvailability(boolean active, boolean digital, boolean pdv) {
-        this.active = active;
+    public void configureIntegration(String externalCode, CatalogItemType catalogItemType) {
+        this.externalCode = externalCode;
+        this.catalogItemType = catalogItemType != null ? catalogItemType : CatalogItemType.DEFAULT;
+    }
+    
+    public void replaceChannelPrices(List<ChannelPrice> channelPrices) {
+        this.channelPrices = channelPrices != null ? new ArrayList<>(channelPrices) : new ArrayList<>();
+    }
+
+    public void configureAvailability(ProductStatus status, boolean digital, boolean pdv) {
+        this.status = status != null ? status : ProductStatus.AVAILABLE;
         this.availableDigitalMenu = digital;
         this.availablePdv = pdv;
     }
@@ -170,8 +191,20 @@ public class Product implements StoreGuard.StoreScoped {
         return stock;
     }
 
-    public boolean isActive() {
-        return active;
+    public ProductStatus getStatus() {
+        return status;
+    }
+    
+    public String getExternalCode() {
+        return externalCode;
+    }
+
+    public CatalogItemType getCatalogItemType() {
+        return catalogItemType;
+    }
+
+    public List<ChannelPrice> getChannelPrices() {
+        return Collections.unmodifiableList(channelPrices);
     }
 
     public ProductType getProductType() {

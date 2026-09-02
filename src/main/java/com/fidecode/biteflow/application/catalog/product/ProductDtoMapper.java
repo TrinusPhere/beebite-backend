@@ -33,9 +33,13 @@ public final class ProductDtoMapper {
         }
         var modIds = p.getModifierGroupIds() != null ? p.getModifierGroupIds().stream().map(UUID::toString).toList()
                 : List.<String> of();
+        var channelPricesDto = p.getChannelPrices() != null ? p.getChannelPrices().stream()
+                .map(cp -> new ProductResponse.ChannelPriceDto(cp.getChannel(), cp.getPrice())).toList()
+                : List.<ProductResponse.ChannelPriceDto> of();
         return new ProductResponse(p.getId() != null ? p.getId().toString() : null, p.getName(),
                 p.getCategoryId() != null ? p.getCategoryId().toString() : null, categoryName, p.getDescription(),
-                p.getPrice(), p.getImageUrl(), p.getStock(), p.isActive(), p.getProductType().name(), p.isTrackStock(),
+                p.getPrice(), p.getImageUrl(), p.getStock(), p.getStatus().name(), p.getExternalCode(),
+                p.getCatalogItemType().name(), channelPricesDto, p.getProductType().name(), p.isTrackStock(),
                 p.getProductionSectorId() != null ? p.getProductionSectorId().toString() : null, p.getSaleUnit().name(),
                 p.isAvailableDigitalMenu(), p.isAvailablePdv(), sheet, removable, modIds, p.calculateTotalCost(),
                 p.calculateProfit(), null);

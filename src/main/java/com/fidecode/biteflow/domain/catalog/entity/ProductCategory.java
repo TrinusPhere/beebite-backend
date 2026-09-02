@@ -1,6 +1,7 @@
 package com.fidecode.biteflow.domain.catalog.entity;
 
 import com.fidecode.biteflow.domain.shared.StoreGuard;
+import com.fidecode.biteflow.domain.catalog.valueobject.ProductStatus;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -8,12 +9,12 @@ public class ProductCategory implements StoreGuard.StoreScoped {
     private final UUID id;
     private final UUID storeId;
     private String name;
-    private boolean active;
+    private ProductStatus status;
     private int displayOrder;
     private List<UUID> defaultModifierGroupIds;
     private final LocalDateTime createdAt;
 
-    private ProductCategory(UUID id, UUID storeId, String name, boolean active, int displayOrder, List<UUID> ids,
+    private ProductCategory(UUID id, UUID storeId, String name, ProductStatus status, int displayOrder, List<UUID> ids,
             LocalDateTime createdAt) {
         if (storeId == null)
             throw new IllegalArgumentException("StoreId is required");
@@ -22,26 +23,26 @@ public class ProductCategory implements StoreGuard.StoreScoped {
         this.id = id;
         this.storeId = storeId;
         this.name = name;
-        this.active = active;
+        this.status = status != null ? status : ProductStatus.AVAILABLE;
         this.displayOrder = displayOrder;
         this.defaultModifierGroupIds = ids != null ? new ArrayList<>(ids) : new ArrayList<>();
         this.createdAt = createdAt;
     }
 
     public static ProductCategory create(UUID storeId, String name, int order, List<UUID> ids) {
-        return new ProductCategory(UUID.randomUUID(), storeId, name, true, order, ids, LocalDateTime.now());
+        return new ProductCategory(UUID.randomUUID(), storeId, name, ProductStatus.AVAILABLE, order, ids, LocalDateTime.now());
     }
 
-    public static ProductCategory reconstitute(UUID id, UUID storeId, String name, boolean active, int order,
+    public static ProductCategory reconstitute(UUID id, UUID storeId, String name, ProductStatus status, int order,
             List<UUID> ids, LocalDateTime createdAt) {
-        return new ProductCategory(id, storeId, name, active, order, ids, createdAt);
+        return new ProductCategory(id, storeId, name, status, order, ids, createdAt);
     }
 
-    public void update(String name, boolean active, int order, List<UUID> ids) {
+    public void update(String name, ProductStatus status, int order, List<UUID> ids) {
         if (name == null || name.isBlank())
             throw new IllegalArgumentException("Name is required");
         this.name = name;
-        this.active = active;
+        this.status = status != null ? status : ProductStatus.AVAILABLE;
         this.displayOrder = order;
         this.defaultModifierGroupIds = ids != null ? new ArrayList<>(ids) : new ArrayList<>();
     }
@@ -58,8 +59,8 @@ public class ProductCategory implements StoreGuard.StoreScoped {
         return name;
     }
 
-    public boolean isActive() {
-        return active;
+    public ProductStatus getStatus() {
+        return status;
     }
 
     public int getDisplayOrder() {

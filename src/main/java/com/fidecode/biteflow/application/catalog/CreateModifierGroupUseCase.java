@@ -6,6 +6,7 @@ import com.fidecode.biteflow.domain.catalog.entity.ModifierGroup;
 import com.fidecode.biteflow.domain.catalog.entity.ModifierOption;
 import com.fidecode.biteflow.domain.catalog.repository.ModifierGroupRepository;
 import com.fidecode.biteflow.domain.catalog.valueobject.ModifierType;
+import com.fidecode.biteflow.domain.catalog.valueobject.ModifierGroupSemanticType;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -29,15 +30,20 @@ public class CreateModifierGroupUseCase {
         boolean required = request.required() != null ? request.required() : false;
         int min = request.minSelections() != null ? request.minSelections() : 0;
         int max = request.maxSelections() != null ? request.maxSelections() : 1;
+        ModifierGroupSemanticType semanticType = request.semanticType() != null ? ModifierGroupSemanticType.valueOf(request.semanticType()) : null;
 
-        ModifierGroup group = new ModifierGroup(storeId, request.name(), type, required, min, max, request.icon());
+        ModifierGroup group = new ModifierGroup(storeId, request.name(), type, required, min, max, request.icon(), semanticType);
 
         if (request.options() != null) {
             List<ModifierOption> options = new ArrayList<>();
             for (int i = 0; i < request.options().size(); i++) {
                 var optDto = request.options().get(i);
-                options.add(new ModifierOption(null, optDto.name(),
-                        optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i));
+                ModifierOption opt = new ModifierOption(null, optDto.name(),
+                        optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i);
+                if (optDto.linkedProductId() != null) {
+                    opt.setLinkedProductId(UUID.fromString(optDto.linkedProductId()));
+                }
+                options.add(opt);
             }
             group.replaceOptions(options);
         }

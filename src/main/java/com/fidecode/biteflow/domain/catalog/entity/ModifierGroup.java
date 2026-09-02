@@ -2,6 +2,7 @@ package com.fidecode.biteflow.domain.catalog.entity;
 
 import com.fidecode.biteflow.domain.shared.StoreGuard;
 import com.fidecode.biteflow.domain.catalog.valueobject.ModifierType;
+import com.fidecode.biteflow.domain.catalog.valueobject.ModifierGroupSemanticType;
 import java.util.*;
 
 public class ModifierGroup implements StoreGuard.StoreScoped {
@@ -13,10 +14,11 @@ public class ModifierGroup implements StoreGuard.StoreScoped {
     private int minSelections;
     private int maxSelections;
     private String icon;
+    private ModifierGroupSemanticType semanticType;
     private List<ModifierOption> options;
 
     public ModifierGroup(UUID storeId, String name, ModifierType type, boolean required, int min, int max,
-            String icon) {
+            String icon, ModifierGroupSemanticType semanticType) {
         if (storeId == null)
             throw new IllegalArgumentException("storeId é obrigatório.");
         validate(name, min, max);
@@ -27,12 +29,13 @@ public class ModifierGroup implements StoreGuard.StoreScoped {
         this.minSelections = min;
         this.maxSelections = max;
         this.icon = icon;
+        this.semanticType = semanticType;
         this.options = new ArrayList<>();
     }
 
     public static ModifierGroup reconstitute(UUID id, UUID storeId, String name, ModifierType type, boolean required,
-            int min, int max, String icon, List<ModifierOption> options) {
-        ModifierGroup g = new ModifierGroup(storeId, name, type, required, min, max, icon);
+            int min, int max, String icon, ModifierGroupSemanticType semanticType, List<ModifierOption> options) {
+        ModifierGroup g = new ModifierGroup(storeId, name, type, required, min, max, icon, semanticType);
         g.id = id;
         g.replaceOptions(options);
         return g;
@@ -45,7 +48,7 @@ public class ModifierGroup implements StoreGuard.StoreScoped {
             throw new IllegalArgumentException("minSelections não pode ser maior que maxSelections.");
     }
 
-    public void update(String name, ModifierType type, Boolean required, Integer min, Integer max, String icon) {
+    public void update(String name, ModifierType type, Boolean required, Integer min, Integer max, String icon, ModifierGroupSemanticType semanticType) {
         int nextMin = min != null ? min : minSelections, nextMax = max != null ? max : maxSelections;
         validate(name != null ? name : this.name, nextMin, nextMax);
         if (name != null && !name.isBlank())
@@ -57,6 +60,9 @@ public class ModifierGroup implements StoreGuard.StoreScoped {
         this.minSelections = nextMin;
         this.maxSelections = nextMax;
         this.icon = icon;
+        if (semanticType != null) {
+            this.semanticType = semanticType;
+        }
     }
 
     public void replaceOptions(List<ModifierOption> options) {
@@ -93,6 +99,10 @@ public class ModifierGroup implements StoreGuard.StoreScoped {
 
     public String getIcon() {
         return icon;
+    }
+
+    public ModifierGroupSemanticType getSemanticType() {
+        return semanticType;
     }
 
     public List<ModifierOption> getOptions() {

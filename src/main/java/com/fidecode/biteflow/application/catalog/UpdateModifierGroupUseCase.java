@@ -7,6 +7,7 @@ import com.fidecode.biteflow.domain.catalog.entity.ModifierOption;
 import com.fidecode.biteflow.domain.catalog.exception.ModifierGroupNotFoundException;
 import com.fidecode.biteflow.domain.catalog.repository.ModifierGroupRepository;
 import com.fidecode.biteflow.domain.catalog.valueobject.ModifierType;
+import com.fidecode.biteflow.domain.catalog.valueobject.ModifierGroupSemanticType;
 import com.fidecode.biteflow.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -31,15 +32,21 @@ public class UpdateModifierGroupUseCase {
                 .orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
         StoreGuard.enforce(group, storeId);
 
+        ModifierGroupSemanticType semanticType = request.semanticType() != null ? ModifierGroupSemanticType.valueOf(request.semanticType()) : null;
+
         group.update(request.name(), request.type() != null ? ModifierType.valueOf(request.type()) : null,
-                request.required(), request.minSelections(), request.maxSelections(), request.icon());
+                request.required(), request.minSelections(), request.maxSelections(), request.icon(), semanticType);
 
         if (request.options() != null) {
             List<ModifierOption> options = new ArrayList<>();
             for (int i = 0; i < request.options().size(); i++) {
                 var optDto = request.options().get(i);
-                options.add(new ModifierOption(group.getId(), optDto.name(),
-                        optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i));
+                ModifierOption opt = new ModifierOption(group.getId(), optDto.name(),
+                        optDto.price() != null ? optDto.price() : BigDecimal.ZERO, i);
+                if (optDto.linkedProductId() != null) {
+                    opt.setLinkedProductId(UUID.fromString(optDto.linkedProductId()));
+                }
+                options.add(opt);
             }
             group.replaceOptions(options);
         }

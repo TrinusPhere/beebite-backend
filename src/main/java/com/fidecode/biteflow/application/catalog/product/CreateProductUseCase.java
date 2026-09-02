@@ -8,6 +8,9 @@ import com.fidecode.biteflow.domain.catalog.entity.TechnicalSheetItem;
 import com.fidecode.biteflow.domain.catalog.repository.IngredientRepository;
 import com.fidecode.biteflow.domain.catalog.repository.ProductRepository;
 import com.fidecode.biteflow.domain.catalog.valueobject.ProductType;
+import com.fidecode.biteflow.domain.catalog.valueobject.ProductStatus;
+import com.fidecode.biteflow.domain.catalog.valueobject.CatalogItemType;
+import com.fidecode.biteflow.domain.catalog.valueobject.ChannelPrice;
 import com.fidecode.biteflow.domain.catalog.valueobject.Unit;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -44,8 +47,15 @@ public class CreateProductUseCase {
                 product.getPrice(), request.imageUrl());
         if (request.stock() != null)
             product.initializeStock(request.stock());
-        if (request.active() != null)
-            product.configureAvailability(request.active(), product.isAvailableDigitalMenu(), product.isAvailablePdv());
+        if (request.status() != null)
+            product.configureAvailability(ProductStatus.valueOf(request.status()), product.isAvailableDigitalMenu(), product.isAvailablePdv());
+
+        product.configureIntegration(request.externalCode(), request.catalogItemType() != null ? CatalogItemType.valueOf(request.catalogItemType()) : null);
+
+        if (request.channelPrices() != null) {
+            product.replaceChannelPrices(request.channelPrices().stream()
+                    .map(cp -> new ChannelPrice(cp.channel(), cp.price())).toList());
+        }
         if (request.productType() != null)
             product.configureInventory(ProductType.valueOf(request.productType()), product.isTrackStock(),
                     product.getProductionSectorId(), product.getSaleUnit());
@@ -59,9 +69,9 @@ public class CreateProductUseCase {
             product.configureInventory(product.getProductType(), product.isTrackStock(),
                     product.getProductionSectorId(), Unit.valueOf(request.saleUnit()));
         if (request.availableDigitalMenu() != null)
-            product.configureAvailability(product.isActive(), request.availableDigitalMenu(), product.isAvailablePdv());
+            product.configureAvailability(product.getStatus(), request.availableDigitalMenu(), product.isAvailablePdv());
         if (request.availablePdv() != null)
-            product.configureAvailability(product.isActive(), product.isAvailableDigitalMenu(), request.availablePdv());
+            product.configureAvailability(product.getStatus(), product.isAvailableDigitalMenu(), request.availablePdv());
 
         List<UUID> ingredientIds = new ArrayList<>();
         if (request.technicalSheet() != null) {

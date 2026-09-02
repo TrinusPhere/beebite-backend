@@ -2,6 +2,7 @@ package com.fidecode.biteflow.application.publicmenu;
 
 import com.fidecode.biteflow.application.publicmenu.dto.PublicMenuResponse;
 import com.fidecode.biteflow.domain.catalog.repository.*;
+import com.fidecode.biteflow.domain.catalog.valueobject.ProductStatus;
 import com.fidecode.biteflow.domain.store.exception.StoreNotFoundException;
 import com.fidecode.biteflow.domain.store.repository.StoreRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -27,7 +28,7 @@ public class GetPublicMenuUseCase {
         var cmap = new HashMap<UUID, String>();
         categories.findAllByStoreId(store.getId()).forEach(c -> cmap.put(c.getId(), c.getName()));
         var views = products.findAllByStoreId(store.getId()).stream()
-                .filter(p -> p.isActive() && p.isAvailableDigitalMenu())
+                .filter(p -> p.getStatus() == ProductStatus.AVAILABLE && p.isAvailableDigitalMenu())
                 .map(p -> new PublicMenuResponse.ProductView(p.getId().toString(), p.getName(),
                         p.getCategoryId() != null ? p.getCategoryId().toString() : null,
                         p.getCategoryId() != null ? cmap.get(p.getCategoryId()) : "Outros", p.getDescription(),

@@ -22,8 +22,8 @@ public class ProductCategoryEntity extends PanacheEntityBase {
     @Column(nullable = false)
     public String name;
 
-    @Column(name = "is_active", nullable = false)
-    public boolean isActive;
+    @Column(name = "status", nullable = false)
+    public String status;
 
     @Column(name = "display_order", nullable = false)
     public int displayOrder;

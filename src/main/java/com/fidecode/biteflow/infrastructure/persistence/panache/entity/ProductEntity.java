@@ -44,7 +44,14 @@ public class ProductEntity extends PanacheEntityBase {
 
     public int stock;
 
-    public boolean active;
+    @Column(name = "status", nullable = false)
+    public String status;
+
+    @Column(name = "external_code")
+    public String externalCode;
+
+    @Column(name = "catalog_item_type", nullable = false)
+    public String catalogItemType;
 
     @Column(name = "product_type", nullable = false)
     public String productType;
@@ -75,6 +82,9 @@ public class ProductEntity extends PanacheEntityBase {
     @org.hibernate.annotations.BatchSize(size = 50)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<TechnicalSheetItemEntity> technicalSheet = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<ProductChannelPriceEntity> channelPrices = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_removable_item", joinColumns = @JoinColumn(name = "product_id"))

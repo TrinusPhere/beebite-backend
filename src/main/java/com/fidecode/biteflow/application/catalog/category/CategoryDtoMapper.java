@@ -19,7 +19,7 @@ public final class CategoryDtoMapper {
                     .collect(Collectors.toList());
         }
 
-        return new CategoryResponse(category.getId().toString(), category.getName(), category.isActive(),
+        return new CategoryResponse(category.getId().toString(), category.getName(), category.getStatus().name(),
                 category.getDisplayOrder(), modifierGroupIds,
                 category.getCreatedAt() != null ? category.getCreatedAt().toInstant(ZoneOffset.UTC) : null);
     }

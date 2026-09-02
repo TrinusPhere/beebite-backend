@@ -39,6 +39,9 @@ public class ModifierGroupEntity extends PanacheEntityBase {
 
     public String icon;
 
+    @Column(name = "semantic_type")
+    public String semanticType;
+
     @OneToMany(mappedBy = "modifierGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<ModifierOptionEntity> options = new ArrayList<>();
 

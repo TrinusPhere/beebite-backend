@@ -26,4 +26,7 @@ public class ModifierOptionEntity extends PanacheEntityBase {
 
     @Column(name = "sort_order")
     public int sortOrder;
+
+    @Column(name = "linked_product_id")
+    public UUID linkedProductId;
 }
