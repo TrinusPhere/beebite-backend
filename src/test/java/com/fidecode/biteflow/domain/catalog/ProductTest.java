@@ -21,7 +21,7 @@ class ProductTest {
         assertEquals("X-Bacon", product.getName());
         assertEquals(categoryId, product.getCategoryId());
         assertEquals(storeId, product.getStoreId());
-        assertTrue(product.isActive());
+        assertTrue(product.getStatus() == com.fidecode.biteflow.domain.catalog.valueobject.ProductStatus.AVAILABLE);
         assertEquals(0, BigDecimal.valueOf(35.00).compareTo(product.getPrice()));
     }
 

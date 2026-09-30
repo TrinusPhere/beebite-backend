@@ -21,10 +21,10 @@ CREATE INDEX idx_channel_price_product ON product_channel_price(product_id);
 
 -- ── ProductCategory: migração de boolean active → enum status ──
 ALTER TABLE product_category ADD COLUMN status VARCHAR(20);
-UPDATE product_category SET status = CASE WHEN active = true THEN 'AVAILABLE' ELSE 'UNAVAILABLE' END;
+UPDATE product_category SET status = CASE WHEN is_active = true THEN 'AVAILABLE' ELSE 'UNAVAILABLE' END;
 ALTER TABLE product_category ALTER COLUMN status SET NOT NULL;
 ALTER TABLE product_category ALTER COLUMN status SET DEFAULT 'AVAILABLE';
-ALTER TABLE product_category DROP COLUMN active;
+ALTER TABLE product_category DROP COLUMN is_active;
 
 -- ── ModifierGroup: tipo semântico ──
 ALTER TABLE modifier_group ADD COLUMN semantic_type VARCHAR(30);

@@ -268,7 +268,7 @@ class OrderUseCasesTest {
     @Test
     void deveLancarExcecaoAoEditarPedidoEmRota() {
         UUID orderId = UUID.randomUUID();
-        Order order = Order.reconstitute(orderId, STORE_ID, "#9999", null, null, "João", null, OrderType.DELIVERY,
+        Order order = Order.reconstitute(orderId, STORE_ID, "#9999", null, "João", null, OrderType.DELIVERY,
                 OrderStatus.EM_ROTA, PaymentMethod.PIX, null, null, OrderPlatform.OWN, null, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO, false, List.of(), java.time.LocalDateTime.now(),
                 java.time.LocalDateTime.now(), null);
@@ -284,7 +284,7 @@ class OrderUseCasesTest {
     @Test
     void deveLancarExcecaoAoEditarPedidoFinalizado() {
         UUID orderId = UUID.randomUUID();
-        Order order = Order.reconstitute(orderId, STORE_ID, "#9998", null, null, "Maria", null, OrderType.BALCAO,
+        Order order = Order.reconstitute(orderId, STORE_ID, "#9998", null, "Maria", null, OrderType.BALCAO,
                 OrderStatus.FINALIZADO, PaymentMethod.DINHEIRO, null, null, OrderPlatform.OWN, null, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO, false, List.of(), java.time.LocalDateTime.now(),
                 java.time.LocalDateTime.now(), null);

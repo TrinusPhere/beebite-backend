@@ -59,7 +59,7 @@ class GetDashboardUseCaseTest {
                 .thenReturn(List.of(record));
 
         // Arrange — Pedidos ativos
-        var activeOrder = Order.reconstitute(UUID.randomUUID(), STORE_ID, "#1024", null, null, "Mateus Silva", null,
+        var activeOrder = Order.reconstitute(UUID.randomUUID(), STORE_ID, "#1024", null, "Mateus Silva", null,
                 OrderType.DELIVERY, OrderStatus.PREPARO, PaymentMethod.PIX, null, null, OrderPlatform.OWN, null,
                 BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("65.00"), false, List.of(), LocalDateTime.now(),
                 LocalDateTime.now(), null);

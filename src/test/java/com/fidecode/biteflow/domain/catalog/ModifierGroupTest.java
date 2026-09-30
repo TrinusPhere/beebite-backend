@@ -17,7 +17,7 @@ class ModifierGroupTest {
 
     @Test
     void shouldCreateRadioGroup() {
-        ModifierGroup group = new ModifierGroup(storeId, "Ponto da Carne", ModifierType.RADIO, true, 1, 1, "🥩");
+        ModifierGroup group = new ModifierGroup(storeId, "Ponto da Carne", ModifierType.RADIO, true, 1, 1, "🥩", null);
         assertEquals("Ponto da Carne", group.getName());
         assertEquals(ModifierType.RADIO, group.getType());
         assertTrue(group.isRequired());
@@ -27,7 +27,7 @@ class ModifierGroupTest {
 
     @Test
     void shouldCreateCheckboxGroup() {
-        ModifierGroup group = new ModifierGroup(storeId, "Extras", ModifierType.CHECKBOX, false, 0, 3, "➕");
+        ModifierGroup group = new ModifierGroup(storeId, "Extras", ModifierType.CHECKBOX, false, 0, 3, "➕", null);
         assertEquals(ModifierType.CHECKBOX, group.getType());
         assertFalse(group.isRequired());
     }
@@ -35,18 +35,18 @@ class ModifierGroupTest {
     @Test
     void shouldRequireName() {
         assertThrows(IllegalArgumentException.class,
-                () -> new ModifierGroup(storeId, null, ModifierType.RADIO, false, 0, 1, null));
+                () -> new ModifierGroup(storeId, null, ModifierType.RADIO, false, 0, 1, null, null));
     }
 
     @Test
     void shouldRequireStoreId() {
         assertThrows(IllegalArgumentException.class,
-                () -> new ModifierGroup(null, "Test", ModifierType.RADIO, false, 0, 1, null));
+                () -> new ModifierGroup(null, "Test", ModifierType.RADIO, false, 0, 1, null, null));
     }
 
     @Test
     void shouldValidateMinMaxSelections() {
         assertThrows(IllegalArgumentException.class,
-                () -> new ModifierGroup(storeId, "Test", ModifierType.RADIO, false, 3, 1, null));
+                () -> new ModifierGroup(storeId, "Test", ModifierType.RADIO, false, 3, 1, null, null));
     }
 }
