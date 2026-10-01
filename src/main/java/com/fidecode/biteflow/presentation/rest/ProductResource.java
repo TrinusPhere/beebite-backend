@@ -37,12 +37,27 @@ public class ProductResource extends BaseResource {
     UpdateProductRemovableItemsUseCase updateProductRemovableItemsUseCase;
     @Inject
     UpdateProductModifierGroupsUseCase updateProductModifierGroupsUseCase;
+    @Inject
+    GetProductByExternalCodeUseCase getProductByExternalCodeUseCase;
+    @Inject
+    UpdateProductAvailabilityUseCase updateProductAvailabilityUseCase;
 
     @PermissionsAllowed("produtos")
     @GET
     public Response list(@QueryParam("categoryId") String categoryId, @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("20") int size) {
         return Response.ok(listProductsUseCase.execute(getStoreId(), categoryId, page, size)).build();
+    }
+
+    @PermissionsAllowed("produtos")
+    @GET
+    @Path("/by-external-code/{externalCode}")
+    public Response getByExternalCode(@PathParam("externalCode") String externalCode) {
+        ProductResponse product = getProductByExternalCodeUseCase.execute(getStoreId(), externalCode);
+        if (product == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(product).build();
     }
 
     @PermissionsAllowed("produtos")
@@ -86,5 +101,12 @@ public class ProductResource extends BaseResource {
     @Path("/{id}/modifier-groups")
     public Response updateModifierGroups(@PathParam("id") UUID id, List<String> groupIds) {
         return Response.ok(updateProductModifierGroupsUseCase.execute(getStoreId(), id, groupIds)).build();
+    }
+
+    @PermissionsAllowed("produtos")
+    @PUT
+    @Path("/{id}/availability")
+    public Response updateAvailability(@PathParam("id") UUID id, @Valid com.fidecode.biteflow.application.catalog.dto.ProductAvailabilityRequest request) {
+        return Response.ok(updateProductAvailabilityUseCase.execute(getStoreId(), id, request)).build();
     }
 }

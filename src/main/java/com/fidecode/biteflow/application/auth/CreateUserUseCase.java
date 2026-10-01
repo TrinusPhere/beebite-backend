@@ -44,6 +44,6 @@ public class CreateUserUseCase {
 
     static UserResponse toResponse(User u) {
         return new UserResponse(u.getId() != null ? u.getId().toString() : null, u.getName(), u.getLogin(),
-                u.getRole().name(), u.getPermissions().stream().map(Permission::getValue).toList(), u.isActive(), null);
+                u.getRole().name(), u.getPermissions().stream().map(Permission::getValue).toList(), u.isActive(), null, u.getStoreId().toString());
     }
 }

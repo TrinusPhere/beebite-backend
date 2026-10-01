@@ -23,4 +23,10 @@ public interface ProductRepository {
     Product save(Product product);
 
     void deleteById(UUID id);
+
+    /**
+     * Busca um produto pelo externalCode e storeId, INCLUINDO soft-deleted.
+     * Usa SQL nativo para contornar o @SQLRestriction("deleted_at IS NULL").
+     */
+    Optional<Product> findByExternalCodeAndStoreId(String externalCode, UUID storeId);
 }

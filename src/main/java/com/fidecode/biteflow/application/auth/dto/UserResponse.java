@@ -4,5 +4,5 @@ import java.time.Instant;
 import java.util.List;
 
 public record UserResponse(String id, String name, String login, String role, List<String> permissions, boolean active,
-        Instant createdAt) {
+        Instant createdAt, String storeId) {
 }

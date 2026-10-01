@@ -43,6 +43,6 @@ public class LoginUseCase {
 
         return new LoginResponse(token, 86400L,
                 new LoginResponse.UserSummary(user.getId() != null ? user.getId().toString() : null, user.getName(),
-                        user.getLogin(), user.getRole().name(), perms));
+                        user.getLogin(), user.getRole().name(), perms, user.getStoreId().toString()));
     }
 }

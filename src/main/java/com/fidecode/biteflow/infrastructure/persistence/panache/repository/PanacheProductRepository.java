@@ -143,4 +143,37 @@ public class PanacheProductRepository implements ProductRepository {
             em.merge(entity);
         });
     }
+
+    @Override
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public Optional<Product> findByExternalCodeAndStoreId(String externalCode, UUID storeId) {
+        // SQL nativo ignora o @SQLRestriction("deleted_at IS NULL") do Hibernate
+        var results = (java.util.List<Object[]>) em.createNativeQuery(
+                "SELECT id::text, deleted_at FROM product WHERE external_code = :code AND store_id = :storeId LIMIT 1")
+                .setParameter("code", externalCode)
+                .setParameter("storeId", storeId)
+                .getResultList();
+
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Object[] row = results.get(0);
+        UUID productId = UUID.fromString(row[0].toString());
+        boolean isSoftDeleted = row[1] != null;
+
+        // Se o produto estava soft-deleted, restaura para que o Hibernate consiga carregá-lo
+        if (isSoftDeleted) {
+            em.createNativeQuery("UPDATE product SET deleted_at = NULL WHERE id = :id")
+                    .setParameter("id", productId)
+                    .executeUpdate();
+            em.flush();
+            em.clear(); // Limpa o cache L1 para forçar reload
+        }
+
+        ProductEntity entity = em.find(ProductEntity.class, productId);
+        return Optional.ofNullable(entity).map(ProductMapper::toDomain);
+    }
+
 }
