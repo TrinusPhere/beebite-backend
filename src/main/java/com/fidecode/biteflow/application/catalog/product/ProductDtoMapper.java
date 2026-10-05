@@ -38,7 +38,7 @@ public final class ProductDtoMapper {
                 : List.<ProductResponse.ChannelPriceDto> of();
         return new ProductResponse(p.getId() != null ? p.getId().toString() : null, p.getName(),
                 p.getCategoryId() != null ? p.getCategoryId().toString() : null, categoryName, p.getDescription(),
-                p.getPrice(), p.getImageUrl(), p.getStock(), p.getStatus().name(), p.getExternalCode(),
+                p.getPrice(), p.getEstimatedCost(), p.getImageUrl(), p.getStock(), p.getStatus().name(), p.getExternalCode(),
                 p.getCatalogItemType().name(), channelPricesDto, p.getProductType().name(), p.isTrackStock(),
                 p.getProductionSectorId() != null ? p.getProductionSectorId().toString() : null, p.getSaleUnit().name(),
                 p.isAvailableDigitalMenu(), p.isAvailablePdv(), sheet, removable, modIds, p.calculateTotalCost(),

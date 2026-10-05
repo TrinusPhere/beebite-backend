@@ -41,7 +41,7 @@ class ModifierGroupUseCasesTest {
             return g;
         });
 
-        ModifierGroupRequest req = new ModifierGroupRequest("Ponto", "RADIO", true, 1, 1, null, "DEFAULT",
+        ModifierGroupRequest req = new ModifierGroupRequest("Ponto", "RADIO", true, 1, 1, null, "SPECIFICATION",
                 List.of(new ModifierGroupRequest.ModifierOptionDto("Mal", BigDecimal.ZERO, null)));
 
         ModifierGroupResponse response = createModifierGroupUseCase.execute(STORE_ID, req);

@@ -48,18 +48,21 @@ public class UpdateProductUseCase {
         StoreGuard.enforce(product, storeId);
 
         product.updateBasicInfo(request.name(), product.getCategoryId(), product.getDescription(), product.getPrice(),
-                product.getImageUrl());
+                product.getEstimatedCost(), product.getImageUrl());
         UUID categoryId = request.categoryId() != null && !request.categoryId().isBlank()
                 ? UUID.fromString(request.categoryId()) : null;
         product.updateBasicInfo(product.getName(), categoryId, product.getDescription(), product.getPrice(),
-                product.getImageUrl());
+                product.getEstimatedCost(), product.getImageUrl());
         product.updateBasicInfo(product.getName(), product.getCategoryId(), request.description(), product.getPrice(),
-                product.getImageUrl());
+                product.getEstimatedCost(), product.getImageUrl());
         if (request.price() != null)
             product.updateBasicInfo(product.getName(), product.getCategoryId(), product.getDescription(),
-                    request.price(), product.getImageUrl());
+                    request.price(), product.getEstimatedCost(), product.getImageUrl());
+        if (request.estimatedCost() != null)
+            product.updateBasicInfo(product.getName(), product.getCategoryId(), product.getDescription(),
+                    product.getPrice(), request.estimatedCost(), product.getImageUrl());
         product.updateBasicInfo(product.getName(), product.getCategoryId(), product.getDescription(),
-                product.getPrice(), request.imageUrl());
+                product.getPrice(), product.getEstimatedCost(), request.imageUrl());
         if (request.stock() != null)
             product.initializeStock(request.stock());
         if (request.status() != null)

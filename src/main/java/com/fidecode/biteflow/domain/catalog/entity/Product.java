@@ -17,6 +17,7 @@ public class Product implements StoreGuard.StoreScoped {
     private UUID categoryId;
     private String description;
     private BigDecimal price;
+    private BigDecimal estimatedCost;
     private String imageUrl;
     private int stock;
     private ProductStatus status;
@@ -55,7 +56,7 @@ public class Product implements StoreGuard.StoreScoped {
     }
 
     public static Product reconstitute(UUID id, Long version, UUID storeId, String name, UUID categoryId,
-            String description, BigDecimal price, String imageUrl, int stock, ProductStatus status, String externalCode,
+            String description, BigDecimal price, BigDecimal estimatedCost, String imageUrl, int stock, ProductStatus status, String externalCode,
             CatalogItemType catalogItemType, List<ChannelPrice> channelPrices, ProductType productType,
             boolean trackStock, UUID productionSectorId, Unit saleUnit, boolean availableDigitalMenu,
             boolean availablePdv, List<TechnicalSheetItem> technicalSheet, List<UUID> removableItemIds,
@@ -64,6 +65,7 @@ public class Product implements StoreGuard.StoreScoped {
         p.id = id;
         p.version = version;
         p.description = description;
+        p.estimatedCost = estimatedCost;
         p.imageUrl = imageUrl;
         p.initializeStock(stock);
         p.status = status != null ? status : ProductStatus.AVAILABLE;
@@ -82,13 +84,14 @@ public class Product implements StoreGuard.StoreScoped {
         return p;
     }
 
-    public void updateBasicInfo(String name, UUID categoryId, String description, BigDecimal price, String imageUrl) {
+    public void updateBasicInfo(String name, UUID categoryId, String description, BigDecimal price, BigDecimal estimatedCost, String imageUrl) {
         if (name != null && !name.isBlank())
             this.name = name;
         this.categoryId = categoryId;
         this.description = description;
         if (price != null)
             this.price = price;
+        this.estimatedCost = estimatedCost;
         this.imageUrl = imageUrl;
     }
 
@@ -147,12 +150,19 @@ public class Product implements StoreGuard.StoreScoped {
     }
 
     public BigDecimal calculateTotalCost() {
-        return technicalSheet == null || technicalSheet.isEmpty() ? BigDecimal.ZERO
-                : technicalSheet.stream().map(TechnicalSheetItem::getLineCost).reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (technicalSheet != null && !technicalSheet.isEmpty()) {
+            return technicalSheet.stream().map(TechnicalSheetItem::getLineCost).reduce(BigDecimal.ZERO, BigDecimal::add);
+        }
+        return estimatedCost != null ? estimatedCost : BigDecimal.ZERO;
     }
 
     public BigDecimal calculateProfit() {
         return price.subtract(calculateTotalCost());
+    }
+
+    public BigDecimal calculateNetProfit(BigDecimal channelFeeRate) {
+        BigDecimal fee = price.multiply(channelFeeRate != null ? channelFeeRate : BigDecimal.ZERO);
+        return price.subtract(calculateTotalCost()).subtract(fee);
     }
 
     public UUID getId() {
@@ -181,6 +191,10 @@ public class Product implements StoreGuard.StoreScoped {
 
     public BigDecimal getPrice() {
         return price;
+    }
+
+    public BigDecimal getEstimatedCost() {
+        return estimatedCost;
     }
 
     public String getImageUrl() {

@@ -26,7 +26,7 @@ public final class ProductMapper {
         var prices = e.channelPrices != null ? e.channelPrices.stream()
                 .map(pe -> new ChannelPrice(pe.channel, pe.price)).toList()
                 : java.util.List.<ChannelPrice> of();
-        return Product.reconstitute(e.id, e.version, e.storeId, e.name, e.categoryId, e.description, e.price,
+        return Product.reconstitute(e.id, e.version, e.storeId, e.name, e.categoryId, e.description, e.price, e.estimatedCost,
                 e.imageUrl, e.stock, 
                 e.status != null ? ProductStatus.valueOf(e.status) : ProductStatus.AVAILABLE, 
                 e.externalCode,
@@ -46,6 +46,7 @@ public final class ProductMapper {
         e.categoryId = p.getCategoryId();
         e.description = p.getDescription();
         e.price = p.getPrice();
+        e.estimatedCost = p.getEstimatedCost();
         e.imageUrl = p.getImageUrl();
         e.stock = p.getStock();
         e.status = p.getStatus().name();

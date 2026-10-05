@@ -44,9 +44,9 @@ public class ProductResource extends BaseResource {
 
     @PermissionsAllowed("produtos")
     @GET
-    public Response list(@QueryParam("categoryId") String categoryId, @QueryParam("page") @DefaultValue("0") int page,
+    public Response list(@QueryParam("categoryId") String categoryId, @QueryParam("pendingCost") @DefaultValue("false") boolean pendingCost, @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("20") int size) {
-        return Response.ok(listProductsUseCase.execute(getStoreId(), categoryId, page, size)).build();
+        return Response.ok(listProductsUseCase.execute(getStoreId(), categoryId, pendingCost, page, size)).build();
     }
 
     @PermissionsAllowed("produtos")

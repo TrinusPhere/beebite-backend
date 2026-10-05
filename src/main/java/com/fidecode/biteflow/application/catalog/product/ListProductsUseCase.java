@@ -34,10 +34,15 @@ public class ListProductsUseCase {
         this.productResponseAssembler = productResponseAssembler;
     }
 
-    public PageResponse<ProductResponse> execute(UUID storeId, String categoryId, int page, int size) {
-        PageResult<Product> productPage = (categoryId != null && !categoryId.isBlank())
-                ? productRepository.findByStoreIdAndCategoryId(storeId, UUID.fromString(categoryId), page, size)
-                : productRepository.findAllByStoreId(storeId, page, size);
+    public PageResponse<ProductResponse> execute(UUID storeId, String categoryId, boolean pendingCost, int page, int size) {
+        PageResult<Product> productPage;
+        if (pendingCost) {
+            productPage = productRepository.findPendingCostByStoreId(storeId, page, size);
+        } else if (categoryId != null && !categoryId.isBlank()) {
+            productPage = productRepository.findByStoreIdAndCategoryId(storeId, UUID.fromString(categoryId), page, size);
+        } else {
+            productPage = productRepository.findAllByStoreId(storeId, page, size);
+        }
 
         // Otimização contra N+1
         Map<UUID, Ingredient> ingredientCache = ingredientRepository.findAllByStoreId(storeId).stream()

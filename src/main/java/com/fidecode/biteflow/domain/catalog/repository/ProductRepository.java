@@ -11,6 +11,8 @@ public interface ProductRepository {
 
     com.fidecode.biteflow.domain.shared.PageResult<Product> findAllByStoreId(UUID storeId, int page, int size);
 
+    com.fidecode.biteflow.domain.shared.PageResult<Product> findPendingCostByStoreId(UUID storeId, int page, int size);
+
     com.fidecode.biteflow.domain.shared.PageResult<Product> findByStoreIdAndCategoryId(UUID storeId, UUID categoryId,
             int page, int size);
 

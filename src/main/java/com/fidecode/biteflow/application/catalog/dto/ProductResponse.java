@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.List;
 
 public record ProductResponse(String id, String name, String categoryId, String categoryName, String description,
-        BigDecimal price, String imageUrl, int stock, String status, String externalCode, String catalogItemType,
+        BigDecimal price, BigDecimal estimatedCost, String imageUrl, int stock, String status, String externalCode, String catalogItemType,
         List<ChannelPriceDto> channelPrices, String productType, boolean trackStock,
         String productionSectorId, String saleUnit, boolean availableDigitalMenu, boolean availablePdv,
         List<TechnicalSheetItemResponse> technicalSheet, List<RemovableItemResponse> removableItems,

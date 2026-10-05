@@ -42,9 +42,7 @@ public class CreateProductUseCase {
                 ? UUID.fromString(request.categoryId()) : null;
         Product product = new Product(storeId, request.name(), categoryId, request.price());
         product.updateBasicInfo(product.getName(), product.getCategoryId(), request.description(), product.getPrice(),
-                product.getImageUrl());
-        product.updateBasicInfo(product.getName(), product.getCategoryId(), product.getDescription(),
-                product.getPrice(), request.imageUrl());
+                request.estimatedCost(), request.imageUrl());
         if (request.stock() != null)
             product.initializeStock(request.stock());
         if (request.status() != null)

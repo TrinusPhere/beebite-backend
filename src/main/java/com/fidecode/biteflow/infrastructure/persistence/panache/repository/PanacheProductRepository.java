@@ -50,6 +50,16 @@ public class PanacheProductRepository implements ProductRepository {
 
     @Override
     @Transactional
+    public com.fidecode.biteflow.domain.shared.PageResult<Product> findPendingCostByStoreId(UUID storeId, int page, int size) {
+        var query = repo.find("storeId = ?1 and estimatedCost is null and technicalSheet is empty", storeId)
+                .page(io.quarkus.panache.common.Page.of(page, size));
+        List<Product> content = query.list().stream().map(ProductMapper::toDomain).toList();
+        return new com.fidecode.biteflow.domain.shared.PageResult<>(content, page, size, query.count(),
+                query.pageCount());
+    }
+
+    @Override
+    @Transactional
     public com.fidecode.biteflow.domain.shared.PageResult<Product> findByStoreIdAndCategoryId(UUID storeId,
             UUID categoryId, int page, int size) {
         var query = repo.find("storeId = ?1 and categoryId = ?2", storeId, categoryId)
@@ -86,6 +96,7 @@ public class PanacheProductRepository implements ProductRepository {
         entity.categoryId = product.getCategoryId();
         entity.description = product.getDescription();
         entity.price = product.getPrice();
+        entity.estimatedCost = product.getEstimatedCost();
         entity.imageUrl = product.getImageUrl();
         entity.stock = product.getStock();
         entity.status = product.getStatus().name();

@@ -39,6 +39,9 @@ public class ProductEntity extends PanacheEntityBase {
     @Column(precision = 10, scale = 2)
     public BigDecimal price;
 
+    @Column(name = "estimated_cost", precision = 10, scale = 2)
+    public BigDecimal estimatedCost;
+
     @Column(name = "image_url")
     public String imageUrl;
 
