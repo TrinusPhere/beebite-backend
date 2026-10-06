@@ -33,6 +33,7 @@ class CustomerUseCasesTest {
     private DeleteCustomerUseCase deleteCustomerUseCase;
     private ListCustomersUseCase listCustomersUseCase;
     private GetCustomerUseCase getCustomerUseCase;
+    private GetCustomerByPhoneUseCase getCustomerByPhoneUseCase;
 
     private final UUID STORE_ID = UUID.randomUUID();
 
@@ -43,6 +44,7 @@ class CustomerUseCasesTest {
         deleteCustomerUseCase = new DeleteCustomerUseCase(customerRepository);
         listCustomersUseCase = new ListCustomersUseCase(customerRepository);
         getCustomerUseCase = new GetCustomerUseCase(customerRepository);
+        getCustomerByPhoneUseCase = new GetCustomerByPhoneUseCase(customerRepository);
     }
 
     @Test
@@ -137,5 +139,27 @@ class CustomerUseCasesTest {
 
         CustomerResponse response = getCustomerUseCase.execute(STORE_ID, id);
         assertEquals("João", response.name());
+    }
+
+    @Test
+    void deveBuscarClientePorTelefone() {
+        String phone = "11999999999";
+        Customer customer = new Customer(STORE_ID, "Maria");
+        customer.updateProfile("Maria", phone, "maria@email.com", "000", "Rua", "1", "A", "Centro");
+        
+        when(customerRepository.findByPhoneAndStoreId(phone, STORE_ID)).thenReturn(Optional.of(customer));
+
+        CustomerResponse response = getCustomerByPhoneUseCase.execute(STORE_ID, phone);
+        assertEquals("Maria", response.name());
+        assertEquals(phone, response.phone());
+    }
+
+    @Test
+    void deveLancarExcecaoAoBuscarClientePorTelefoneInexistente() {
+        String phone = "000";
+        when(customerRepository.findByPhoneAndStoreId(phone, STORE_ID)).thenReturn(Optional.empty());
+
+        assertThrows(com.fidecode.biteflow.domain.customer.exception.CustomerNotFoundException.class, 
+                () -> getCustomerByPhoneUseCase.execute(STORE_ID, phone));
     }
 }

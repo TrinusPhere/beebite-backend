@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-public record PublicOrderRequest(@NotBlank String customerName, @NotBlank String customerPhone,
+public record PublicOrderRequest(String customerId, @NotBlank String customerName, @NotBlank String customerPhone,
         @NotBlank String serviceType, String operation, String channel, String source, DeliveryAddress deliveryAddress,
         @NotBlank String paymentMethod, BigDecimal cashChangeFor, String notes, BigDecimal total,
         @NotNull @Size(min = 1) List<Item> items) {

@@ -26,7 +26,7 @@ public class CreatePublicOrderUseCase {
         if (!store.isOpen())
             throw new StoreClosedException();
         String address = r.deliveryAddress() != null ? r.deliveryAddress().address() : null;
-        var customer = new CreateOrderRequest.CustomerInfo(null, r.customerName(), address, r.customerPhone(),
+        var customer = new CreateOrderRequest.CustomerInfo(r.customerId(), r.customerName(), address, r.customerPhone(),
                 r.deliveryAddress() != null ? r.deliveryAddress().complement() : null,
                 r.deliveryAddress() != null ? r.deliveryAddress().reference() : null);
         var items = r.items().stream()

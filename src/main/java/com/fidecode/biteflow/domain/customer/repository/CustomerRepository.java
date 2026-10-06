@@ -13,6 +13,8 @@ public interface CustomerRepository {
 
     Optional<Customer> findById(UUID id);
 
+    Optional<Customer> findByPhoneAndStoreId(String phone, UUID storeId);
+
     com.fidecode.biteflow.domain.shared.PageResult<Customer> findAllByStoreId(UUID storeId, int page, int size);
 
     com.fidecode.biteflow.domain.shared.PageResult<Customer> searchByStoreId(UUID storeId, String search, int page,
