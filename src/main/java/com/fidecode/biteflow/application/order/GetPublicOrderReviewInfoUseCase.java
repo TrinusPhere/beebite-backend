@@ -18,6 +18,7 @@ public class GetPublicOrderReviewInfoUseCase {
 
     public PublicOrderReviewInfoResponse execute(UUID orderId) {
         var order = repository.findById(orderId).orElseThrow(() -> new OrderNotFoundException(orderId.toString()));
-        return new PublicOrderReviewInfoResponse(order.getId().toString(), order.getDisplayId(), order.getDriverName());
+        return new PublicOrderReviewInfoResponse(order.getId().toString(), order.getDisplayId(), order.getDriverName(),
+                order.getCustomerName(), order.getCustomerPhone());
     }
 }

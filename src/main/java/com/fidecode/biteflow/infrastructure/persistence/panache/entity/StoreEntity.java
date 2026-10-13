@@ -28,7 +28,7 @@ public class StoreEntity extends PanacheEntityBase {
     @Column(name = "is_open", nullable = false)
     public boolean isOpen;
 
-    @Column(name = "opening_hours")
+    @Column(name = "opening_hours", columnDefinition = "TEXT")
     public String openingHours;
 
     @Column(name = "address")
