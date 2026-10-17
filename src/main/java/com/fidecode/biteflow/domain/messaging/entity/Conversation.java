@@ -77,6 +77,13 @@ public class Conversation implements StoreGuard.StoreScoped {
         touch();
     }
 
+    public void addMessage(ConversationMessage message) {
+        if (message != null) {
+            this.messages.add(message);
+            touch();
+        }
+    }
+
     private void touch() {
         this.updatedAt = LocalDateTime.now();
     }

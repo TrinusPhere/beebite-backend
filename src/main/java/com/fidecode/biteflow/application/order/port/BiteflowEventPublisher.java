@@ -1,6 +1,8 @@
 package com.fidecode.biteflow.application.order.port;
 
 import com.fidecode.biteflow.domain.order.entity.Order;
+import com.fidecode.biteflow.domain.messaging.entity.Conversation;
+import com.fidecode.biteflow.domain.messaging.entity.ConversationMessage;
 
 /**
  * Port — BiteflowEventPublisher. Abstrai a publicação de eventos de pedidos iFood no Pub/Sub. Implementado em
@@ -22,4 +24,7 @@ public interface BiteflowEventPublisher {
      *            descrição do motivo
      */
     void publishCancelled(Order order, String cancellationCode, String reason);
+
+    /** Publica evento de mensagem de chat enviada. */
+    void publishChatMessageSent(Conversation conversation, ConversationMessage message);
 }

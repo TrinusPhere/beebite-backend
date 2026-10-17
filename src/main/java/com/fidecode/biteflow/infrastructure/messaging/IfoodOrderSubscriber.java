@@ -6,6 +6,9 @@ import com.fidecode.biteflow.domain.order.entity.Order;
 import com.fidecode.biteflow.domain.order.entity.OrderItem;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.valueobject.*;
+import com.fidecode.biteflow.domain.messaging.entity.Conversation;
+import com.fidecode.biteflow.domain.messaging.entity.ConversationMessage;
+import com.fidecode.biteflow.domain.messaging.repository.ConversationRepository;
 
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.GrpcTransportChannel;
@@ -51,6 +54,7 @@ public class IfoodOrderSubscriber {
     private static final String PROJECT = "biteflow-dev";
     private static final String SUBSCRIPTION_PLACED = "ifood-order-placed-sub";
     private static final String SUBSCRIPTION_STATUS = "ifood-order-status-changed-sub";
+    private static final String SUBSCRIPTION_CHAT = "ifood-chat-message-sub";
 
     @ConfigProperty(name = "quarkus.google.cloud.pubsub.endpoint")
     Optional<String> emulatorEndpoint;
@@ -62,10 +66,14 @@ public class IfoodOrderSubscriber {
     OrderRepository orderRepository;
 
     @Inject
+    ConversationRepository conversationRepository;
+
+    @Inject
     ObjectMapper objectMapper;
 
     private Subscriber placedSubscriber;
     private Subscriber statusSubscriber;
+    private Subscriber chatSubscriber;
     private ManagedChannel channel;
 
     void onStart(@Observes StartupEvent event) {
@@ -81,9 +89,11 @@ public class IfoodOrderSubscriber {
 
             placedSubscriber = buildSubscriber(SUBSCRIPTION_PLACED, this::handleOrderPlaced);
             statusSubscriber = buildSubscriber(SUBSCRIPTION_STATUS, this::handleStatusChanged);
+            chatSubscriber = buildSubscriber(SUBSCRIPTION_CHAT, this::handleChatMessage);
 
             placedSubscriber.startAsync().awaitRunning();
             statusSubscriber.startAsync().awaitRunning();
+            chatSubscriber.startAsync().awaitRunning();
 
             LOG.info("[IFOOD-SUB] Subscribers iFood iniciados.");
         } catch (Exception e) {
@@ -94,6 +104,7 @@ public class IfoodOrderSubscriber {
     void onStop(@Observes ShutdownEvent event) {
         stopSubscriber(placedSubscriber);
         stopSubscriber(statusSubscriber);
+        stopSubscriber(chatSubscriber);
         if (channel != null)
             channel.shutdownNow();
     }
@@ -119,6 +130,17 @@ public class IfoodOrderSubscriber {
             consumer.ack();
         } catch (Exception e) {
             LOG.errorf(e, "[IFOOD-SUB] Erro ao atualizar status iFood — NACK: %s", e.getMessage());
+            consumer.nack();
+        }
+    }
+
+    private void handleChatMessage(PubsubMessage message, AckReplyConsumer consumer) {
+        String payload = message.getData().toStringUtf8();
+        try {
+            saveIfoodChatMessage(payload);
+            consumer.ack();
+        } catch (Exception e) {
+            LOG.errorf(e, "[IFOOD-SUB] Erro ao salvar chat iFood — NACK: %s", e.getMessage());
             consumer.nack();
         }
     }
@@ -182,6 +204,31 @@ public class IfoodOrderSubscriber {
             orderRepository.save(order);
             LOG.infof("[IFOOD-SUB] Status atualizado: %s → %s", ifoodOrderId, newStatus);
         }, () -> LOG.warnf("[IFOOD-SUB] Pedido não encontrado para atualizar status: %s", ifoodOrderId));
+    }
+
+    @Transactional
+    void saveIfoodChatMessage(String payload) throws Exception {
+        JsonNode root = objectMapper.readTree(payload);
+        UUID storeId = UUID.fromString(root.get("storeId").asText());
+        String ifoodOrderId = root.get("orderId").asText();
+        String content = root.get("content").asText();
+        String sender = root.get("sender").asText();
+
+        orderRepository.findByExternalOrderId(ifoodOrderId).ifPresentOrElse(order -> {
+            Conversation conversation = conversationRepository.findByStoreOrderChannel(storeId, order.getId(), "IFOOD").orElse(null);
+            if (conversation == null) {
+                conversation = new Conversation(storeId, "IFOOD");
+                conversation.associateOrder(order.getId(), order.getDisplayId(), order.getCustomerName(), order.getCustomerPhone());
+            }
+            ConversationMessage message = new ConversationMessage(
+                    conversation.getId(), 
+                    "RESTAURANT".equalsIgnoreCase(sender) ? "OUTBOUND" : "INBOUND",
+                    content
+            );
+            conversation.addMessage(message);
+            conversationRepository.save(conversation);
+            LOG.infof("[IFOOD-SUB] Chat salvo: orderId=%s", ifoodOrderId);
+        }, () -> LOG.warnf("[IFOOD-SUB] Pedido não encontrado para chat: %s", ifoodOrderId));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

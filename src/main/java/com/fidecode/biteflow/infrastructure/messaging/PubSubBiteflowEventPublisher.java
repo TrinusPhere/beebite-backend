@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fidecode.biteflow.application.order.port.BiteflowEventPublisher;
 import com.fidecode.biteflow.domain.order.entity.Order;
 import com.fidecode.biteflow.domain.order.valueobject.OrderPlatform;
+import com.fidecode.biteflow.domain.messaging.entity.Conversation;
+import com.fidecode.biteflow.domain.messaging.entity.ConversationMessage;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -42,6 +44,7 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
     private static final String PROJECT = "biteflow-dev";
     private static final String TOPIC_STATUS_CHANGED = "biteflow-order-status-changed";
     private static final String TOPIC_CANCELLED = "biteflow-order-cancelled";
+    private static final String TOPIC_CHAT_MESSAGE = "biteflow-chat-message-outbound";
 
     @ConfigProperty(name = "quarkus.google.cloud.pubsub.endpoint")
     Optional<String> emulatorEndpoint;
@@ -54,6 +57,7 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
 
     private Publisher statusChangedPublisher;
     private Publisher cancelledPublisher;
+    private Publisher chatMessagePublisher;
     private ManagedChannel channel;
 
     @PostConstruct
@@ -61,6 +65,7 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
         try {
             statusChangedPublisher = buildPublisher(TOPIC_STATUS_CHANGED);
             cancelledPublisher = buildPublisher(TOPIC_CANCELLED);
+            chatMessagePublisher = buildPublisher(TOPIC_CHAT_MESSAGE);
             LOG.info("[PUBSUB-BF] Publishers iFood inicializados.");
         } catch (Exception e) {
             LOG.warnf("[PUBSUB-BF] Pub/Sub indisponível — eventos iFood serão ignorados: %s", e.getMessage());
@@ -71,6 +76,7 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
     void shutdown() {
         shutdownPublisher(statusChangedPublisher);
         shutdownPublisher(cancelledPublisher);
+        shutdownPublisher(chatMessagePublisher);
         if (channel != null)
             channel.shutdownNow();
     }
@@ -111,6 +117,28 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
             publish(cancelledPublisher, event, TOPIC_CANCELLED);
         } catch (Exception e) {
             LOG.errorf(e, "[PUBSUB-BF] Falha ao publicar cancelamento: %s", e.getMessage());
+        }
+    }
+
+    @Override
+    public void publishChatMessageSent(Conversation conversation, ConversationMessage message) {
+        if (!"IFOOD".equals(conversation.getChannel()))
+            return;
+        if (chatMessagePublisher == null) {
+            LOG.debug("[PUBSUB-BF] Publisher de chat não disponível.");
+            return;
+        }
+
+        try {
+            Map<String, Object> event = Map.of(
+                    "storeId", conversation.getStoreId().toString(),
+                    "orderId", conversation.getOrderId() != null ? conversation.getOrderId().toString() : "",
+                    "message", message.getContent()
+            );
+            publish(chatMessagePublisher, event, TOPIC_CHAT_MESSAGE);
+            LOG.infof("[PUBSUB-BF] Mensagem de chat publicada: storeId=%s", conversation.getStoreId());
+        } catch (Exception e) {
+            LOG.errorf(e, "[PUBSUB-BF] Falha ao publicar mensagem de chat: %s", e.getMessage());
         }
     }
 
