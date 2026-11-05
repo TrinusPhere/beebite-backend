@@ -5,7 +5,7 @@ import java.util.Arrays;
 public enum Permission {
     DASHBOARD("dashboard"), PEDIDOS("pedidos"), CLIENTES("clientes"), INGREDIENTES("ingredientes"),
     PRODUTOS("produtos"), ENTREGADORES("entregadores"), ACERTO_ENTREGADORES("acerto_entregadores"),
-    USUARIOS("usuarios"), INTEGRACOES("integracoes"), FINANCEIRO("financeiro");
+    USUARIOS("usuarios"), INTEGRACOES("integracoes"), FINANCEIRO("financeiro"), KDS("kds"), CAIXA("caixa");
 
     private final String value;
 

@@ -20,6 +20,13 @@ public class PrinterEntity extends PanacheEntityBase {
     public String connectionType;
     public String address;
     public boolean active;
+    @Column(name = "paper_width_mm")
+    public int paperWidthMm = 80;
+    public int port = 9100;
+    @Column(name = "code_page")
+    public String codePage = "CP860";
+    @Column(name = "cut_paper")
+    public boolean cutPaper = true;
     @CreationTimestamp
     @Column(name = "created_at")
     public Instant createdAt;

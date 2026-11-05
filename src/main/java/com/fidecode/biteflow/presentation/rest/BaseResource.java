@@ -45,4 +45,21 @@ public abstract class BaseResource {
         }
         return UUID.fromString(storeIdClaim);
     }
+
+    /**
+     * Extrai o userId do claim JWT.
+     *
+     * @return UUID do usuário autenticado
+     */
+    protected UUID getUserId() {
+        Object raw = jwt.getClaim("userId");
+        if (raw == null) {
+            throw new IllegalStateException("Token JWT inválido: claim 'userId' ausente.");
+        }
+        String userIdClaim = raw.toString().replace("\"", "");
+        if (userIdClaim.isBlank()) {
+            throw new IllegalStateException("Token JWT inválido: claim 'userId' ausente.");
+        }
+        return UUID.fromString(userIdClaim);
+    }
 }

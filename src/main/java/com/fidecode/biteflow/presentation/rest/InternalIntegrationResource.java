@@ -45,7 +45,7 @@ public class InternalIntegrationResource {
             "isOpen", store.isOpen(),
             "openingHours", store.getOpeningHours() != null ? store.getOpeningHours() : "",
             "address", store.getAddress() != null ? store.getAddress() : "",
-            "publicSlug", store.getPublicSlug()
+            "publicSlug", store.getPublicSlug() != null ? store.getPublicSlug() : ""
         );
         return Response.ok(dto).build();
     }
@@ -105,12 +105,17 @@ public class InternalIntegrationResource {
         if (notesStr == null) notesStr = "";
         
         String serviceType = (String) request.get("serviceType");
-        if (serviceType == null) serviceType = "DELIVERY";
+        if (serviceType == null || serviceType.isBlank()) {
+            serviceType = "ENTREGA";
+        }
+        boolean isPickup = "RETIRADA".equalsIgnoreCase(serviceType) || "PICKUP".equalsIgnoreCase(serviceType);
+        String orderType = isPickup ? "BALCAO" : "DELIVERY";
+        String normalizedService = isPickup ? "RETIRADA" : "ENTREGA";
         
         var req = new CreateOrderRequest(
-            "DELIVERY", customerInfo, (String) request.get("paymentMethod"), items,
+            orderType, customerInfo, (String) request.get("paymentMethod"), items,
             java.math.BigDecimal.ZERO, "DELIVERY", "CARDAPIO_PROPRIO",
-            serviceType, "WEB", 
+            normalizedService, "WEB", 
             request.get("cashChangeFor") != null ? new java.math.BigDecimal(request.get("cashChangeFor").toString()) : null,
             notesStr
         );
