@@ -48,12 +48,13 @@ public class DeductOrderInventoryUseCase {
                         .orElseThrow(() -> new ProductNotFoundException(snapshot.productId().toString()));
                 StoreGuard.enforce(product, event.getStoreId());
 
-                if (product.getProductType() == ProductType.RESALE) {
+                // Produtos com ficha técnica (sejam produzidos ou revenda) consomem os ingredientes da ficha
+                if (product.getTechnicalSheet() != null && !product.getTechnicalSheet().isEmpty()) {
+                    deductTechnicalSheet(event, product, snapshot.quantity());
+                } else if (product.getProductType() == ProductType.RESALE) {
+                    // Revenda avulsa sem ficha técnica consome o próprio estoque do produto
                     deductResaleProduct(product, snapshot.quantity());
-                    continue;
                 }
-
-                deductTechnicalSheet(event, product, snapshot.quantity());
             }
         });
     }

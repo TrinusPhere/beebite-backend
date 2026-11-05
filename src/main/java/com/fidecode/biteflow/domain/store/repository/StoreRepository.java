@@ -12,6 +12,8 @@ public interface StoreRepository {
     Optional<Store> findById(UUID id);
 
     Optional<Store> findByPublicIdentifier(String identifier);
+    
+    java.util.List<Store> findAll();
 
     Store save(Store store);
 }

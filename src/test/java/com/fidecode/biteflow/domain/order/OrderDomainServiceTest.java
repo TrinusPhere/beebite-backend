@@ -64,6 +64,43 @@ class OrderDomainServiceTest {
     }
 
     @Test
+    void retiradaDevePularEmRotaEIrDiretoParaFinalizadoMesmoSendoDeliveryType() {
+        Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.defineContext("DELIVERY", "CARDAPIO_PROPRIO", "RETIRADA", "WEB");
+        order.changeStatus(OrderStatus.PREPARO);
+
+        service.advanceStatus(order);
+        assertEquals(OrderStatus.FINALIZADO, order.getStatus());
+        assertNotNull(order.getFinishedAt());
+    }
+
+    @Test
+    void salaoDevePularEmRotaEIrDiretoParaFinalizado() {
+        Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.defineContext("SALAO", "PDV", "MESA", "PDV_CAIXA");
+        order.changeStatus(OrderStatus.PREPARO);
+
+        service.advanceStatus(order);
+        assertEquals(OrderStatus.FINALIZADO, order.getStatus());
+        assertNotNull(order.getFinishedAt());
+    }
+
+    @Test
+    void isDeliveryWithDriverDeveDiferenciarEntregaDeRetiradaESalao() {
+        Order delivery = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        delivery.defineContext("DELIVERY", "CARDAPIO_PROPRIO", "ENTREGA", "WEB");
+        assertTrue(OrderDomainService.isDeliveryWithDriver(delivery));
+
+        Order retirada = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        retirada.defineContext("DELIVERY", "CARDAPIO_PROPRIO", "RETIRADA", "WEB");
+        assertFalse(OrderDomainService.isDeliveryWithDriver(retirada));
+
+        Order salao = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
+        salao.defineContext("SALAO", "PDV", "CONSUMO_LOCAL", "PDV_CAIXA");
+        assertFalse(OrderDomainService.isDeliveryWithDriver(salao));
+    }
+
+    @Test
     void deveLancarExcecaoAoAvancarPedidoCancelado() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.changeStatus(OrderStatus.CANCELADO);

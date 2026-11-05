@@ -17,8 +17,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class OrderDomainService {
 
     /**
-     * Avança o status do pedido sequencialmente. ANALISE → PREPARO → EM_ROTA → FINALIZADO Balcão pode pular EM_ROTA →
-     * FINALIZADO direto de PREPARO.
+     * Avança o status do pedido sequencialmente. ANALISE → PREPARO → EM_ROTA → FINALIZADO
+     * Pedidos que não necessitam de motoboy (Balcão, Retirada no local, Salão, Consumo Local, Mesa, Comanda)
+     * pulam EM_ROTA e vão direto para FINALIZADO.
      */
     public void advanceStatus(Order order) {
         OrderStatus current = order.getStatus();
@@ -33,8 +34,8 @@ public class OrderDomainService {
         OrderStatus next = switch (current) {
         case ANALISE -> OrderStatus.PREPARO;
         case PREPARO -> {
-            // Balcão pula EM_ROTA e vai direto para FINALIZADO
-            if (order.getType() == OrderType.BALCAO) {
+            // Apenas pedidos delivery com entregador vão para EM_ROTA; retirada e salão vão direto para FINALIZADO
+            if (!isDeliveryWithDriver(order)) {
                 yield OrderStatus.FINALIZADO;
             }
             yield OrderStatus.EM_ROTA;
@@ -63,8 +64,8 @@ public class OrderDomainService {
             throw new InvalidOrderTransitionException("Pedido finalizado não pode ser movido.");
         }
 
-        // Validar: motoboy obrigatório para EM_ROTA em delivery
-        if (targetStatus == OrderStatus.EM_ROTA && order.getType() == OrderType.DELIVERY
+        // Validar: motoboy obrigatório para EM_ROTA em delivery que requer entregador
+        if (targetStatus == OrderStatus.EM_ROTA && isDeliveryWithDriver(order)
                 && order.getDriverId() == null) {
             throw new InvalidOrderTransitionException("Motoboy obrigatório para mover pedido delivery para EM_ROTA.");
         }
@@ -79,9 +80,29 @@ public class OrderDomainService {
         order.assignDriver(driverId, driverName);
     }
 
+    /**
+     * Determina se o pedido é de entrega a domicílio e exige motoboy.
+     * Pedidos de balcão, retirada no local, salão, mesa ou comanda NÃO necessitam de entregador.
+     */
+    public static boolean isDeliveryWithDriver(Order order) {
+        if (order == null || order.getType() == OrderType.BALCAO) {
+            return false;
+        }
+        if ("SALAO".equalsIgnoreCase(order.getOperation()) || "BALCAO".equalsIgnoreCase(order.getOperation())) {
+            return false;
+        }
+        String service = order.getServiceType();
+        if ("RETIRADA".equalsIgnoreCase(service) || "PICKUP".equalsIgnoreCase(service)
+                || "CONSUMO_LOCAL".equalsIgnoreCase(service) || "MESA".equalsIgnoreCase(service)
+                || "COMANDA".equalsIgnoreCase(service)) {
+            return false;
+        }
+        return order.getType() == OrderType.DELIVERY;
+    }
+
     private void applyStatusChange(Order order, OrderStatus newStatus) {
-        // Validar motoboy obrigatório para EM_ROTA em delivery
-        if (newStatus == OrderStatus.EM_ROTA && order.getType() == OrderType.DELIVERY && order.getDriverId() == null) {
+        // Validar motoboy obrigatório para EM_ROTA apenas para delivery com entregador
+        if (newStatus == OrderStatus.EM_ROTA && isDeliveryWithDriver(order) && order.getDriverId() == null) {
             throw new InvalidOrderTransitionException("Motoboy obrigatório para mover pedido delivery para EM_ROTA.");
         }
 

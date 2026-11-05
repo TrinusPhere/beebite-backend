@@ -77,6 +77,25 @@ class StoreUseCaseTest {
     }
 
     @Test
+    void shouldUpdateStoreWithScheduleJsonAndPublicSlug() {
+        UpdateStoreInfoUseCase updateStoreInfoUseCase = new UpdateStoreInfoUseCase(storeRepository);
+
+        String longScheduleJson = "{\"autoSchedule\":false,\"schedule\":{\"MONDAY\":{\"start\":\"08:00\",\"end\":\"22:00\",\"active\":true},\"TUESDAY\":{\"start\":\"08:00\",\"end\":\"22:00\",\"active\":true},\"WEDNESDAY\":{\"start\":\"08:00\",\"end\":\"22:00\",\"active\":true},\"THURSDAY\":{\"start\":\"08:00\",\"end\":\"22:00\",\"active\":true},\"FRIDAY\":{\"start\":\"08:00\",\"end\":\"22:00\",\"active\":true},\"SATURDAY\":{\"start\":\"08:00\",\"end\":\"22:00\",\"active\":true},\"SUNDAY\":{\"start\":\"08:00\",\"end\":\"22:00\",\"active\":false}}}";
+        StoreInfoRequest request = new StoreInfoRequest("00000000-0000-0000-0000-000000000001", "BiteFlow Lanchonete", null, true, longScheduleJson,
+                "Rua da Lanchonete, 123 - Centro", "biteflow-lanchonete");
+        when(storeRepository.findById(storeId)).thenReturn(Optional.of(existingStore));
+        when(storeRepository.save(any(Store.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        StoreInfoResponse response = updateStoreInfoUseCase.execute(storeId, request);
+
+        assertEquals("BiteFlow Lanchonete", response.name());
+        assertTrue(response.isOpen());
+        assertEquals("biteflow-lanchonete", response.publicSlug());
+        assertEquals(longScheduleJson, response.openingHours());
+        verify(storeRepository).save(any(Store.class));
+    }
+
+    @Test
     void shouldThrowWhenUpdatingNonExistentStore() {
         UpdateStoreInfoUseCase updateStoreInfoUseCase = new UpdateStoreInfoUseCase(storeRepository);
 

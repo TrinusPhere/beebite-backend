@@ -2,6 +2,8 @@ package com.fidecode.biteflow.presentation.rest;
 
 import com.fidecode.biteflow.application.order.*;
 import com.fidecode.biteflow.application.order.dto.*;
+import com.fidecode.biteflow.application.printing.PrintOrderUseCase;
+import com.fidecode.biteflow.application.printing.dto.PrintOrderRequest;
 
 import jakarta.annotation.security.RolesAllowed;
 import io.quarkus.security.PermissionsAllowed;
@@ -46,6 +48,8 @@ public class OrderResource extends BaseResource {
     GetOrderKanbanUseCase getOrderKanbanUseCase;
     @Inject
     DeleteOrderUseCase deleteOrderUseCase;
+    @Inject
+    PrintOrderUseCase printOrderUseCase;
 
     @PermissionsAllowed("pedidos")
     @GET
@@ -132,6 +136,13 @@ public class OrderResource extends BaseResource {
     public Response delete(@PathParam("id") UUID id) {
         deleteOrderUseCase.delete(getStoreId(), id);
         return Response.noContent().build();
+    }
+
+    @PermissionsAllowed("pedidos")
+    @POST
+    @Path("/{id}/print")
+    public Response print(@PathParam("id") UUID id, @Valid PrintOrderRequest request) {
+        return Response.ok(printOrderUseCase.execute(getStoreId(), id, request)).build();
     }
 
     // Internal record for batch move

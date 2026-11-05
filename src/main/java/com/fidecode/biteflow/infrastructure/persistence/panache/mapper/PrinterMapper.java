@@ -8,7 +8,8 @@ public final class PrinterMapper {
     }
 
     public static Printer toDomain(PrinterEntity e) {
-        return Printer.reconstitute(e.id, e.storeId, e.name, e.connectionType, e.address, e.active);
+        return Printer.reconstitute(e.id, e.storeId, e.name, e.connectionType, e.address, e.active, e.paperWidthMm,
+                e.port, e.codePage, e.cutPaper);
     }
 
     public static PrinterEntity toEntity(Printer p) {
@@ -19,6 +20,10 @@ public final class PrinterMapper {
         e.connectionType = p.getConnectionType();
         e.address = p.getAddress();
         e.active = p.isActive();
+        e.paperWidthMm = p.getPaperWidth().millimeters();
+        e.port = p.getPort();
+        e.codePage = p.getCodePage();
+        e.cutPaper = p.isCutPaper();
         return e;
     }
 }

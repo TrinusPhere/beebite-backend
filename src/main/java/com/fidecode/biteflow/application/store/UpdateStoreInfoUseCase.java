@@ -25,6 +25,9 @@ public class UpdateStoreInfoUseCase {
 
         store.updateInfo(request.name(), request.logoUrl(), request.isOpen(), request.openingHours(),
                 request.address());
+        if (request.publicSlug() != null && !request.publicSlug().isBlank()) {
+            store.definePublicSlug(request.publicSlug());
+        }
 
         Store saved = storeRepository.save(store);
         return GetStoreInfoUseCase.toResponse(saved);

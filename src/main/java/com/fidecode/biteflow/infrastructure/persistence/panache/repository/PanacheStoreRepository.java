@@ -34,6 +34,11 @@ public class PanacheStoreRepository implements StoreRepository {
     }
 
     @Override
+    public java.util.List<Store> findAll() {
+        return repo.findAll().stream().map(StoreMapper::toDomain).toList();
+    }
+
+    @Override
     @Transactional
     public Store save(Store store) {
         StoreEntity entity = StoreMapper.toEntity(store);

@@ -19,6 +19,7 @@ public class CreatePrinterUseCase {
     public PrinterResponse execute(UUID storeId, PrinterRequest request) {
         var p = new Printer(storeId, request.name(), request.connectionType());
         p.configureAddress(request.address());
+        p.configureHardware(request.paperWidthMm(), request.port(), request.codePage(), request.cutPaper());
         if (request.active() != null)
             p.changeActive(request.active());
         return PrintingDtoMapper.toResponse(repo.save(p));
