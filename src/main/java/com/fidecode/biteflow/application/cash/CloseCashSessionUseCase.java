@@ -9,6 +9,7 @@ import com.fidecode.biteflow.domain.cash.exception.CashSessionNotFoundException;
 import com.fidecode.biteflow.domain.cash.repository.CashMovementRepository;
 import com.fidecode.biteflow.domain.cash.repository.CashSessionRepository;
 import com.fidecode.biteflow.domain.cash.valueobject.MovementType;
+import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.valueobject.PaymentMethod;
 import com.fidecode.biteflow.domain.payment.entity.Payment;
 import com.fidecode.biteflow.domain.payment.repository.PaymentRepository;
@@ -27,14 +28,23 @@ public class CloseCashSessionUseCase {
     private final CashSessionRepository sessionRepository;
     private final CashMovementRepository movementRepository;
     private final PaymentRepository paymentRepository;
+    private final OrderRepository orderRepository;
+
+    public CloseCashSessionUseCase(CashSessionRepository sessionRepository,
+                                  CashMovementRepository movementRepository,
+                                  PaymentRepository paymentRepository) {
+        this(sessionRepository, movementRepository, paymentRepository, null);
+    }
 
     @Inject
     public CloseCashSessionUseCase(CashSessionRepository sessionRepository,
                                   CashMovementRepository movementRepository,
-                                  PaymentRepository paymentRepository) {
+                                  PaymentRepository paymentRepository,
+                                  OrderRepository orderRepository) {
         this.sessionRepository = sessionRepository;
         this.movementRepository = movementRepository;
         this.paymentRepository = paymentRepository;
+        this.orderRepository = orderRepository;
     }
 
     public CashSessionResponse execute(UUID storeId, UUID sessionId, CloseCashSessionRequest request) {
@@ -67,6 +77,12 @@ public class CloseCashSessionUseCase {
 
         session.close(cashInRegister, request.countedAmount(), request.closingNotes());
         CashSession saved = sessionRepository.save(session);
+
+        // Reinicia a numeração de pedidos do PDV para a próxima sessão de caixa
+        if (orderRepository != null) {
+            orderRepository.resetDisplayIdSequence();
+        }
+
         return CashSessionDtoMapper.toResponse(saved);
     }
 }

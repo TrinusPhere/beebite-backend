@@ -2,6 +2,7 @@ package com.fidecode.biteflow.infrastructure.event;
 
 import com.fidecode.biteflow.application.financial.CreateFinancialRecordUseCase;
 import com.fidecode.biteflow.application.inventory.DeductOrderInventoryUseCase;
+import com.fidecode.biteflow.application.payment.RegisterOrderPaymentUseCase;
 import com.fidecode.biteflow.domain.customer.entity.Customer;
 import com.fidecode.biteflow.domain.customer.repository.CustomerRepository;
 import com.fidecode.biteflow.domain.delivery.entity.DeliveryDriver;
@@ -16,8 +17,12 @@ import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
 /**
- * Observador CDI — reage ao evento de pedido finalizado. Responsabilidades: 1. Criar FinancialRecord 2. Incrementar
- * totalDeliveries do driver (se presente) 3. Incrementar totalOrders do customer (se presente)
+ * Observador CDI — reage ao evento de pedido finalizado. Responsabilidades:
+ * 1. Baixar estoque
+ * 2. Criar FinancialRecord
+ * 3. Registrar/vincular pagamento na sessão aberta de caixa
+ * 4. Incrementar totalDeliveries do driver (se presente)
+ * 5. Incrementar totalOrders do customer (se presente)
  */
 @ApplicationScoped
 public class OrderFinalizedObserver {
@@ -28,15 +33,18 @@ public class OrderFinalizedObserver {
     private final DeliveryDriverRepository deliveryDriverRepository;
     private final CustomerRepository customerRepository;
     private final DeductOrderInventoryUseCase deductOrderInventoryUseCase;
+    private final RegisterOrderPaymentUseCase registerOrderPaymentUseCase;
 
     @Inject
     public OrderFinalizedObserver(CreateFinancialRecordUseCase createFinancialRecordUseCase,
             DeliveryDriverRepository deliveryDriverRepository, CustomerRepository customerRepository,
-            DeductOrderInventoryUseCase deductOrderInventoryUseCase) {
+            DeductOrderInventoryUseCase deductOrderInventoryUseCase,
+            RegisterOrderPaymentUseCase registerOrderPaymentUseCase) {
         this.createFinancialRecordUseCase = createFinancialRecordUseCase;
         this.deliveryDriverRepository = deliveryDriverRepository;
         this.customerRepository = customerRepository;
         this.deductOrderInventoryUseCase = deductOrderInventoryUseCase;
+        this.registerOrderPaymentUseCase = registerOrderPaymentUseCase;
     }
 
     @Transactional
@@ -49,7 +57,10 @@ public class OrderFinalizedObserver {
         // 2. Criar registro financeiro
         createFinancialRecordUseCase.execute(event);
 
-        // 3. Incrementar totalDeliveries do driver
+        // 3. Registrar / vincular pagamento no caixa aberto
+        registerOrderPaymentUseCase.execute(event);
+
+        // 4. Incrementar totalDeliveries do driver
         if (event.getDriverId() != null) {
             deliveryDriverRepository.findById(event.getDriverId()).ifPresent(driver -> {
                 driver.incrementDeliveries();
@@ -58,7 +69,7 @@ public class OrderFinalizedObserver {
             });
         }
 
-        // 4. Incrementar totalOrders do customer
+        // 5. Incrementar totalOrders do customer
         if (event.getCustomerId() != null) {
             customerRepository.findById(event.getCustomerId()).ifPresent(customer -> {
                 customer.incrementTotalOrders();

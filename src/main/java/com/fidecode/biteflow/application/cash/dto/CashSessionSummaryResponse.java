@@ -1,5 +1,7 @@
 package com.fidecode.biteflow.application.cash.dto;
 
+import com.fidecode.biteflow.application.payment.dto.PaymentResponse;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -17,5 +19,6 @@ public record CashSessionSummaryResponse(
         BigDecimal totalSangria,
         BigDecimal totalAjustes,
         BigDecimal calculatedCashBalance, // initial + cashSales + suprimento - sangria + ajustes
-        List<DriverCollectionSummaryDto> driverCollections
+        List<DriverCollectionSummaryDto> driverCollections,
+        List<PaymentResponse> payments
 ) {}

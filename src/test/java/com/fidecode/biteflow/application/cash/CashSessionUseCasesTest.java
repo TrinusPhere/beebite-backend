@@ -11,6 +11,7 @@ import com.fidecode.biteflow.domain.cash.repository.CashMovementRepository;
 import com.fidecode.biteflow.domain.cash.repository.CashRegisterRepository;
 import com.fidecode.biteflow.domain.cash.repository.CashSessionRepository;
 import com.fidecode.biteflow.domain.cash.valueobject.CashSessionStatus;
+import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.payment.repository.PaymentRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,9 @@ class CashSessionUseCasesTest {
 
     @Mock
     private PaymentRepository paymentRepository;
+
+    @Mock
+    private OrderRepository orderRepository;
 
     @Test
     @DisplayName("OpenCashSessionUseCase deve abrir sessão quando usuário não possui outra aberta")
@@ -112,5 +116,29 @@ class CashSessionUseCasesTest {
 
         assertEquals("CLOSED", res.status());
         assertEquals(new BigDecimal("0.00"), res.differenceAmount());
+    }
+
+    @Test
+    @DisplayName("CloseCashSessionUseCase deve reiniciar sequência de displayId dos pedidos ao encerrar o caixa")
+    void shouldResetDisplayIdSequenceWhenSessionIsClosed() {
+        CloseCashSessionUseCase useCase = new CloseCashSessionUseCase(
+                sessionRepository, movementRepository, paymentRepository, orderRepository
+        );
+        UUID storeId = UUID.randomUUID();
+        UUID sessionId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        CashSession session = new CashSession(storeId, UUID.randomUUID(), userId, new BigDecimal("100.00"));
+        session.setId(sessionId);
+
+        when(sessionRepository.findById(sessionId)).thenReturn(Optional.of(session));
+        when(movementRepository.findBySessionId(sessionId)).thenReturn(List.of());
+        when(paymentRepository.findByCashSessionId(sessionId)).thenReturn(List.of());
+        when(sessionRepository.save(any(CashSession.class))).thenAnswer(i -> i.getArgument(0));
+
+        CloseCashSessionRequest req = new CloseCashSessionRequest(new BigDecimal("100.00"), "Fechando turno");
+        useCase.execute(storeId, sessionId, req);
+
+        verify(orderRepository).resetDisplayIdSequence();
     }
 }

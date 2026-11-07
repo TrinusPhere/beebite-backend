@@ -75,6 +75,10 @@ public class Order implements StoreGuard.StoreScoped {
         this.paymentMethod = paymentMethod;
         this.status = OrderStatus.ANALISE;
         this.platform = OrderPlatform.OWN;
+        this.operation = type == OrderType.BALCAO ? "BALCAO" : "DELIVERY";
+        this.channel = "PDV";
+        this.serviceType = type == OrderType.BALCAO ? "BALCAO" : "DELIVERY";
+        this.source = "SISTEMA";
         this.subtotal = BigDecimal.ZERO;
         this.deliveryCost = BigDecimal.ZERO;
         this.totalValue = BigDecimal.ZERO;

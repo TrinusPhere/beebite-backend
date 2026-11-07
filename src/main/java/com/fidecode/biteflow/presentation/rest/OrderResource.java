@@ -50,6 +50,18 @@ public class OrderResource extends BaseResource {
     DeleteOrderUseCase deleteOrderUseCase;
     @Inject
     PrintOrderUseCase printOrderUseCase;
+    @Inject
+    GetOrderHistoryUseCase getOrderHistoryUseCase;
+
+    @PermissionsAllowed("pedidos")
+    @GET
+    @Path("/history")
+    public Response getHistory(@QueryParam("date") String dateStr) {
+        java.time.LocalDate date = (dateStr != null && !dateStr.isBlank())
+                ? java.time.LocalDate.parse(dateStr)
+                : java.time.LocalDate.now();
+        return Response.ok(getOrderHistoryUseCase.execute(getStoreId(), date)).build();
+    }
 
     @PermissionsAllowed("pedidos")
     @GET

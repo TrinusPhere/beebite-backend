@@ -1,6 +1,9 @@
 package com.fidecode.biteflow.application.order;
 
 import com.fidecode.biteflow.application.order.dto.*;
+import com.fidecode.biteflow.domain.cash.entity.CashSession;
+import com.fidecode.biteflow.domain.cash.repository.CashSessionRepository;
+import com.fidecode.biteflow.domain.cash.valueobject.CashSessionStatus;
 import com.fidecode.biteflow.domain.catalog.entity.ModifierGroup;
 import com.fidecode.biteflow.domain.catalog.entity.ModifierOption;
 import com.fidecode.biteflow.domain.catalog.entity.Product;
@@ -44,6 +47,8 @@ class OrderUseCasesTest {
     @Mock
     private IngredientRepository ingredientRepository;
     @Mock
+    private CashSessionRepository cashSessionRepository;
+    @Mock
     private com.fidecode.biteflow.application.order.port.BiteflowEventPublisher biteflowEventPublisher;
 
     private CreateOrderUseCase createOrderUseCase;
@@ -51,6 +56,8 @@ class OrderUseCasesTest {
     private UpdateOrderUseCase updateOrderUseCase;
     private GetOrderKanbanUseCase getOrderKanbanUseCase;
     private DeleteOrderUseCase deleteOrderUseCase;
+    @Mock
+    private com.fidecode.biteflow.application.kds.CancelProductionTasksByOrderUseCase cancelProductionTasksByOrderUseCase;
 
     @Mock
     private OrderDomainService orderDomainService;
@@ -69,7 +76,7 @@ class OrderUseCasesTest {
         updateOrderUseCase = new UpdateOrderUseCase(orderRepository, productRepository, modifierGroupRepository,
                 ingredientRepository);
         getOrderKanbanUseCase = new GetOrderKanbanUseCase(orderRepository);
-        deleteOrderUseCase = new DeleteOrderUseCase(orderRepository);
+        deleteOrderUseCase = new DeleteOrderUseCase(orderRepository, cancelProductionTasksByOrderUseCase);
     }
 
     @Test
@@ -295,5 +302,76 @@ class OrderUseCasesTest {
 
         assertThrows(InvalidOrderTransitionException.class,
                 () -> updateOrderUseCase.update(STORE_ID, orderId, request));
+    }
+
+    @Test
+    void kanbanDeveIncluirPedidosFinalizadosECanceladosNaColunaFinalizado() {
+        Order finalizado = Order.reconstitute(UUID.randomUUID(), STORE_ID, "#1001", null, "Cliente 1", null,
+                OrderType.DELIVERY, OrderStatus.FINALIZADO, PaymentMethod.PIX, null, null, OrderPlatform.OWN,
+                null, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.ZERO, false, List.of(),
+                java.time.LocalDateTime.now().minusMinutes(10), java.time.LocalDateTime.now(), null);
+
+        Order cancelado = Order.reconstitute(UUID.randomUUID(), STORE_ID, "#1002", null, "Cliente 2", null,
+                OrderType.BALCAO, OrderStatus.CANCELADO, PaymentMethod.DINHEIRO, null, null, OrderPlatform.OWN,
+                null, BigDecimal.valueOf(25), BigDecimal.ZERO, BigDecimal.ZERO, false, List.of(),
+                java.time.LocalDateTime.now(), java.time.LocalDateTime.now(), null);
+
+        when(orderRepository.findActiveKanbanOrdersByStoreId(eq(STORE_ID), any()))
+                .thenReturn(List.of(finalizado, cancelado));
+
+        var kanban = getOrderKanbanUseCase.listKanban(STORE_ID, null);
+
+        assertNotNull(kanban);
+        var finalizadoCol = kanban.columns().stream()
+                .filter(c -> "FINALIZADO".equals(c.id()))
+                .findFirst().orElseThrow();
+
+        assertEquals(2, finalizadoCol.orders().size());
+        assertTrue(finalizadoCol.orders().stream().anyMatch(o -> "#1001".equals(o.displayId()) && "FINALIZADO".equals(o.status())));
+        assertTrue(finalizadoCol.orders().stream().anyMatch(o -> "#1002".equals(o.displayId()) && "CANCELADO".equals(o.status())));
+    }
+
+    @Test
+    void kanbanDeveEstarLimpoQuandoCaixaEstiverEncerrado() {
+        GetOrderKanbanUseCase useCase = new GetOrderKanbanUseCase(orderRepository, cashSessionRepository);
+
+        when(cashSessionRepository.findByStoreIdAndStatus(STORE_ID, CashSessionStatus.OPEN))
+                .thenReturn(List.of());
+
+        var kanban = useCase.listKanban(STORE_ID, null);
+
+        assertNotNull(kanban);
+        assertEquals(4, kanban.columns().size());
+        assertTrue(kanban.columns().stream().allMatch(col -> col.orders().isEmpty()));
+        verify(orderRepository, never()).findActiveKanbanOrdersByStoreId(any(), any());
+    }
+
+    @Test
+    void kanbanDeveFiltrarSomentePedidosAposAberturaDoCaixaEspecifico() {
+        GetOrderKanbanUseCase useCase = new GetOrderKanbanUseCase(orderRepository, cashSessionRepository);
+
+        var sessionOpenedAt = java.time.LocalDateTime.now().minusHours(2);
+        CashSession session = new CashSession(STORE_ID, UUID.randomUUID(), UUID.randomUUID(), BigDecimal.ZERO);
+        session = CashSession.reconstitute(UUID.randomUUID(), STORE_ID, UUID.randomUUID(), UUID.randomUUID(),
+                CashSessionStatus.OPEN, sessionOpenedAt, null, BigDecimal.ZERO, null, null, null, null,
+                sessionOpenedAt, sessionOpenedAt);
+
+        when(cashSessionRepository.findByStoreIdAndStatus(STORE_ID, CashSessionStatus.OPEN))
+                .thenReturn(List.of(session));
+
+        Order order = Order.reconstitute(UUID.randomUUID(), STORE_ID, "#1001", null, "Cliente", null,
+                OrderType.BALCAO, OrderStatus.PREPARO, PaymentMethod.DINHEIRO, null, null, OrderPlatform.OWN,
+                null, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.ZERO, false, List.of(),
+                sessionOpenedAt.plusMinutes(10), sessionOpenedAt.plusMinutes(10), null);
+
+        when(orderRepository.findActiveKanbanOrdersByStoreId(eq(STORE_ID), eq(sessionOpenedAt)))
+                .thenReturn(List.of(order));
+
+        var kanban = useCase.listKanban(STORE_ID, null);
+
+        assertNotNull(kanban);
+        var preparoCol = kanban.columns().stream().filter(c -> "PREPARO".equals(c.id())).findFirst().orElseThrow();
+        assertEquals(1, preparoCol.orders().size());
+        assertEquals("#1001", preparoCol.orders().get(0).displayId());
     }
 }

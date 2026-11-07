@@ -32,10 +32,10 @@ public class DispatchOrderToKdsUseCase {
 
     @Inject
     public DispatchOrderToKdsUseCase(OrderRepository orderRepository,
-                                     ProductionTaskRepository taskRepository,
-                                     ProductRepository productRepository,
-                                     ProductComboComponentRepository comboComponentRepository,
-                                     KdsEventPublisher eventPublisher) {
+            ProductionTaskRepository taskRepository,
+            ProductRepository productRepository,
+            ProductComboComponentRepository comboComponentRepository,
+            KdsEventPublisher eventPublisher) {
         this.orderRepository = orderRepository;
         this.taskRepository = taskRepository;
         this.productRepository = productRepository;
@@ -68,7 +68,7 @@ public class DispatchOrderToKdsUseCase {
             Product product = productMap.get(item.getProductId());
             String modifiersSummary = buildModifiersSummary(item);
 
-            if (product != null && product.getProductType() == ProductType.COMBO) {
+            if (product != null) {
                 List<ProductComboComponent> components = comboComponentRepository.findByComboProductId(product.getId());
                 if (!components.isEmpty()) {
                     List<UUID> compProductIds = components.stream()

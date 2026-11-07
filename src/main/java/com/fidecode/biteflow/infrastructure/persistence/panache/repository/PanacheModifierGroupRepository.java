@@ -36,6 +36,12 @@ public class PanacheModifierGroupRepository implements ModifierGroupRepository {
 
     @Override
     @Transactional
+    public List<ModifierGroup> findAllByStoreId(UUID storeId) {
+        return repo.find("storeId", storeId).list().stream().map(this::toDomainFull).toList();
+    }
+
+    @Override
+    @Transactional
     public List<ModifierGroup> findAllById(List<UUID> ids) {
         if (ids == null || ids.isEmpty())
             return List.of();

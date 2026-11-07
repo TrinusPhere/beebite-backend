@@ -15,7 +15,7 @@ public class CashSession implements StoreGuard.StoreScoped {
     private final UUID cashRegisterId;
     private final UUID userId;
     private CashSessionStatus status;
-    private final LocalDateTime openedAt;
+    private LocalDateTime openedAt;
     private LocalDateTime closedAt;
     private final BigDecimal initialAmount;
     private BigDecimal expectedAmount;
@@ -48,6 +48,7 @@ public class CashSession implements StoreGuard.StoreScoped {
         CashSession session = new CashSession(storeId, cashRegisterId, userId, initialAmount);
         session.id = id;
         session.status = status;
+        if (openedAt != null) session.openedAt = openedAt;
         session.closedAt = closedAt;
         session.expectedAmount = expectedAmount;
         session.countedAmount = countedAmount;
