@@ -8,6 +8,7 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.jboss.logging.Logger;
 
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -17,11 +18,16 @@ import java.util.List;
 @ApplicationScoped
 public class StoreScheduler {
 
-    @Inject
-    StoreRepository storeRepository;
+    private static final Logger LOG = Logger.getLogger(StoreScheduler.class);
+
+    private final StoreRepository storeRepository;
+    private final ObjectMapper objectMapper;
 
     @Inject
-    ObjectMapper objectMapper;
+    public StoreScheduler(StoreRepository storeRepository, ObjectMapper objectMapper) {
+        this.storeRepository = storeRepository;
+        this.objectMapper = objectMapper;
+    }
 
     @Scheduled(every = "1m")
     @Transactional
@@ -34,6 +40,11 @@ public class StoreScheduler {
         for (Store store : stores) {
             String hoursJson = store.getOpeningHours();
             if (hoursJson == null || hoursJson.isBlank()) continue;
+
+            // Se for texto livre legado (ex: "10:00 - 22:00") e não um JSON, ignora o agendamento automático
+            if (!hoursJson.trim().startsWith("{")) {
+                continue;
+            }
 
             try {
                 JsonNode root = objectMapper.readTree(hoursJson);
@@ -63,7 +74,7 @@ public class StoreScheduler {
                                 storeRepository.save(store);
                             }
                         } else {
-                            // inactive for today
+                            // Inativo para hoje
                             if (store.isOpen()) {
                                 store.close();
                                 storeRepository.save(store);
@@ -72,8 +83,8 @@ public class StoreScheduler {
                     }
                 }
             } catch (Exception e) {
-                // Ignore malformed JSON
-                e.printStackTrace();
+                LOG.debugf(e, "Horário de funcionamento não pôde ser interpretado como JSON na loja %s: %s",
+                        store.getName(), e.getMessage());
             }
         }
     }
