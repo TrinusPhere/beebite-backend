@@ -42,6 +42,8 @@ class MoveOrderToColumnUseCaseTest {
     private KdsSettingsRepository kdsSettingsRepository;
     @Mock
     private PaymentRepository paymentRepository;
+    @Mock
+    private com.fidecode.biteflow.application.order.port.BiteflowEventPublisher eventPublisher;
 
     private MoveOrderToColumnUseCase useCase;
 
@@ -54,8 +56,23 @@ class MoveOrderToColumnUseCaseTest {
         useCase = new MoveOrderToColumnUseCase(
                 repo, service, publisher, tx,
                 cancelProductionTasksByOrderUseCase, dispatchOrderToKdsUseCase,
-                kdsSettingsRepository, paymentRepository
+                kdsSettingsRepository, paymentRepository, eventPublisher
         );
+    }
+
+    @Test
+    void devePublicarEventoQuandoMoverPedidoParaOutraColuna() {
+        Order order = new Order(storeId, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.setId(orderId);
+        order.setPlatform(com.fidecode.biteflow.domain.order.valueobject.OrderPlatform.IFOOD);
+        order.setExternalOrderId("ifood-test-123");
+
+        when(repo.findById(orderId)).thenReturn(Optional.of(order));
+        when(repo.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.execute(storeId, orderId, "PREPARO");
+
+        verify(eventPublisher).publishStatusChanged(any(Order.class));
     }
 
     @Test

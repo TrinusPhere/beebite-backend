@@ -109,5 +109,19 @@ class DeductOrderInventoryUseCaseTest {
         verify(productRepository).save(resaleProduct);
         verifyNoInteractions(ingredientRepository);
     }
+
+    @Test
+    void deveIgnorarItemSemProductIdAoFinalizarPedidoExterno() {
+        OrderFinalizedEvent event = new OrderFinalizedEvent(
+                UUID.randomUUID(), STORE_ID, new BigDecimal("15.00"), PaymentMethod.PIX,
+                null, null, List.of(new OrderFinalizedEvent.ProductSnapshot(null, "Item iFood Sem Catalogo", 1, new BigDecimal("15.00")))
+        );
+
+        useCase.execute(event);
+
+        verifyNoInteractions(productRepository);
+        verifyNoInteractions(ingredientRepository);
+        verifyNoInteractions(stockMovementRepository);
+    }
 }
 

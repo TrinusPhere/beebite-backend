@@ -76,6 +76,9 @@ public class IfoodOrderSubscriber {
     OrderRepository orderRepository;
 
     @Inject
+    com.fidecode.biteflow.application.order.UpdateIfoodOrderStatusUseCase updateIfoodOrderStatusUseCase;
+
+    @Inject
     ConversationRepository conversationRepository;
 
     @Inject
@@ -208,17 +211,12 @@ public class IfoodOrderSubscriber {
         LOG.infof("[IFOOD-SUB] Pedido iFood criado: displayId=%s storeId=%s", displayId, storeId);
     }
 
-    @Transactional
     void updateIfoodOrderStatus(String payload) throws Exception {
         JsonNode root = objectMapper.readTree(payload);
         String ifoodOrderId = root.get("ifoodOrderId").asText();
         String newStatus = root.get("newBiteflowStatus").asText();
 
-        orderRepository.findByExternalOrderId(ifoodOrderId).ifPresentOrElse(order -> {
-            order.changeStatus(OrderStatus.valueOf(newStatus));
-            orderRepository.save(order);
-            LOG.infof("[IFOOD-SUB] Status atualizado: %s → %s", ifoodOrderId, newStatus);
-        }, () -> LOG.warnf("[IFOOD-SUB] Pedido não encontrado para atualizar status: %s", ifoodOrderId));
+        updateIfoodOrderStatusUseCase.execute(ifoodOrderId, OrderStatus.valueOf(newStatus));
     }
 
     @Transactional

@@ -1,5 +1,6 @@
 package com.fidecode.biteflow.application.order;
 
+import com.fidecode.biteflow.application.order.port.BiteflowEventPublisher;
 import com.fidecode.biteflow.application.kds.CancelProductionTasksByOrderUseCase;
 import com.fidecode.biteflow.application.kds.DispatchOrderToKdsUseCase;
 import com.fidecode.biteflow.application.order.dto.OrderResponse;
@@ -30,6 +31,7 @@ public class AdvanceOrderStatusUseCase {
     private final CancelProductionTasksByOrderUseCase cancelProductionTasksByOrderUseCase;
     private final KdsSettingsRepository kdsSettingsRepository;
     private final PaymentRepository paymentRepository;
+    private final BiteflowEventPublisher eventPublisher;
 
     @Inject
     public AdvanceOrderStatusUseCase(OrderRepository repo,
@@ -39,7 +41,8 @@ public class AdvanceOrderStatusUseCase {
                                      DispatchOrderToKdsUseCase dispatchOrderToKdsUseCase,
                                      CancelProductionTasksByOrderUseCase cancelProductionTasksByOrderUseCase,
                                      KdsSettingsRepository kdsSettingsRepository,
-                                     PaymentRepository paymentRepository) {
+                                     PaymentRepository paymentRepository,
+                                     BiteflowEventPublisher eventPublisher) {
         this.repo = repo;
         this.service = service;
         this.publisher = publisher;
@@ -48,40 +51,47 @@ public class AdvanceOrderStatusUseCase {
         this.cancelProductionTasksByOrderUseCase = cancelProductionTasksByOrderUseCase;
         this.kdsSettingsRepository = kdsSettingsRepository;
         this.paymentRepository = paymentRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public OrderResponse execute(UUID storeId, UUID id) {
-        return tx.execute(() -> {
+        Order saved = tx.execute(() -> {
             Order order = StoreGuard.enforce(
                     repo.findById(id).orElseThrow(() -> new OrderNotFoundException(id.toString())),
                     storeId
             );
 
             service.advanceStatus(order);
-            Order saved = repo.save(order);
-            publisher.publishIfFinalized(saved);
+            Order result = repo.save(order);
+            publisher.publishIfFinalized(result);
 
-            if (saved.getStatus() == OrderStatus.PREPARO && dispatchOrderToKdsUseCase != null) {
+            if (result.getStatus() == OrderStatus.PREPARO && dispatchOrderToKdsUseCase != null) {
                 KdsSettings settings = kdsSettingsRepository != null
                         ? kdsSettingsRepository.findByStoreId(storeId).orElseGet(() -> KdsSettings.createDefault(storeId))
                         : KdsSettings.createDefault(storeId);
 
                 if (settings.getDispatchMode() == DispatchMode.AUTO) {
-                    dispatchOrderToKdsUseCase.execute(storeId, saved.getId());
+                    dispatchOrderToKdsUseCase.execute(storeId, result.getId());
                 }
-            } else if (saved.getStatus() == OrderStatus.EM_ROTA || saved.getStatus() == OrderStatus.FINALIZADO || saved.getStatus() == OrderStatus.CANCELADO) {
+            } else if (result.getStatus() == OrderStatus.EM_ROTA || result.getStatus() == OrderStatus.FINALIZADO || result.getStatus() == OrderStatus.CANCELADO) {
                 if (cancelProductionTasksByOrderUseCase != null) {
-                    cancelProductionTasksByOrderUseCase.execute(storeId, saved.getId());
+                    cancelProductionTasksByOrderUseCase.execute(storeId, result.getId());
                 }
-                if (saved.getStatus() == OrderStatus.CANCELADO && paymentRepository != null) {
-                    paymentRepository.findByOrderId(saved.getId()).forEach(p -> {
+                if (result.getStatus() == OrderStatus.CANCELADO && paymentRepository != null) {
+                    paymentRepository.findByOrderId(result.getId()).forEach(p -> {
                         p.cancel();
                         paymentRepository.save(p);
                     });
                 }
             }
 
-            return OrderDtoMapper.toResponse(saved);
+            return result;
         });
+
+        if (eventPublisher != null) {
+            eventPublisher.publishStatusChanged(saved);
+        }
+
+        return OrderDtoMapper.toResponse(saved);
     }
 }

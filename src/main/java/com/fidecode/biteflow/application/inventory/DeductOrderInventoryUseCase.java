@@ -44,6 +44,10 @@ public class DeductOrderInventoryUseCase {
     public void execute(OrderFinalizedEvent event) {
         tx.execute(() -> {
             for (var snapshot : event.getProducts()) {
+                if (snapshot.productId() == null) {
+                    // Itens de pedidos externos (ex: iFood) criados sem vínculo prévio com o catálogo local
+                    continue;
+                }
                 Product product = productRepository.findById(snapshot.productId())
                         .orElseThrow(() -> new ProductNotFoundException(snapshot.productId().toString()));
                 StoreGuard.enforce(product, event.getStoreId());

@@ -1,5 +1,6 @@
 package com.fidecode.biteflow.application.order;
 
+import com.fidecode.biteflow.application.order.port.BiteflowEventPublisher;
 import com.fidecode.biteflow.application.kds.CancelProductionTasksByOrderUseCase;
 import com.fidecode.biteflow.application.kds.DispatchOrderToKdsUseCase;
 import com.fidecode.biteflow.application.order.dto.OrderResponse;
@@ -7,6 +8,7 @@ import com.fidecode.biteflow.application.shared.port.TransactionExecutor;
 import com.fidecode.biteflow.domain.kds.entity.KdsSettings;
 import com.fidecode.biteflow.domain.kds.repository.KdsSettingsRepository;
 import com.fidecode.biteflow.domain.kds.valueobject.DispatchMode;
+import com.fidecode.biteflow.domain.order.entity.Order;
 import com.fidecode.biteflow.domain.order.exception.OrderNotFoundException;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
 import com.fidecode.biteflow.domain.order.service.OrderDomainService;
@@ -27,6 +29,7 @@ public class MoveOrderToColumnUseCase {
     private final DispatchOrderToKdsUseCase dispatchOrderToKdsUseCase;
     private final KdsSettingsRepository kdsSettingsRepository;
     private final PaymentRepository paymentRepository;
+    private final BiteflowEventPublisher eventPublisher;
 
     @Inject
     public MoveOrderToColumnUseCase(OrderRepository repo, OrderDomainService service,
@@ -34,7 +37,8 @@ public class MoveOrderToColumnUseCase {
             CancelProductionTasksByOrderUseCase cancelProductionTasksByOrderUseCase,
             DispatchOrderToKdsUseCase dispatchOrderToKdsUseCase,
             KdsSettingsRepository kdsSettingsRepository,
-            PaymentRepository paymentRepository) {
+            PaymentRepository paymentRepository,
+            BiteflowEventPublisher eventPublisher) {
         this.repo = repo;
         this.service = service;
         this.publisher = publisher;
@@ -43,36 +47,43 @@ public class MoveOrderToColumnUseCase {
         this.dispatchOrderToKdsUseCase = dispatchOrderToKdsUseCase;
         this.kdsSettingsRepository = kdsSettingsRepository;
         this.paymentRepository = paymentRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public OrderResponse execute(UUID storeId, UUID id, String targetStatus) {
-        return tx.execute(() -> {
+        Order saved = tx.execute(() -> {
             var order = StoreGuard
                     .enforce(repo.findById(id).orElseThrow(() -> new OrderNotFoundException(id.toString())), storeId);
             service.moveToColumn(order, OrderStatus.valueOf(targetStatus));
-            var saved = repo.save(order);
-            publisher.publishIfFinalized(saved);
+            var result = repo.save(order);
+            publisher.publishIfFinalized(result);
 
-            if (saved.getStatus() == OrderStatus.PREPARO && dispatchOrderToKdsUseCase != null) {
+            if (result.getStatus() == OrderStatus.PREPARO && dispatchOrderToKdsUseCase != null) {
                 KdsSettings settings = kdsSettingsRepository != null
                         ? kdsSettingsRepository.findByStoreId(storeId).orElseGet(() -> KdsSettings.createDefault(storeId))
                         : KdsSettings.createDefault(storeId);
                 if (settings.getDispatchMode() == DispatchMode.AUTO) {
-                    dispatchOrderToKdsUseCase.execute(storeId, saved.getId());
+                    dispatchOrderToKdsUseCase.execute(storeId, result.getId());
                 }
-            } else if (saved.getStatus() == OrderStatus.EM_ROTA || saved.getStatus() == OrderStatus.FINALIZADO || saved.getStatus() == OrderStatus.CANCELADO) {
+            } else if (result.getStatus() == OrderStatus.EM_ROTA || result.getStatus() == OrderStatus.FINALIZADO || result.getStatus() == OrderStatus.CANCELADO) {
                 if (cancelProductionTasksByOrderUseCase != null) {
-                    cancelProductionTasksByOrderUseCase.execute(storeId, saved.getId());
+                    cancelProductionTasksByOrderUseCase.execute(storeId, result.getId());
                 }
-                if (saved.getStatus() == OrderStatus.CANCELADO && paymentRepository != null) {
-                    paymentRepository.findByOrderId(saved.getId()).forEach(p -> {
+                if (result.getStatus() == OrderStatus.CANCELADO && paymentRepository != null) {
+                    paymentRepository.findByOrderId(result.getId()).forEach(p -> {
                         p.cancel();
                         paymentRepository.save(p);
                     });
                 }
             }
 
-            return OrderDtoMapper.toResponse(saved);
+            return result;
         });
+
+        if (eventPublisher != null) {
+            eventPublisher.publishStatusChanged(saved);
+        }
+
+        return OrderDtoMapper.toResponse(saved);
     }
 }

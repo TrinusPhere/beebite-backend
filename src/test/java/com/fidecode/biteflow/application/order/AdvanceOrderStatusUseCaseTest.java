@@ -43,6 +43,8 @@ class AdvanceOrderStatusUseCaseTest {
     private KdsSettingsRepository kdsSettingsRepository;
     @Mock
     private PaymentRepository paymentRepository;
+    @Mock
+    private com.fidecode.biteflow.application.order.port.BiteflowEventPublisher eventPublisher;
 
     private AdvanceOrderStatusUseCase useCase;
 
@@ -55,8 +57,23 @@ class AdvanceOrderStatusUseCaseTest {
         useCase = new AdvanceOrderStatusUseCase(
                 repo, service, publisher, tx,
                 dispatchOrderToKdsUseCase, cancelProductionTasksByOrderUseCase,
-                kdsSettingsRepository, paymentRepository
+                kdsSettingsRepository, paymentRepository, eventPublisher
         );
+    }
+
+    @Test
+    void devePublicarEventoQuandoAvancarStatusDoPedido() {
+        Order order = new Order(storeId, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.setId(orderId);
+        order.setPlatform(com.fidecode.biteflow.domain.order.valueobject.OrderPlatform.IFOOD);
+        order.setExternalOrderId("ifood-test-123");
+
+        when(repo.findById(orderId)).thenReturn(Optional.of(order));
+        when(repo.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.execute(storeId, orderId);
+
+        verify(eventPublisher).publishStatusChanged(any(Order.class));
     }
 
     @Test
