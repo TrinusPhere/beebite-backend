@@ -25,7 +25,11 @@ public interface OrderRepository {
 
     long getNextDisplayIdSequence();
 
+    void resetDisplayIdSequence();
+
     List<Order> findActiveKanbanOrdersByStoreId(UUID storeId, java.time.LocalDateTime startOfDay);
+
+    List<Order> findByStoreIdAndDateRange(UUID storeId, java.time.LocalDateTime start, java.time.LocalDateTime end);
 
     List<Order> findAllById(List<UUID> ids);
 

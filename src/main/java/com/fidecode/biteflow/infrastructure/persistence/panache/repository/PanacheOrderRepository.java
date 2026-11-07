@@ -54,8 +54,16 @@ public class PanacheOrderRepository implements OrderRepository {
     @Transactional
     public List<Order> findActiveKanbanOrdersByStoreId(UUID storeId, java.time.LocalDateTime startOfDay) {
         return repo.find(
-                "SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.storeId = ?1 and (o.status != 'FINALIZADO' or o.createdAt >= ?2)",
+                "SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.storeId = ?1 and o.createdAt >= ?2",
                 storeId, startOfDay).list().stream().map(this::toDomainFull).toList();
+    }
+
+    @Override
+    @Transactional
+    public List<Order> findByStoreIdAndDateRange(UUID storeId, java.time.LocalDateTime start, java.time.LocalDateTime end) {
+        return repo.find(
+                "SELECT DISTINCT o FROM OrderEntity o LEFT JOIN FETCH o.items WHERE o.storeId = ?1 AND o.createdAt >= ?2 AND o.createdAt <= ?3 ORDER BY o.createdAt DESC",
+                storeId, start, end).list().stream().map(this::toDomainFull).toList();
     }
 
     @Override
@@ -102,6 +110,12 @@ public class PanacheOrderRepository implements OrderRepository {
     @Override
     public long getNextDisplayIdSequence() {
         return ((Number) em.createNativeQuery("SELECT nextval('order_display_id_seq')").getSingleResult()).longValue();
+    }
+
+    @Override
+    @Transactional
+    public void resetDisplayIdSequence() {
+        em.createNativeQuery("ALTER SEQUENCE order_display_id_seq RESTART WITH 1001").executeUpdate();
     }
 
     private Order toDomainFull(OrderEntity e) {

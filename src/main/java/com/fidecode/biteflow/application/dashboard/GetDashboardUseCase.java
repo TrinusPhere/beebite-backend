@@ -2,7 +2,6 @@ package com.fidecode.biteflow.application.dashboard;
 
 import com.fidecode.biteflow.application.dashboard.dto.DashboardResponse;
 import com.fidecode.biteflow.domain.customer.repository.CustomerRepository;
-import com.fidecode.biteflow.domain.delivery.entity.DeliveryDriver;
 import com.fidecode.biteflow.domain.delivery.repository.DeliveryDriverRepository;
 import com.fidecode.biteflow.domain.financial.entity.FinancialRecord;
 import com.fidecode.biteflow.domain.financial.repository.FinancialRecordRepository;
@@ -10,14 +9,16 @@ import com.fidecode.biteflow.domain.financial.valueobject.FinancialStatus;
 import com.fidecode.biteflow.domain.order.entity.Order;
 import com.fidecode.biteflow.domain.order.entity.OrderItem;
 import com.fidecode.biteflow.domain.order.repository.OrderRepository;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -44,68 +45,144 @@ public class GetDashboardUseCase {
     }
 
     public DashboardResponse execute(UUID storeId) {
-        LocalDate today = LocalDate.now();
-        LocalDate yesterday = today.minusDays(1);
+        return execute(storeId, "daily", null, null);
+    }
 
-        // ── KPI 1: Vendas do dia ──
-        List<FinancialRecord> todayRecords = financialRecordRepository.findByStoreIdAndDateRange(storeId, today, today)
+    public DashboardResponse execute(UUID storeId, String period, LocalDate customStartDate, LocalDate customEndDate) {
+        String p = period != null ? period.toLowerCase().trim() : "daily";
+        LocalDate today = LocalDate.now();
+
+        LocalDate start;
+        LocalDate end;
+        LocalDate prevStart;
+        LocalDate prevEnd;
+        String salesLabel;
+
+        switch (p) {
+            case "weekly":
+                start = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                end = today;
+                prevStart = start.minusWeeks(1);
+                prevEnd = prevStart.plusDays(ChronoUnit.DAYS.between(start, end));
+                salesLabel = "Vendas da Semana";
+                break;
+            case "monthly":
+                start = today.withDayOfMonth(1);
+                end = today;
+                prevStart = start.minusMonths(1);
+                prevEnd = prevStart.plusDays(ChronoUnit.DAYS.between(start, end));
+                salesLabel = "Vendas do Mês";
+                break;
+            case "custom":
+                start = customStartDate != null ? customStartDate : today;
+                end = customEndDate != null ? customEndDate : start;
+                if (end.isBefore(start)) {
+                    LocalDate tmp = start;
+                    start = end;
+                    end = tmp;
+                }
+                long days = ChronoUnit.DAYS.between(start, end) + 1;
+                prevEnd = start.minusDays(1);
+                prevStart = prevEnd.minusDays(days - 1);
+                salesLabel = "Vendas no Período";
+                break;
+            case "daily":
+            default:
+                start = customStartDate != null ? customStartDate : today;
+                end = start;
+                prevStart = start.minusDays(1);
+                prevEnd = prevStart;
+                salesLabel = start.equals(today) ? "Vendas Hoje" : "Vendas do Dia";
+                break;
+        }
+
+        // ── KPI 1: Vendas ──
+        List<FinancialRecord> currentRecords = financialRecordRepository
+                .findByStoreIdAndDateRange(storeId, start, end)
                 .stream().filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO).toList();
 
-        BigDecimal todayRevenue = todayRecords.stream().map(FinancialRecord::getTotalValue).reduce(BigDecimal.ZERO,
-                BigDecimal::add);
-
-        List<FinancialRecord> yesterdayRecords = financialRecordRepository
-                .findByStoreIdAndDateRange(storeId, yesterday, yesterday).stream()
-                .filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO).toList();
-
-        BigDecimal yesterdayRevenue = yesterdayRecords.stream().map(FinancialRecord::getTotalValue)
+        BigDecimal currentRevenue = currentRecords.stream()
+                .map(FinancialRecord::getTotalValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        String revenueChange = calculateChange(todayRevenue, yesterdayRevenue);
+        List<FinancialRecord> prevRecords = financialRecordRepository
+                .findByStoreIdAndDateRange(storeId, prevStart, prevEnd)
+                .stream().filter(r -> r.getStatus() == FinancialStatus.CONCLUIDO).toList();
 
-        // ── KPI 2: Novos clientes (hoje vs ontem) ──
-        long newCustomersToday = customerRepository.countByStoreIdAndCreatedSince(storeId, today.atStartOfDay());
-        long newCustomersYesterday = customerRepository.countByStoreIdAndCreatedSince(storeId, yesterday.atStartOfDay())
-                - newCustomersToday; // subtrai os de hoje para isolar apenas os de ontem
-        String customersChange = calculateChange(BigDecimal.valueOf(newCustomersToday),
-                BigDecimal.valueOf(Math.max(newCustomersYesterday, 0)));
+        BigDecimal prevRevenue = prevRecords.stream()
+                .map(FinancialRecord::getTotalValue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // ── KPI 3: Pedidos ativos (hoje vs ontem) ──
-        List<Order> activeOrders = orderRepository.findActiveKanbanOrdersByStoreId(storeId, today.atStartOfDay());
-        int activeOrderCount = activeOrders.size();
+        String revenueChange = calculateChange(currentRevenue, prevRevenue);
 
-        List<Order> yesterdayActiveOrders = orderRepository.findActiveKanbanOrdersByStoreId(storeId,
-                yesterday.atStartOfDay());
-        // Pedidos ativos de ontem = total encontrados desde ontem - os de hoje
-        int yesterdayActiveCount = Math.max(yesterdayActiveOrders.size() - activeOrderCount, 0);
-        String ordersChange = calculateChange(BigDecimal.valueOf(activeOrderCount),
-                BigDecimal.valueOf(yesterdayActiveCount));
+        // ── KPI 2: Novos clientes ──
+        long newCustomersCurrent;
+        long newCustomersPrev;
 
-        // ── KPI 4: Ticket médio (hoje vs ontem) ──
+        if (p.equals("daily") && start.equals(today)) {
+            newCustomersCurrent = customerRepository.countByStoreIdAndCreatedSince(storeId, today.atStartOfDay());
+            newCustomersPrev = Math.max(0,
+                    customerRepository.countByStoreIdAndCreatedSince(storeId, today.minusDays(1).atStartOfDay())
+                            - newCustomersCurrent);
+        } else {
+            newCustomersCurrent = customerRepository.countByStoreIdAndCreatedBetween(storeId, start.atStartOfDay(),
+                    end.atTime(23, 59, 59, 999999999));
+            newCustomersPrev = customerRepository.countByStoreIdAndCreatedBetween(storeId, prevStart.atStartOfDay(),
+                    prevEnd.atTime(23, 59, 59, 999999999));
+        }
+
+        String customersChange = calculateChange(BigDecimal.valueOf(newCustomersCurrent),
+                BigDecimal.valueOf(newCustomersPrev));
+
+        // ── KPI 3: Pedidos ──
+        List<Order> currentOrders;
+        int currentOrderCount;
+        int prevOrderCount;
+        String ordersLabel;
+
+        if (p.equals("daily") && start.equals(today)) {
+            currentOrders = orderRepository.findActiveKanbanOrdersByStoreId(storeId, today.atStartOfDay());
+            currentOrderCount = currentOrders.size();
+            List<Order> yesterdayOrders = orderRepository.findActiveKanbanOrdersByStoreId(storeId,
+                    today.minusDays(1).atStartOfDay());
+            prevOrderCount = Math.max(yesterdayOrders.size() - currentOrderCount, 0);
+            ordersLabel = "Pedidos Ativos";
+        } else {
+            currentOrders = orderRepository.findByStoreIdAndDateRange(storeId, start.atStartOfDay(),
+                    end.atTime(23, 59, 59, 999999999));
+            currentOrderCount = currentOrders.size();
+            List<Order> prevPeriodOrders = orderRepository.findByStoreIdAndDateRange(storeId, prevStart.atStartOfDay(),
+                    prevEnd.atTime(23, 59, 59, 999999999));
+            prevOrderCount = prevPeriodOrders.size();
+            ordersLabel = "Total Pedidos";
+        }
+
+        String ordersChange = calculateChange(BigDecimal.valueOf(currentOrderCount),
+                BigDecimal.valueOf(prevOrderCount));
+
+        // ── KPI 4: Ticket médio ──
         BigDecimal ticketMedio = BigDecimal.ZERO;
-        if (!todayRecords.isEmpty()) {
-            ticketMedio = todayRevenue.divide(BigDecimal.valueOf(todayRecords.size()), 2, RoundingMode.HALF_UP);
+        if (!currentRecords.isEmpty()) {
+            ticketMedio = currentRevenue.divide(BigDecimal.valueOf(currentRecords.size()), 2, RoundingMode.HALF_UP);
         }
-        BigDecimal yesterdayTicketMedio = BigDecimal.ZERO;
-        if (!yesterdayRecords.isEmpty()) {
-            yesterdayTicketMedio = yesterdayRevenue.divide(BigDecimal.valueOf(yesterdayRecords.size()), 2,
-                    RoundingMode.HALF_UP);
+        BigDecimal prevTicketMedio = BigDecimal.ZERO;
+        if (!prevRecords.isEmpty()) {
+            prevTicketMedio = prevRevenue.divide(BigDecimal.valueOf(prevRecords.size()), 2, RoundingMode.HALF_UP);
         }
-        String ticketChange = calculateChange(ticketMedio, yesterdayTicketMedio);
+        String ticketChange = calculateChange(ticketMedio, prevTicketMedio);
 
         // Stats
         List<DashboardResponse.StatItem> stats = new ArrayList<>();
-        stats.add(new DashboardResponse.StatItem("Vendas Hoje", todayRevenue, formatCurrency(todayRevenue),
+        stats.add(new DashboardResponse.StatItem(salesLabel, currentRevenue, formatCurrency(currentRevenue),
                 revenueChange));
-        stats.add(new DashboardResponse.StatItem("Novos Clientes", BigDecimal.valueOf(newCustomersToday),
-                String.valueOf(newCustomersToday), customersChange));
-        stats.add(new DashboardResponse.StatItem("Pedidos Ativos", BigDecimal.valueOf(activeOrderCount),
-                String.valueOf(activeOrderCount), ordersChange));
-        stats.add(
-                new DashboardResponse.StatItem("Ticket Médio", ticketMedio, formatCurrency(ticketMedio), ticketChange));
+        stats.add(new DashboardResponse.StatItem("Novos Clientes", BigDecimal.valueOf(newCustomersCurrent),
+                String.valueOf(newCustomersCurrent), customersChange));
+        stats.add(new DashboardResponse.StatItem(ordersLabel, BigDecimal.valueOf(currentOrderCount),
+                String.valueOf(currentOrderCount), ordersChange));
+        stats.add(new DashboardResponse.StatItem("Ticket Médio", ticketMedio, formatCurrency(ticketMedio), ticketChange));
 
-        // ── Pedidos recentes (últimos 10 ativos) ──
-        List<DashboardResponse.RecentOrder> recentOrders = activeOrders.stream().limit(10)
+        // ── Pedidos recentes (últimos 10 do período) ──
+        List<DashboardResponse.RecentOrder> recentOrders = currentOrders.stream().limit(10)
                 .map(order -> new DashboardResponse.RecentOrder(order.getDisplayId(), order.getCustomerName(),
                         buildItemsSummary(order.getItems()), order.getTotalValue(), order.getStatus().name(),
                         order.getCreatedAt()))

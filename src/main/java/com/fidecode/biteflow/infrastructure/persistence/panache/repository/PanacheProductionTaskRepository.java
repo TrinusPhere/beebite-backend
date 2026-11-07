@@ -64,7 +64,7 @@ public class PanacheProductionTaskRepository implements ProductionTaskRepository
                     .collect(Collectors.toList());
         }
 
-        return repo.find("storeId = :storeId and status in (:statuses) and (sectorId in (:sectorIds) or sectorId is null) and deletedAt is null order by createdAt asc",
+        return repo.find("storeId = :storeId and status in (:statuses) and sectorId in (:sectorIds) and deletedAt is null order by createdAt asc",
                 Parameters.with("storeId", storeId).and("statuses", activeStatuses).and("sectorIds", sectorIds))
                 .list().stream()
                 .map(ProductionTaskMapper::toDomain)
@@ -84,7 +84,7 @@ public class PanacheProductionTaskRepository implements ProductionTaskRepository
                     .collect(Collectors.toList());
         }
 
-        return repo.find("storeId = :storeId and status = :status and (sectorId in (:sectorIds) or sectorId is null) and completedAt >= :since and deletedAt is null order by completedAt desc",
+        return repo.find("storeId = :storeId and status = :status and sectorId in (:sectorIds) and completedAt >= :since and deletedAt is null order by completedAt desc",
                 Parameters.with("storeId", storeId).and("status", readyStatus).and("sectorIds", sectorIds).and("since", since))
                 .page(0, limit)
                 .list().stream()
@@ -102,8 +102,9 @@ public class PanacheProductionTaskRepository implements ProductionTaskRepository
     @Override
     @Transactional
     public void cancelAllByOrderId(UUID orderId) {
-        repo.update("status = :status, canceledAt = now() where orderId = :orderId and status not in (:closedStatuses)",
+        repo.update("status = :status, canceledAt = :now where orderId = :orderId and status not in (:closedStatuses)",
                 Parameters.with("status", TaskStatus.CANCELED.name())
+                        .and("now", LocalDateTime.now())
                         .and("orderId", orderId)
                         .and("closedStatuses", List.of(TaskStatus.READY.name(), TaskStatus.CANCELED.name())));
     }

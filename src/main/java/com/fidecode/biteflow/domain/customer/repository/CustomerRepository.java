@@ -25,4 +25,6 @@ public interface CustomerRepository {
     void deleteById(UUID id);
 
     long countByStoreIdAndCreatedSince(UUID storeId, java.time.LocalDateTime since);
+
+    long countByStoreIdAndCreatedBetween(UUID storeId, java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

@@ -80,8 +80,14 @@ public class PanacheCustomerRepository implements CustomerRepository {
     }
 
     @Override
+    public long countByStoreIdAndCreatedBetween(UUID storeId, java.time.LocalDateTime start, java.time.LocalDateTime end) {
+        return repo.count("storeId = ?1 and createdAt >= ?2 and createdAt <= ?3", storeId, start, end);
+    }
+
+    @Override
     public Optional<Customer> findByPhoneAndStoreId(String phone, UUID storeId) {
-        return repo.find("phone = ?1 and storeId = ?2 and deletedAt is null", phone, storeId)
+        String digits = phone != null ? phone.replaceAll("\\D", "") : "";
+        return repo.find("(phone = ?1 or phone = ?2) and storeId = ?3 and deletedAt is null", digits, phone, storeId)
                 .firstResultOptional()
                 .map(CustomerMapper::toDomain);
     }

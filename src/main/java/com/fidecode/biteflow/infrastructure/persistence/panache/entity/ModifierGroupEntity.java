@@ -42,7 +42,7 @@ public class ModifierGroupEntity extends PanacheEntityBase {
     @Column(name = "semantic_type")
     public String semanticType;
 
-    @OneToMany(mappedBy = "modifierGroup", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "modifierGroup", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     public List<ModifierOptionEntity> options = new ArrayList<>();
 
     @CreationTimestamp

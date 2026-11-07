@@ -9,6 +9,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.time.LocalDate;
+
 /**
  * REST Resource — Dashboard (/api/v1/dashboard). Painel resumo com KPIs consolidados.
  */
@@ -23,7 +25,18 @@ public class DashboardResource extends BaseResource {
 
     @PermissionsAllowed("dashboard")
     @GET
-    public Response getDashboard() {
-        return Response.ok(getDashboardUseCase.execute(getStoreId())).build();
+    public Response getDashboard(
+            @QueryParam("period") @DefaultValue("daily") String period,
+            @QueryParam("startDate") String startDateStr,
+            @QueryParam("endDate") String endDateStr) {
+
+        LocalDate startDate = (startDateStr != null && !startDateStr.isBlank())
+                ? LocalDate.parse(startDateStr)
+                : null;
+        LocalDate endDate = (endDateStr != null && !endDateStr.isBlank())
+                ? LocalDate.parse(endDateStr)
+                : null;
+
+        return Response.ok(getDashboardUseCase.execute(getStoreId(), period, startDate, endDate)).build();
     }
 }

@@ -11,6 +11,8 @@ public interface ModifierGroupRepository {
 
     com.fidecode.biteflow.domain.shared.PageResult<ModifierGroup> findAllByStoreId(UUID storeId, int page, int size);
 
+    List<ModifierGroup> findAllByStoreId(UUID storeId);
+
     List<ModifierGroup> findAllById(List<UUID> ids);
 
     ModifierGroup save(ModifierGroup modifierGroup);

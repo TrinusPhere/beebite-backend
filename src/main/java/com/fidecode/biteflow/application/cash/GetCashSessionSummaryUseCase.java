@@ -3,6 +3,8 @@ package com.fidecode.biteflow.application.cash;
 import com.fidecode.biteflow.application.cash.dto.CashSessionDtoMapper;
 import com.fidecode.biteflow.application.cash.dto.CashSessionSummaryResponse;
 import com.fidecode.biteflow.application.cash.dto.DriverCollectionSummaryDto;
+import com.fidecode.biteflow.application.payment.dto.PaymentDtoMapper;
+import com.fidecode.biteflow.application.payment.dto.PaymentResponse;
 import com.fidecode.biteflow.domain.auth.entity.User;
 import com.fidecode.biteflow.domain.auth.repository.UserRepository;
 import com.fidecode.biteflow.domain.cash.entity.CashMovement;
@@ -140,6 +142,10 @@ public class GetCashSessionSummaryUseCase {
             ));
         }
 
+        List<PaymentResponse> paymentResponses = payments.stream()
+                .map(PaymentDtoMapper::toResponse)
+                .toList();
+
         return new CashSessionSummaryResponse(
                 CashSessionDtoMapper.toResponse(session),
                 registerName,
@@ -154,7 +160,8 @@ public class GetCashSessionSummaryUseCase {
                 sangria,
                 ajustes,
                 calculatedCashBalance,
-                driverSummaries
+                driverSummaries,
+                paymentResponses
         );
     }
 }

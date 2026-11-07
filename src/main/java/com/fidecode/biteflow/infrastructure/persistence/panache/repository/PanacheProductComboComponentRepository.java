@@ -62,6 +62,6 @@ public class PanacheProductComboComponentRepository implements ProductComboCompo
     @Override
     @Transactional
     public void deleteByComboProductId(UUID comboProductId) {
-        repo.update("deletedAt = now() where comboProductId = ?1 and deletedAt is null", comboProductId);
+        repo.update("deletedAt = ?1 where comboProductId = ?2 and deletedAt is null", java.time.LocalDateTime.now(), comboProductId);
     }
 }

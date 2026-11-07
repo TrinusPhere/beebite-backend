@@ -16,8 +16,16 @@ import com.google.api.gax.rpc.FixedTransportChannelProvider;
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.cloud.pubsub.v1.Subscriber;
+import com.google.cloud.pubsub.v1.SubscriptionAdminClient;
+import com.google.cloud.pubsub.v1.SubscriptionAdminSettings;
+import com.google.cloud.pubsub.v1.TopicAdminClient;
+import com.google.cloud.pubsub.v1.TopicAdminSettings;
 import com.google.pubsub.v1.ProjectSubscriptionName;
+import com.google.pubsub.v1.ProjectTopicName;
 import com.google.pubsub.v1.PubsubMessage;
+import com.google.pubsub.v1.PushConfig;
+import com.google.pubsub.v1.Subscription;
+import com.google.pubsub.v1.Topic;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -52,6 +60,8 @@ public class IfoodOrderSubscriber {
 
     private static final Logger LOG = Logger.getLogger(IfoodOrderSubscriber.class);
     private static final String PROJECT = "biteflow-dev";
+    private static final String TOPIC_PLACED = "ifood-order-placed";
+    private static final String TOPIC_STATUS = "ifood-order-status-changed";
     private static final String SUBSCRIPTION_PLACED = "ifood-order-placed-sub";
     private static final String SUBSCRIPTION_STATUS = "ifood-order-status-changed-sub";
     private static final String SUBSCRIPTION_CHAT = "ifood-chat-message-sub";
@@ -85,6 +95,8 @@ public class IfoodOrderSubscriber {
         try {
             if (Boolean.TRUE.equals(usePlaintext.orElse(false)) && emulatorEndpoint.isPresent()) {
                 channel = ManagedChannelBuilder.forTarget(emulatorEndpoint.get()).usePlaintext().build();
+                ensureSubscriptionExists(SUBSCRIPTION_PLACED, TOPIC_PLACED);
+                ensureSubscriptionExists(SUBSCRIPTION_STATUS, TOPIC_STATUS);
             }
 
             placedSubscriber = buildSubscriber(SUBSCRIPTION_PLACED, this::handleOrderPlaced);
@@ -162,10 +174,13 @@ public class IfoodOrderSubscriber {
             return;
         }
 
-        Order order = new Order(storeId, OrderType.DELIVERY, PaymentMethod.PIX);
+        OrderType resolvedType = "TAKEOUT".equalsIgnoreCase(orderType) ? OrderType.BALCAO : OrderType.DELIVERY;
+        Order order = new Order(storeId, resolvedType, PaymentMethod.PIX);
         order.setDisplayId(displayId);
         order.setPlatform(OrderPlatform.IFOOD);
         order.setExternalOrderId(ifoodOrderId);
+        String serviceType = resolvedType == OrderType.BALCAO ? "BALCAO" : "DELIVERY";
+        order.defineContext(serviceType, "IFOOD", serviceType, "IFOOD_INTEGRATION");
 
         // Customer
         if (root.has("customerName") && !root.get("customerName").isNull()) {
@@ -247,6 +262,50 @@ public class IfoodOrderSubscriber {
         if (addr.has("city"))
             sb.append(", ").append(addr.get("city").asText());
         return sb.toString();
+    }
+
+    private void ensureSubscriptionExists(String subId, String topicId) {
+        if (channel == null) return;
+        try {
+            var channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
+            var credentialsProvider = NoCredentialsProvider.create();
+
+            TopicAdminSettings topicSettings = TopicAdminSettings.newBuilder()
+                    .setTransportChannelProvider(channelProvider)
+                    .setCredentialsProvider(credentialsProvider)
+                    .build();
+            try (TopicAdminClient topicClient = TopicAdminClient.create(topicSettings)) {
+                ProjectTopicName topicName = ProjectTopicName.of(PROJECT, topicId);
+                try {
+                    topicClient.getTopic(topicName);
+                } catch (Exception e) {
+                    topicClient.createTopic(Topic.newBuilder().setName(topicName.toString()).build());
+                    LOG.infof("[IFOOD-SUB] Tópico criado no emulador: %s", topicId);
+                }
+            }
+
+            SubscriptionAdminSettings subSettings = SubscriptionAdminSettings.newBuilder()
+                    .setTransportChannelProvider(channelProvider)
+                    .setCredentialsProvider(credentialsProvider)
+                    .build();
+            try (SubscriptionAdminClient subClient = SubscriptionAdminClient.create(subSettings)) {
+                ProjectSubscriptionName subName = ProjectSubscriptionName.of(PROJECT, subId);
+                ProjectTopicName topicName = ProjectTopicName.of(PROJECT, topicId);
+                try {
+                    subClient.getSubscription(subName);
+                } catch (Exception e) {
+                    subClient.createSubscription(Subscription.newBuilder()
+                            .setName(subName.toString())
+                            .setTopic(topicName.toString())
+                            .setPushConfig(PushConfig.getDefaultInstance())
+                            .setAckDeadlineSeconds(60)
+                            .build());
+                    LOG.infof("[IFOOD-SUB] Subscription criada no emulador: %s", subId);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warnf("[IFOOD-SUB] Não foi possível verificar/criar subscription no emulador: %s", e.getMessage());
+        }
     }
 
     private Subscriber buildSubscriber(String subscriptionId, MessageReceiver receiver) {
