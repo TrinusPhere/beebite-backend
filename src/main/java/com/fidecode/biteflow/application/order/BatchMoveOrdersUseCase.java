@@ -73,7 +73,7 @@ public class BatchMoveOrdersUseCase {
                     if (settings.getDispatchMode() == DispatchMode.AUTO) {
                         dispatchOrderToKdsUseCase.execute(storeId, saved.getId());
                     }
-                } else if (saved.getStatus() == OrderStatus.EM_ROTA || saved.getStatus() == OrderStatus.FINALIZADO || saved.getStatus() == OrderStatus.CANCELADO) {
+                } else if (saved.getStatus() == OrderStatus.EM_ROTA || saved.getStatus() == OrderStatus.ENTREGUE || saved.getStatus() == OrderStatus.FINALIZADO || saved.getStatus() == OrderStatus.CANCELADO) {
                     if (cancelProductionTasksByOrderUseCase != null) {
                         cancelProductionTasksByOrderUseCase.execute(storeId, saved.getId());
                     }
