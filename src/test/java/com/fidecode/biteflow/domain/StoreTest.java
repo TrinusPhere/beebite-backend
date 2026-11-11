@@ -38,4 +38,20 @@ class StoreTest {
     void shouldRejectBlankName() {
         assertThrows(IllegalArgumentException.class, () -> new Store("  "));
     }
+
+    @Test
+    void shouldDefaultToCloudSyncModeAndSupportEdgeMetadata() {
+        Store store = new Store("Chefs Burguer Balcão");
+        assertEquals("CLOUD", store.getSyncMode());
+        assertNull(store.getEdgeApiKeyHash());
+        assertNull(store.getLastEdgeSyncAt());
+
+        java.time.Instant syncTime = java.time.Instant.now();
+        store.configureEdgeSync("EDGE", "hashed_key_123");
+        store.markEdgeSynced(syncTime);
+
+        assertEquals("EDGE", store.getSyncMode());
+        assertEquals("hashed_key_123", store.getEdgeApiKeyHash());
+        assertEquals(syncTime, store.getLastEdgeSyncAt());
+    }
 }

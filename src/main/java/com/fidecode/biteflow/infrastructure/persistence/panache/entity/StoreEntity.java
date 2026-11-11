@@ -37,6 +37,15 @@ public class StoreEntity extends PanacheEntityBase {
     @Column(name = "public_slug")
     public String publicSlug;
 
+    @Column(name = "sync_mode", nullable = false)
+    public String syncMode = "CLOUD";
+
+    @Column(name = "edge_api_key_hash")
+    public String edgeApiKeyHash;
+
+    @Column(name = "last_edge_sync_at")
+    public Instant lastEdgeSyncAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     public Instant createdAt;

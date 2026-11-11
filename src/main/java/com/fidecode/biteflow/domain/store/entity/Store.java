@@ -1,5 +1,6 @@
 package com.fidecode.biteflow.domain.store.entity;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public class Store {
@@ -10,14 +11,23 @@ public class Store {
     private String openingHours;
     private String address;
     private String publicSlug;
+    private String syncMode;
+    private String edgeApiKeyHash;
+    private Instant lastEdgeSyncAt;
 
     public Store(String name) {
         validate(name);
         this.name = name;
+        this.syncMode = "CLOUD";
     }
 
     public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
             String slug) {
+        return reconstitute(id, name, logoUrl, open, hours, address, slug, "CLOUD", null, null);
+    }
+
+    public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
+            String slug, String syncMode, String edgeApiKeyHash, Instant lastEdgeSyncAt) {
         Store s = new Store(name);
         s.id = id;
         s.logoUrl = logoUrl;
@@ -25,6 +35,9 @@ public class Store {
         s.openingHours = hours;
         s.address = address;
         s.publicSlug = slug;
+        s.syncMode = (syncMode == null || syncMode.isBlank()) ? "CLOUD" : syncMode;
+        s.edgeApiKeyHash = edgeApiKeyHash;
+        s.lastEdgeSyncAt = lastEdgeSyncAt;
         return s;
     }
 
@@ -44,6 +57,18 @@ public class Store {
 
     public void definePublicSlug(String slug) {
         this.publicSlug = slug;
+    }
+
+    public void configureEdgeSync(String syncMode, String edgeApiKeyHash) {
+        if (syncMode == null || (!syncMode.equals("CLOUD") && !syncMode.equals("EDGE"))) {
+            throw new IllegalArgumentException("syncMode deve ser CLOUD ou EDGE.");
+        }
+        this.syncMode = syncMode;
+        this.edgeApiKeyHash = edgeApiKeyHash;
+    }
+
+    public void markEdgeSynced(Instant syncedAt) {
+        this.lastEdgeSyncAt = syncedAt != null ? syncedAt : Instant.now();
     }
 
     public void open() {
@@ -80,6 +105,18 @@ public class Store {
 
     public String getPublicSlug() {
         return publicSlug;
+    }
+
+    public String getSyncMode() {
+        return syncMode;
+    }
+
+    public String getEdgeApiKeyHash() {
+        return edgeApiKeyHash;
+    }
+
+    public Instant getLastEdgeSyncAt() {
+        return lastEdgeSyncAt;
     }
 
     public void setId(UUID id) {

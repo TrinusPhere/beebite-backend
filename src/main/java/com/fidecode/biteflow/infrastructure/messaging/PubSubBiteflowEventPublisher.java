@@ -41,10 +41,15 @@ import io.grpc.ManagedChannelBuilder;
 public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
 
     private static final Logger LOG = Logger.getLogger(PubSubBiteflowEventPublisher.class);
-    private static final String PROJECT = "biteflow-dev";
     private static final String TOPIC_STATUS_CHANGED = "biteflow-order-status-changed";
     private static final String TOPIC_CANCELLED = "biteflow-order-cancelled";
     private static final String TOPIC_CHAT_MESSAGE = "biteflow-chat-message-outbound";
+
+    @ConfigProperty(name = "quarkus.google.cloud.project-id", defaultValue = "biteflow-dev")
+    String projectId;
+
+    @ConfigProperty(name = "biteflow.feature.ifood-integration.enabled", defaultValue = "true")
+    boolean ifoodIntegrationEnabled;
 
     @ConfigProperty(name = "quarkus.google.cloud.pubsub.endpoint")
     Optional<String> emulatorEndpoint;
@@ -62,11 +67,15 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
 
     @PostConstruct
     void init() {
+        if (!ifoodIntegrationEnabled) {
+            LOG.info("[PUBSUB-BF] Integração iFood desabilitada — publishers não inicializados.");
+            return;
+        }
         try {
             statusChangedPublisher = buildPublisher(TOPIC_STATUS_CHANGED);
             cancelledPublisher = buildPublisher(TOPIC_CANCELLED);
             chatMessagePublisher = buildPublisher(TOPIC_CHAT_MESSAGE);
-            LOG.info("[PUBSUB-BF] Publishers iFood inicializados.");
+            LOG.infof("[PUBSUB-BF] Publishers iFood inicializados (project=%s).", projectId);
         } catch (Exception e) {
             LOG.warnf("[PUBSUB-BF] Pub/Sub indisponível — eventos iFood serão ignorados: %s", e.getMessage());
         }
@@ -150,7 +159,7 @@ public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
     }
 
     private Publisher buildPublisher(String topicId) throws Exception {
-        ProjectTopicName topicName = ProjectTopicName.of(PROJECT, topicId);
+        ProjectTopicName topicName = ProjectTopicName.of(projectId, topicId);
 
         if (Boolean.TRUE.equals(usePlaintext.orElse(false)) && emulatorEndpoint.isPresent()) {
             if (channel == null) {

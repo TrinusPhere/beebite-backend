@@ -1,0 +1,656 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BiteFlow PRD — Plano de Arquitetura, DevSecOps, FinOps &amp; Implementação (Opção A)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      .tab-section {
+        display: block !important;
+      }
+    }
+    .flow-line {
+      stroke-dasharray: 6 4;
+      animation: dashMove 1.4s linear infinite;
+    }
+    .flow-line-paused {
+      stroke-dasharray: 4 4;
+      opacity: 0.35;
+    }
+    @keyframes dashMove {
+      to {
+        stroke-dashoffset: -20;
+      }
+    }
+  </style>
+  <script>
+    (function() {
+      var bg = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
+      if (!bg) {
+        var s = document.documentElement.style;
+        s.setProperty('--background', '#0f172a');
+        s.setProperty('--foreground', '#f8fafc');
+        s.setProperty('--card', '#1e293b');
+        s.setProperty('--secondary', '#334155');
+        s.setProperty('--secondary-foreground', '#f1f5f9');
+        s.setProperty('--muted-foreground', '#94a3b8');
+        s.setProperty('--border', '#334155');
+        s.setProperty('--primary', '#3b82f6');
+        s.setProperty('--primary-foreground', '#ffffff');
+      }
+    })();
+  </script>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-blue-500/20">
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+    <!-- HEADER / HERO -->
+    <header class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-500 border border-blue-500/30">
+            SaaS Multi-Tenant &amp; Multi-Loja Genérico
+          </span>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+            Opção A: Híbrida (Cloud + Edge Outbox)
+          </span>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+            DevSecOps: 5/5 Bloqueadores Resolvidos ✓
+          </span>
+        </div>
+        <button
+          onclick="window.print()"
+          class="no-print px-3.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] hover:opacity-90 transition cursor-pointer"
+        >
+          Imprimir / Salvar PDF
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--foreground)]">
+          Plano de Arquitetura, DevSecOps, FinOps e Implementação PRD — BiteFlow SaaS
+        </h1>
+        <p class="text-sm sm:text-base text-[var(--muted-foreground)] leading-relaxed">
+          Arquitetura 100% genérica para atender desde clientes com <strong>1 único CNPJ</strong> até grupos com <strong>2 ou mais CNPJs/modalidades</strong>
+          (como o caso de estreia do <em>Chefs Burguer</em>: Delivery na Nuvem + Balcão Edge Local Offline-First), permitindo ao proprietário alternar entre lojas no celular <strong>sem precisar deslogar</strong>.
+        </p>
+      </div>
+
+      <!-- KPI SUMMARY CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+        <div class="bg-[var(--secondary)]/60 border border-[var(--border)] rounded-xl p-4">
+          <div class="text-xs font-medium text-[var(--muted-foreground)]">Acesso Multi-Loja SaaS</div>
+          <div class="text-lg font-bold mt-1">1 Login Único</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-1">Troca em 1 clique sem deslogar</div>
+        </div>
+        <div class="bg-[var(--secondary)]/60 border border-[var(--border)] rounded-xl p-4">
+          <div class="text-xs font-medium text-[var(--muted-foreground)]">Arquitetura Escolhida</div>
+          <div class="text-lg font-bold text-emerald-500 mt-1">Opção A: Híbrida</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-1">Edge Local + Outbox Unidirecional</div>
+        </div>
+        <div class="bg-[var(--secondary)]/60 border border-[var(--border)] rounded-xl p-4">
+          <div class="text-xs font-medium text-[var(--muted-foreground)]">Custo Cloud Otimizado (Estágio 1)</div>
+          <div class="text-lg font-bold text-blue-500 mt-1">R$ 95 – R$ 165/mês</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-1">GCP SP + Pub/Sub Free + Cloudflare</div>
+        </div>
+        <div class="bg-[var(--secondary)]/60 border border-[var(--border)] rounded-xl p-4">
+          <div class="text-xs font-medium text-[var(--muted-foreground)]">Status DevSecOps Pré-Deploy</div>
+          <div class="text-lg font-bold text-emerald-500 mt-1">5 / 5 Resolvidos ✓</div>
+          <div class="text-xs text-[var(--muted-foreground)] mt-1">Validado via JUnit 5 + ArchUnit</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- NAVIGATION BAR -->
+    <nav class="no-print sticky top-2 z-20 bg-[var(--card)]/95 backdrop-blur border border-[var(--border)] rounded-xl p-2 shadow-sm flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap gap-1.5" id="nav-buttons">
+        <button onclick="setFilter('all')" data-tab="all" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] transition cursor-pointer">
+          Visão Completa
+        </button>
+        <button onclick="setFilter('sec1')" data-tab="sec1" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--secondary)] transition cursor-pointer">
+          1. Multi-Loja (Sem Deslogar)
+        </button>
+        <button onclick="setFilter('sec2')" data-tab="sec2" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--secondary)] transition cursor-pointer">
+          2. Simulador Edge + Nuvem
+        </button>
+        <button onclick="setFilter('sec34')" data-tab="sec34" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--secondary)] transition cursor-pointer">
+          3 &amp; 4. OTA &amp; Riscos Locais
+        </button>
+        <button onclick="setFilter('sec5')" data-tab="sec5" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--secondary)] transition cursor-pointer">
+          5. Opção A (Decidida)
+        </button>
+        <button onclick="setFilter('sec6')" data-tab="sec6" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--secondary)] transition cursor-pointer">
+          6. Calculadora FinOps
+        </button>
+        <button onclick="setFilter('sec7')" data-tab="sec7" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-500 hover:bg-emerald-500/10 transition cursor-pointer">
+          7. Bloqueadores (5/5) ✓
+        </button>
+        <button onclick="setFilter('sec8')" data-tab="sec8" class="nav-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-500 hover:bg-blue-500/10 transition cursor-pointer">
+          8. Spec Técnica (SQL &amp; Código)
+        </button>
+      </div>
+    </nav>
+
+    <!-- =================================================================== -->
+    <!-- SEÇÃO 1: MODELO SAAS MULTI-LOJA GENÉRICO (SEM DESLOGAR)             -->
+    <!-- =================================================================== -->
+    <section data-section="sec1" class="tab-section bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div class="flex items-start justify-between gap-4 border-b border-[var(--border)] pb-4">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-blue-500">Seção 1 · Arquitetura Multi-Tenant &amp; Multi-Loja Genérica</span>
+          <h2 class="text-xl font-bold mt-1">1 Login Único para 1 ou N CNPJs (Troca Instantânea sem Deslogar)</h2>
+        </div>
+      </div>
+
+      <p class="text-sm text-[var(--muted-foreground)] leading-relaxed">
+        No BiteFlow, cada CNPJ ou unidade operacional é um registro isolado na tabela <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">store</code>
+        (estoque, cozinha, impressoras e caixa próprios). Através da tabela associativa genérica
+        <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">user_store_access</code>, o sistema se adapta automaticamente ao porte de qualquer cliente:
+      </p>
+
+      <div class="overflow-x-auto border border-[var(--border)] rounded-xl">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead>
+            <tr class="bg-[var(--secondary)] text-[var(--foreground)] border-b border-[var(--border)]">
+              <th class="p-3.5 font-semibold">Perfil do Cliente no SaaS</th>
+              <th class="p-3.5 font-semibold">Retorno do <code class="text-xs">/api/v1/auth/login</code></th>
+              <th class="p-3.5 font-semibold">Experiência na Tela (Celular e PC)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border)] text-[var(--muted-foreground)]">
+            <tr>
+              <td class="p-3.5 font-semibold text-[var(--foreground)]">Cliente com 1 única loja (1 CNPJ)</td>
+              <td class="p-3.5"><code class="px-1 py-0.5 rounded bg-[var(--secondary)]">accessibleStores</code> retorna <strong>1 loja</strong>; JWT já entra nela.</td>
+              <td class="p-3.5"><strong>Zero complexidade:</strong> como <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">accessibleStores.length === 1</code>, o seletor de lojas fica oculto.</td>
+            </tr>
+            <tr>
+              <td class="p-3.5 font-semibold text-emerald-500">Cliente com 2+ lojas/CNPJs (ex: Delivery + Balcão ou Filiais)</td>
+              <td class="p-3.5"><code class="px-1 py-0.5 rounded bg-[var(--secondary)]">accessibleStores</code> retorna todas as <strong>N lojas</strong> do proprietário.</td>
+              <td class="p-3.5"><strong>Sem deslogar:</strong> exibe o <strong>Store Switcher</strong> no topo. Ao clicar na outra unidade, chama <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">POST /api/v1/auth/switch-store/{storeId}</code> e troca o cookie JWT na hora sem pedir senha.</td>
+            </tr>
+            <tr>
+              <td class="p-3.5 font-semibold text-[var(--foreground)]">Funcionário de 1 unidade (ex: Caixa)</td>
+              <td class="p-3.5"><code class="px-1 py-0.5 rounded bg-[var(--secondary)]">accessibleStores</code> retorna apenas a loja onde ele trabalha.</td>
+              <td class="p-3.5">Entra direto na unidade dele e não vê nem tem acesso às outras unidades do dono.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SEÇÃO 2: ARQUITETURA LOCAL-FIRST + NUVEM (SIMULADOR INTERATIVO)     -->
+    <!-- =================================================================== -->
+    <section data-section="sec2" class="tab-section bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div class="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-4">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-500">Seção 2 · Viabilidade &amp; Topologia</span>
+          <h2 class="text-xl font-bold mt-1">Unidade Local Offline-First (<code class="text-base">EDGE</code>) + Nuvem (<code class="text-base">CLOUD</code>)</h2>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+          Padrão Store-and-Forward / Outbox
+        </span>
+      </div>
+
+      <div class="space-y-3 text-sm text-[var(--muted-foreground)] leading-relaxed">
+        <p>
+          Qualquer loja cadastrada no BiteFlow pode operar em modo <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">CLOUD</code> (direto na nuvem)
+          ou em modo <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">EDGE</code> (servidor local na loja física + sincronização assíncrona via <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">edge_sync_outbox</code>).
+        </p>
+      </div>
+
+      <!-- INTERACTIVE TOPOLOGY SIMULATOR -->
+      <div class="border border-[var(--border)] bg-[var(--secondary)]/30 rounded-2xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Simulador Interativo de Arquitetura</div>
+            <div class="text-sm font-semibold mt-0.5">Teste o comportamento do sistema em cada cenário:</div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="setTopologyMode('online')" id="topo-online" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-white transition cursor-pointer">
+              🟢 Híbrido: Internet Normal
+            </button>
+            <button onclick="setTopologyMode('offline')" id="topo-offline" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] transition cursor-pointer">
+              🔴 Híbrido: Fibra Rompida no Balcão
+            </button>
+            <button onclick="setTopologyMode('dualwan')" id="topo-dualwan" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] transition cursor-pointer">
+              🔵 Comparativo: 100% Nuvem + 4G
+            </button>
+          </div>
+        </div>
+
+        <!-- SVG ARCHITECTURE DIAGRAM -->
+        <div class="overflow-x-auto bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
+          <svg viewBox="0 0 920 340" class="w-full min-w-[680px] h-auto" role="img" aria-label="Diagrama de Arquitetura BiteFlow">
+            <!-- Loja Balcão Box -->
+            <rect x="16" y="20" width="270" height="295" rx="14" fill="none" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.5" />
+            <text x="32" y="46" fill="currentColor" font-size="13" font-weight="700" id="svg-balcao-title">UNIDADE BALCÃO (MODO EDGE)</text>
+
+            <rect x="34" y="64" width="234" height="48" rx="8" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.45" />
+            <text x="48" y="85" fill="currentColor" font-size="12" font-weight="600">Caixa PDV + Monitores KDS</text>
+            <text x="48" y="102" fill="currentColor" opacity="0.7" font-size="12" id="svg-balcao-lat">LAN Local (&lt; 2ms sem internet)</text>
+
+            <rect x="34" y="130" width="234" height="58" rx="8" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-opacity="0.45" id="svg-edge-box" />
+            <text x="48" y="153" fill="currentColor" font-size="12" font-weight="600" id="svg-edge-title">Mini-PC Linux (Quarkus + Postgres)</text>
+            <text x="48" y="172" fill="currentColor" opacity="0.7" font-size="12" id="svg-edge-sub">Fila edge_sync_outbox ativa</text>
+
+            <rect x="34" y="206" width="234" height="44" rx="8" fill="#8b5cf6" fill-opacity="0.12" stroke="#8b5cf6" stroke-opacity="0.45" />
+            <text x="48" y="232" fill="currentColor" font-size="12" font-weight="600">Impressora Térmica (TCP :9100)</text>
+
+            <text x="34" y="282" fill="#10b981" font-size="12" font-weight="700" id="svg-balcao-status">✓ Vendas e Impressão 100% Operacionais</text>
+
+            <!-- Cloud Box -->
+            <rect x="345" y="20" width="255" height="295" rx="14" fill="none" stroke="#3b82f6" stroke-opacity="0.4" stroke-width="1.5" />
+            <text x="362" y="46" fill="#3b82f6" font-size="13" font-weight="700">NUVEM GCP (SÃO PAULO)</text>
+
+            <rect x="362" y="64" width="220" height="56" rx="8" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-opacity="0.45" />
+            <text x="376" y="87" fill="currentColor" font-size="12" font-weight="600">BiteFlow Cloud API</text>
+            <text x="376" y="106" fill="currentColor" opacity="0.7" font-size="12">Multi-Store + Store Switcher</text>
+
+            <rect x="362" y="138" width="220" height="54" rx="8" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-opacity="0.45" />
+            <text x="376" y="161" fill="currentColor" font-size="12" font-weight="600">biteflow-ifood-service</text>
+            <text x="376" y="179" fill="currentColor" opacity="0.7" font-size="12">Polling 30s + Cloud Pub/Sub</text>
+
+            <rect x="362" y="210" width="220" height="50" rx="8" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.45" />
+            <text x="376" y="233" fill="currentColor" font-size="12" font-weight="600">PostgreSQL 17 + Cloudflare R2</text>
+            <text x="376" y="249" fill="currentColor" opacity="0.7" font-size="12">Dados consolidados + Backups</text>
+
+            <!-- Delivery + Dono Box -->
+            <rect x="655" y="20" width="248" height="142" rx="14" fill="none" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.5" />
+            <text x="670" y="45" fill="currentColor" font-size="13" font-weight="700">UNIDADE DELIVERY (MODO CLOUD)</text>
+            <text x="670" y="70" fill="currentColor" opacity="0.8" font-size="12">• Recebe iFood em tempo real</text>
+            <text x="670" y="92" fill="currentColor" opacity="0.8" font-size="12">• Gestão de Motoboys / Expedição</text>
+            <text x="670" y="114" fill="currentColor" opacity="0.8" font-size="12">• Impressão via Túnel Tailscale</text>
+            <text x="670" y="142" fill="#10b981" font-size="12" font-weight="700">✓ Operando na Nuvem</text>
+
+            <rect x="655" y="178" width="248" height="137" rx="14" fill="none" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.5" />
+            <text x="670" y="203" fill="currentColor" font-size="13" font-weight="700">CELULAR DO PROPRIETÁRIO</text>
+            <text x="670" y="228" fill="currentColor" opacity="0.8" font-size="12">• Login Único (Troca sem deslogar)</text>
+            <text x="670" y="250" fill="currentColor" opacity="0.8" font-size="12" id="svg-owner-balcao">• Loja Edge: Sincronizada (15s)</text>
+            <text x="670" y="288" fill="#10b981" font-size="12" font-weight="700" id="svg-owner-badge">🟢 Todas as Lojas Online</text>
+
+            <!-- Connectors -->
+            <line id="line-sync" x1="268" y1="158" x2="362" y2="96" stroke="#10b981" stroke-width="2.5" class="flow-line" />
+            <text x="275" y="112" fill="currentColor" font-size="12" font-weight="600" id="label-sync">HTTPS Outbox</text>
+
+            <line x1="582" y1="92" x2="655" y2="92" stroke="#3b82f6" stroke-width="2.5" class="flow-line" />
+            <line x1="582" y1="235" x2="655" y2="235" stroke="#3b82f6" stroke-width="2.5" class="flow-line" />
+          </svg>
+        </div>
+
+        <div id="topo-explanation" class="rounded-xl bg-[var(--card)] border border-[var(--border)] p-4 text-xs sm:text-sm text-[var(--foreground)] leading-relaxed">
+          <strong>Modo Híbrido Online:</strong> A unidade local registra pedidos e imprime comandas localmente em menos de 2ms. A cada 15 segundos, o worker envia os eventos da tabela <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">edge_sync_outbox</code> via HTTPS para a nuvem. O proprietário alterna entre suas lojas em 1 clique no celular sem precisar deslogar.
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SEÇÕES 3 & 4: ATUALIZAÇÃO OTA E RISCOS DE CAMPO                     -->
+    <!-- =================================================================== -->
+    <section data-section="sec34" class="tab-section bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div class="border-b border-[var(--border)] pb-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-blue-500">Seções 3 &amp; 4 · Operação Remota &amp; Engenharia de Campo</span>
+        <h2 class="text-xl font-bold mt-1">Como Atualizar sem Ir ao Local (OTA) e os 6 Problemas Ocultos</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="border border-[var(--border)] bg-[var(--secondary)]/30 rounded-xl p-4 space-y-2">
+          <div class="text-xs font-bold text-blue-500">1. Build &amp; Registry</div>
+          <div class="text-sm font-semibold">Docker + GHCR / Artifact Registry</div>
+          <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">
+            Ao fazer <code class="px-1 py-0.5 rounded bg-[var(--card)]">git push</code> na release, o GitHub Actions publica a nova imagem versionada (<code class="px-1 py-0.5 rounded bg-[var(--card)]">v1.2.0</code>).
+          </p>
+        </div>
+        <div class="border border-[var(--border)] bg-[var(--secondary)]/30 rounded-xl p-4 space-y-2">
+          <div class="text-xs font-bold text-emerald-500">2. Janela de Madrugada</div>
+          <div class="text-sm font-semibold">Watchtower às 04:00h</div>
+          <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">
+            Cron <code class="px-1 py-0.5 rounded bg-[var(--card)]">0 0 4 * * *</code>: faz <code class="px-1 py-0.5 rounded bg-[var(--card)]">pg_dump</code> preventivo, baixa a imagem nova, roda Flyway retrocompatível e reinicia fora do expediente.
+          </p>
+        </div>
+        <div class="border border-[var(--border)] bg-[var(--secondary)]/30 rounded-xl p-4 space-y-2">
+          <div class="text-xs font-bold text-purple-500">3. Acesso de Emergência</div>
+          <div class="text-sm font-semibold">Tailscale (VPN Mesh WireGuard)</div>
+          <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">
+            Atravessa qualquer CGNAT de operadora gratuitamente. Você acessa via SSH privado (<code class="px-1 py-0.5 rounded bg-[var(--card)]">100.x.y.z</code>) de casa para ver logs ou fazer rollback.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+        <div class="border border-[var(--border)] rounded-xl p-4 space-y-1.5">
+          <div class="text-sm font-bold">4.1. Mini-PC Dedicado Linux + Nobreak</div>
+          <p class="text-xs text-[var(--muted-foreground)]">Evita usar o Windows compartilhado do caixa. O computador do atendente abre apenas o navegador apontando para o IP local do Mini-PC.</p>
+        </div>
+        <div class="border border-[var(--border)] rounded-xl p-4 space-y-1.5">
+          <div class="text-sm font-bold">4.2. Backup Criptografado Horário (R2 / GCS)</div>
+          <p class="text-xs text-[var(--muted-foreground)]"><code class="px-1 py-0.5 rounded bg-[var(--secondary)]">pg_dump</code> + <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">rclone</code> enviando dumps para Cloudflare R2 (&lt; R$ 1/mês) contra queima de SSD ou furto.</p>
+        </div>
+        <div class="border border-[var(--border)] rounded-xl p-4 space-y-1.5">
+          <div class="text-sm font-bold">4.3. GraalVM Native + Device Token por Loja</div>
+          <p class="text-xs text-[var(--muted-foreground)]">Binário nativo (<code class="px-1 py-0.5 rounded bg-[var(--secondary)]">-Pnative</code>) consome ~60MB de RAM e protege o código-fonte. O nó Edge usa apenas um token de sincronização restrito ao seu <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">store_id</code>.</p>
+        </div>
+        <div class="border border-amber-500/40 bg-amber-500/10 rounded-xl p-4 space-y-1.5">
+          <div class="text-sm font-bold text-amber-500">4.6. Impressão Térmica na Unidade CLOUD (Delivery)</div>
+          <p class="text-xs text-[var(--foreground)]">O <code class="px-1 py-0.5 rounded bg-[var(--card)]">TcpPrinterGateway</code> conecta na porta <code class="px-1 py-0.5 rounded bg-[var(--card)]">9100</code>. Na unidade Delivery (Nuvem), o Tailscale Subnet Router no PC da expedição permite alcançar a impressora térmica local.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SEÇÃO 5: OPÇÃO A SELECIONADA                                        -->
+    <!-- =================================================================== -->
+    <section data-section="sec5" class="tab-section bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 shadow-sm space-y-4">
+      <div class="border-b border-[var(--border)] pb-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-500">Seção 5 · Decisão Consolidada de Go-Live</span>
+        <h2 class="text-xl font-bold mt-1">Opção A Aprovada: Arquitetura Híbrida desde o Dia 1</h2>
+      </div>
+      <div class="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 text-xs sm:text-sm leading-relaxed">
+        <strong>✓ Decisão Definida:</strong> O BiteFlow terá suporte nativo aos modos <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">CLOUD</code> e <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">EDGE</code> por loja, com fila <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">edge_sync_outbox</code> e troca de unidade sem deslogar (<code class="px-1 py-0.5 rounded bg-[var(--secondary)]">Store Switcher</code>).
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SEÇÃO 6: ANÁLISE FINOPS & CALCULADORA INTERATIVA                    -->
+    <!-- =================================================================== -->
+    <section data-section="sec6" class="tab-section bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div class="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-4">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-500">Seção 6 · Especialidade FinOps</span>
+          <h2 class="text-xl font-bold mt-1">Google Cloud (<code class="text-base">southamerica-east1</code>) + Cloudflare</h2>
+        </div>
+      </div>
+
+      <div class="border border-[var(--border)] bg-[var(--secondary)]/30 rounded-2xl p-5 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-emerald-500">Simulador FinOps de Crescimento SaaS</div>
+            <div class="text-sm font-semibold">Arraste a quantidade de lojas ativas na plataforma:</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <input
+              type="range"
+              id="store-slider"
+              min="1"
+              max="50"
+              value="2"
+              oninput="updateFinops(this.value)"
+              class="w-40 sm:w-56 accent-blue-500 cursor-pointer"
+            />
+            <span id="store-count-badge" class="px-3 py-1 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-bold">
+              2 lojas ativas
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-1">
+            <div class="text-xs text-[var(--muted-foreground)]">Cloud Gerenciado Puro (Cloud Run Always-On + Cloud SQL)</div>
+            <div id="cost-naive" class="text-xl font-bold text-red-500">R$ 616 / mês</div>
+            <div id="cost-naive-per-store" class="text-xs text-[var(--muted-foreground)]">R$ 308 por loja</div>
+          </div>
+
+          <div class="bg-[var(--card)] border border-emerald-500/40 rounded-xl p-4 space-y-1">
+            <div class="text-xs text-emerald-500 font-semibold" id="stage-recommended-label">Arquitetura Recomendada (Estágio 1 Enxuto)</div>
+            <div id="cost-optimized" class="text-xl font-bold text-emerald-500">R$ 131 / mês</div>
+            <div id="cost-opt-per-store" class="text-xs text-[var(--muted-foreground)]">R$ 66 por loja</div>
+          </div>
+
+          <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 space-y-1">
+            <div class="text-xs text-[var(--muted-foreground)]">Economia Anual Estimada</div>
+            <div id="cost-savings" class="text-xl font-bold text-blue-500">R$ 5.820 / ano</div>
+            <div class="text-xs text-[var(--muted-foreground)]">Margem preservada no caixa</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SEÇÃO 7: AUDITORIA DEVSECOPS — 5 BLOQUEADORES RESOLVIDOS            -->
+    <!-- =================================================================== -->
+    <section data-section="sec7" class="tab-section bg-[var(--card)] border border-emerald-500/40 rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-500">Seção 7 · Checklist Obrigatório Pré-Produção — Concluído</span>
+          <h2 class="text-xl font-bold mt-1">5 Bloqueadores Críticos Resolvidos e Testados no Código</h2>
+        </div>
+        <div class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--secondary)] border border-[var(--border)]">
+          Resolvidos: <span id="check-progress" class="text-emerald-500 font-bold">5 / 5</span>
+        </div>
+      </div>
+
+      <div class="space-y-2.5" id="checklist-container">
+        <label class="flex items-start gap-3 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/5">
+          <input type="checkbox" checked onchange="updateChecklist()" class="sec-check mt-1 w-4 h-4 accent-emerald-500" />
+          <div class="text-xs"><strong>#1 Resolvido:</strong> Chaves RSA movidas de <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">META-INF/resources/</code> para <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">src/main/resources/jwt/</code> (não são mais servidas via HTTP).</div>
+        </label>
+        <label class="flex items-start gap-3 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/5">
+          <input type="checkbox" checked onchange="updateChecklist()" class="sec-check mt-1 w-4 h-4 accent-emerald-500" />
+          <div class="text-xs"><strong>#2 Resolvido:</strong> <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">IfoodOrderSubscriber</code> e Publishers injetam <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">quarkus.google.cloud.project-id</code> e respeitam <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">biteflow.feature.ifood-integration.enabled</code>.</div>
+        </label>
+        <label class="flex items-start gap-3 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/5">
+          <input type="checkbox" checked onchange="updateChecklist()" class="sec-check mt-1 w-4 h-4 accent-emerald-500" />
+          <div class="text-xs"><strong>#3 Resolvido:</strong> Cookie <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">biteflow_jwt</code> com <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">Secure=true</code> em produção e <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">SameSite=Lax</code>.</div>
+        </label>
+        <label class="flex items-start gap-3 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/5">
+          <input type="checkbox" checked onchange="updateChecklist()" class="sec-check mt-1 w-4 h-4 accent-emerald-500" />
+          <div class="text-xs"><strong>#4 Resolvido:</strong> Criado <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">ProductionAdminSeedGuard</code>, validação de <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">IFOOD_ENCRYPTION_KEY</code> em produção e <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">.gitignore</code> raiz.</div>
+        </label>
+        <label class="flex items-start gap-3 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/5">
+          <input type="checkbox" checked onchange="updateChecklist()" class="sec-check mt-1 w-4 h-4 accent-emerald-500" />
+          <div class="text-xs"><strong>#5 Resolvido:</strong> <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">LocalImageStorage</code> parametrizado e protegido contra SSRF (<code class="px-1 py-0.5 rounded bg-[var(--secondary)]">file://</code> bloqueado).</div>
+        </label>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SEÇÃO 8: ESPECIFICAÇÃO TÉCNICA DE IMPLEMENTAÇÃO (SQL + CÓDIGO)      -->
+    <!-- =================================================================== -->
+    <section data-section="sec8" class="tab-section bg-[var(--card)] border border-blue-500/40 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div class="border-b border-[var(--border)] pb-4">
+        <span class="text-xs font-semibold uppercase tracking-wider text-blue-500">Seção 8 · Especificação Técnica de Implementação (TDD)</span>
+        <h2 class="text-xl font-bold mt-1">Migration V17, Use Cases e Endpoints (Multi-Store + Edge Outbox)</h2>
+      </div>
+
+      <div class="space-y-2">
+        <h3 class="text-sm font-bold">8.1. Migration SQL (<code class="text-xs">V17__multi_store_and_edge_outbox.sql</code>)</h3>
+        <pre class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>CREATE TABLE user_store_access (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    store_id    UUID        NOT NULL REFERENCES store(id) ON DELETE CASCADE,
+    role        VARCHAR(20) NOT NULL CHECK (role IN ('ADMIN','GERENTE','CAIXA')),
+    permissions TEXT[]      NOT NULL DEFAULT '{}',
+    created_at  TIMESTAMP   NOT NULL DEFAULT now(),
+    CONSTRAINT uq_user_store_access UNIQUE (user_id, store_id)
+);
+
+INSERT INTO user_store_access (user_id, store_id, role, permissions)
+SELECT id, store_id, role, permissions FROM users
+ON CONFLICT (user_id, store_id) DO NOTHING;
+
+ALTER TABLE store
+    ADD COLUMN IF NOT EXISTS sync_mode VARCHAR(20) NOT NULL DEFAULT 'CLOUD' CHECK (sync_mode IN ('CLOUD', 'EDGE')),
+    ADD COLUMN IF NOT EXISTS edge_api_key_hash VARCHAR(255),
+    ADD COLUMN IF NOT EXISTS last_edge_sync_at TIMESTAMP;
+
+CREATE TABLE edge_sync_outbox (
+    id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    store_id        UUID         NOT NULL REFERENCES store(id) ON DELETE CASCADE,
+    event_type      VARCHAR(60)  NOT NULL,
+    aggregate_id    UUID         NOT NULL,
+    payload         JSONB        NOT NULL,
+    status          VARCHAR(20)  NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SYNCED', 'FAILED')),
+    attempts        INTEGER      NOT NULL DEFAULT 0,
+    last_error      TEXT,
+    created_at      TIMESTAMP    NOT NULL DEFAULT now(),
+    synced_at       TIMESTAMP
+);
+
+CREATE TABLE edge_synced_event_log (
+    event_id        UUID         PRIMARY KEY,
+    store_id        UUID         NOT NULL REFERENCES store(id) ON DELETE CASCADE,
+    event_type      VARCHAR(60)  NOT NULL,
+    aggregate_id    UUID         NOT NULL,
+    received_at     TIMESTAMP    NOT NULL DEFAULT now()
+);</code></pre>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="border border-[var(--border)] rounded-xl p-4 space-y-2">
+          <div class="text-xs font-bold text-blue-500 uppercase">Sub-fase 8A · Multi-Store Switcher</div>
+          <ul class="text-xs text-[var(--muted-foreground)] space-y-1.5 list-disc pl-4">
+            <li><strong>Domain:</strong> <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">UserStoreAccess</code> + <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">UserStoreAccessRepository</code></li>
+            <li><strong>Use Cases:</strong> <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">SwitchStoreUseCase</code>, <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">ListAccessibleStoresUseCase</code>, <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">GrantUserStoreAccessUseCase</code></li>
+            <li><strong>Endpoints:</strong> <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">GET /api/v1/auth/stores</code> e <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">POST /api/v1/auth/switch-store/{storeId}</code> (atualiza cookie JWT sem deslogar)</li>
+          </ul>
+        </div>
+        <div class="border border-[var(--border)] rounded-xl p-4 space-y-2">
+          <div class="text-xs font-bold text-emerald-500 uppercase">Sub-fase 8B · Edge Outbox Sync</div>
+          <ul class="text-xs text-[var(--muted-foreground)] space-y-1.5 list-disc pl-4">
+            <li><strong>Domain:</strong> <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">EdgeOutboxEvent</code> + <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">EdgeOutboxRepository</code></li>
+            <li><strong>Use Cases:</strong> <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">EnqueueEdgeOutboxUseCase</code>, <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">FlushEdgeOutboxUseCase</code>, <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">IngestEdgeSyncBatchUseCase</code></li>
+            <li><strong>Endpoint Cloud:</strong> <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">POST /api/v1/internal/edge-sync</code> (idempotente via <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">edge_synced_event_log</code>)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    function setFilter(tab) {
+      const sections = document.querySelectorAll('.tab-section');
+      sections.forEach(sec => {
+        if (tab === 'all' || sec.getAttribute('data-section') === tab) {
+          sec.style.display = 'block';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
+
+      const buttons = document.querySelectorAll('.nav-btn');
+      buttons.forEach(btn => {
+        const isCurrent = btn.getAttribute('data-tab') === tab;
+        if (isCurrent) {
+          btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] transition cursor-pointer';
+        } else if (btn.getAttribute('data-tab') === 'sec7') {
+          btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-500 hover:bg-emerald-500/10 transition cursor-pointer';
+        } else if (btn.getAttribute('data-tab') === 'sec8') {
+          btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-500 hover:bg-blue-500/10 transition cursor-pointer';
+        } else {
+          btn.className = 'nav-btn px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:bg-[var(--secondary)] transition cursor-pointer';
+        }
+      });
+    }
+
+    function setTopologyMode(mode) {
+      const btnOnline = document.getElementById('topo-online');
+      const btnOffline = document.getElementById('topo-offline');
+      const btnDual = document.getElementById('topo-dualwan');
+
+      const inactiveClass = 'px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] transition cursor-pointer';
+      btnOnline.className = inactiveClass;
+      btnOffline.className = inactiveClass;
+      btnDual.className = inactiveClass;
+
+      const lineSync = document.getElementById('line-sync');
+      const labelSync = document.getElementById('label-sync');
+      const balcaoTitle = document.getElementById('svg-balcao-title');
+      const balcaoLat = document.getElementById('svg-balcao-lat');
+      const edgeTitle = document.getElementById('svg-edge-title');
+      const edgeSub = document.getElementById('svg-edge-sub');
+      const ownerBalcao = document.getElementById('svg-owner-balcao');
+      const ownerBadge = document.getElementById('svg-owner-badge');
+      const explanation = document.getElementById('topo-explanation');
+
+      if (mode === 'online') {
+        btnOnline.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-white transition cursor-pointer';
+        lineSync.setAttribute('stroke', '#10b981');
+        lineSync.setAttribute('class', 'flow-line');
+        labelSync.textContent = 'HTTPS Outbox (15s)';
+        balcaoTitle.textContent = 'UNIDADE BALCÃO (MODO EDGE)';
+        balcaoLat.textContent = 'LAN Local (< 2ms sem internet)';
+        edgeTitle.textContent = 'Mini-PC Linux (Quarkus + Postgres)';
+        edgeSub.textContent = 'Fila edge_sync_outbox em dia (0 pendentes)';
+        ownerBalcao.textContent = '• Loja Edge: Sincronizada (15s)';
+        ownerBadge.textContent = '🟢 Todas as Lojas Online';
+        ownerBadge.setAttribute('fill', '#10b981');
+        explanation.innerHTML = '<strong>Modo Híbrido Online:</strong> A unidade local registra pedidos e imprime comandas localmente em menos de 2ms. A cada 15 segundos, o worker envia os eventos da tabela <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">edge_sync_outbox</code> via HTTPS para a nuvem. O proprietário alterna entre suas lojas em 1 clique no celular sem precisar deslogar.';
+      } else if (mode === 'offline') {
+        btnOffline.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500 text-white transition cursor-pointer';
+        lineSync.setAttribute('stroke', '#ef4444');
+        lineSync.setAttribute('class', 'flow-line-paused');
+        labelSync.textContent = 'Sem Internet (Fila Retida)';
+        balcaoTitle.textContent = 'UNIDADE BALCÃO (OFFLINE OPERANDO!)';
+        balcaoLat.textContent = 'LAN Local (< 2ms — Zero Travamento)';
+        edgeTitle.textContent = 'Mini-PC Linux (Quarkus + Postgres)';
+        edgeSub.textContent = 'edge_sync_outbox acumulando vendas localmente';
+        ownerBalcao.textContent = '• Loja Edge: Último sync há 18 min';
+        ownerBadge.textContent = '🟡 Balcão Offline (Vendendo Local)';
+        ownerBadge.setAttribute('fill', '#f59e0b');
+        explanation.innerHTML = '<strong>Queda Total de Internet no Balcão:</strong> O caixa, o KDS da cozinha e a impressora térmica <strong>continuam funcionando normalmente na velocidade máxima</strong>. Os pedidos ficam gravados com segurança no Postgres local (<code class="px-1 py-0.5 rounded bg-[var(--secondary)]">edge_sync_outbox</code>) e sobem automaticamente em lote assim que a conexão voltar.';
+      } else {
+        btnDual.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500 text-white transition cursor-pointer';
+        lineSync.setAttribute('stroke', '#3b82f6');
+        lineSync.setAttribute('class', 'flow-line');
+        labelSync.textContent = 'Fibra / Failover 4G (~30ms)';
+        balcaoTitle.textContent = 'UNIDADE BALCÃO (MODO CLOUD)';
+        balcaoLat.textContent = 'Navegador direto na Nuvem (~30ms)';
+        edgeTitle.textContent = 'Roteador Dual-WAN + Chip 4G';
+        edgeSub.textContent = 'Sem servidor de banco local + Tailscale Print';
+        ownerBalcao.textContent = '• Loja Cloud: 100% Tempo Real';
+        ownerBadge.textContent = '🟢 Tempo Real Total (Mesmo DB)';
+        ownerBadge.setAttribute('fill', '#10b981');
+        explanation.innerHTML = '<strong>Comparativo (Modo Cloud + 4G):</strong> Para clientes que preferirem não ter Mini-PC local, basta configurar a loja como <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">CLOUD</code>.';
+      }
+    }
+
+    function updateFinops(val) {
+      const stores = parseInt(val, 10);
+      const badge = document.getElementById('store-count-badge');
+      badge.textContent = stores + (stores === 1 ? ' loja ativa' : ' lojas ativas');
+
+      const naiveCost = Math.round(580 + (stores * 18));
+      let optCost;
+      const stageLabel = document.getElementById('stage-recommended-label');
+
+      if (stores <= 15) {
+        optCost = Math.round(115 + (stores * 8));
+        stageLabel.textContent = 'Arquitetura Recomendada (Estágio 1 Enxuto)';
+      } else {
+        optCost = Math.round(520 + (stores * 11));
+        stageLabel.textContent = 'Arquitetura Recomendada (Estágio 2 Escala HA)';
+      }
+
+      const savingsYear = Math.max(0, (naiveCost - optCost) * 12);
+
+      document.getElementById('cost-naive').textContent = 'R$ ' + naiveCost.toLocaleString('pt-BR') + ' / mês';
+      document.getElementById('cost-naive-per-store').textContent = 'R$ ' + Math.round(naiveCost / stores).toLocaleString('pt-BR') + ' por loja';
+
+      document.getElementById('cost-optimized').textContent = 'R$ ' + optCost.toLocaleString('pt-BR') + ' / mês';
+      document.getElementById('cost-opt-per-store').textContent = 'R$ ' + Math.round(optCost / stores).toLocaleString('pt-BR') + ' por loja';
+
+      document.getElementById('cost-savings').textContent = 'R$ ' + savingsYear.toLocaleString('pt-BR') + ' / ano';
+    }
+
+    function updateChecklist() {
+      const checks = document.querySelectorAll('.sec-check');
+      let done = 0;
+      checks.forEach(c => {
+        if (c.checked) done++;
+      });
+      document.getElementById('check-progress').textContent = done + ' / ' + checks.length;
+    }
+  </script>
+</body>
+</html>
+

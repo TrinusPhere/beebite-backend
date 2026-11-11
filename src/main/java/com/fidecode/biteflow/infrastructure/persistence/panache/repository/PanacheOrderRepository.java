@@ -23,6 +23,8 @@ public class PanacheOrderRepository implements OrderRepository {
     OrderPanacheRepo repo;
     @Inject
     EntityManager em;
+    @Inject
+    com.fidecode.biteflow.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase;
 
     @Override
     @Transactional
@@ -90,12 +92,40 @@ public class PanacheOrderRepository implements OrderRepository {
             } else {
                 entity = em.merge(entity);
             }
-            return toDomainFull(entity);
+            Order savedDomain = toDomainFull(entity);
+            if (enqueueEdgeOutboxUseCase != null && savedDomain.getId() != null) {
+                enqueueEdgeOutboxUseCase.execute(
+                        savedDomain.getStoreId(),
+                        "ORDER_UPSERT",
+                        savedDomain.getId(),
+                        buildOrderOutboxJson(entity)
+                );
+            }
+            return savedDomain;
         } catch (jakarta.persistence.OptimisticLockException | org.hibernate.StaleObjectStateException ex) {
             // Converte exceção de infra para exceção de domínio — mantém P7
             String id = entity.id != null ? entity.id.toString() : "desconhecido";
             throw new ConcurrentModificationException("pedido", id);
         }
+    }
+
+    private String buildOrderOutboxJson(OrderEntity e) {
+        return String.format(
+                java.util.Locale.US,
+                "{\"displayId\":\"%s\",\"type\":\"%s\",\"status\":\"%s\",\"paymentMethod\":\"%s\",\"platform\":\"%s\",\"operation\":\"%s\",\"channel\":\"%s\",\"serviceType\":\"%s\",\"source\":\"%s\",\"subtotal\":%s,\"deliveryCost\":%s,\"totalAmount\":%s}",
+                e.displayId != null ? e.displayId : "0",
+                e.type != null ? e.type : "BALCAO",
+                e.status != null ? e.status : "NOVO",
+                e.paymentMethod != null ? e.paymentMethod : "DINHEIRO",
+                e.platform != null ? e.platform : "LOCAL",
+                e.operation != null ? e.operation : "BALCAO",
+                e.channel != null ? e.channel : "PDV",
+                e.serviceType != null ? e.serviceType : "COUNTER",
+                e.source != null ? e.source : "EDGE_PDV",
+                e.subtotal != null ? e.subtotal.toPlainString() : "0.00",
+                e.deliveryCost != null ? e.deliveryCost.toPlainString() : "0.00",
+                e.totalValue != null ? e.totalValue.toPlainString() : "0.00"
+        );
     }
 
     @Override

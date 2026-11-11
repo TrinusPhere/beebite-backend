@@ -1,0 +1,17 @@
+{$API_DOMAIN:api.chefsburguer.com.br} {
+    encode zstd gzip
+
+    # Rotas do microsserviço iFood (credenciais, catálogo sync, status, disputas e imagens públicas)
+    @ifood_service {
+        path /api/v1/ifood/* /api/images/*
+    }
+    handle @ifood_service {
+        reverse_proxy biteflow-ifood:8081
+    }
+
+    # Todas as demais rotas vão para o backend principal BiteFlow (Modo CLOUD)
+    handle {
+        reverse_proxy biteflow-core:8080
+    }
+}
+

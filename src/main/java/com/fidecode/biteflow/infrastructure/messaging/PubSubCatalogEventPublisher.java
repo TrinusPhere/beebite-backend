@@ -31,8 +31,13 @@ import io.grpc.ManagedChannelBuilder;
 public class PubSubCatalogEventPublisher implements CatalogEventPublisher {
 
     private static final Logger LOG = Logger.getLogger(PubSubCatalogEventPublisher.class);
-    private static final String PROJECT = "biteflow-dev";
     private static final String TOPIC_CATALOG_CHANGED = "biteflow-catalog-changed";
+
+    @ConfigProperty(name = "quarkus.google.cloud.project-id", defaultValue = "biteflow-dev")
+    String projectId;
+
+    @ConfigProperty(name = "biteflow.feature.ifood-integration.enabled", defaultValue = "true")
+    boolean ifoodIntegrationEnabled;
 
     @ConfigProperty(name = "quarkus.google.cloud.pubsub.endpoint")
     Optional<String> emulatorEndpoint;
@@ -48,9 +53,13 @@ public class PubSubCatalogEventPublisher implements CatalogEventPublisher {
 
     @PostConstruct
     void init() {
+        if (!ifoodIntegrationEnabled) {
+            LOG.info("[PUBSUB-CATALOG] Integração iFood desabilitada — publisher de catálogo não inicializado.");
+            return;
+        }
         try {
             catalogChangedPublisher = buildPublisher(TOPIC_CATALOG_CHANGED);
-            LOG.info("[PUBSUB-CATALOG] Publisher de catálogo inicializado.");
+            LOG.infof("[PUBSUB-CATALOG] Publisher de catálogo inicializado (project=%s).", projectId);
         } catch (Exception e) {
             LOG.warnf("[PUBSUB-CATALOG] Pub/Sub indisponível — eventos de catálogo serão ignorados: %s", e.getMessage());
         }
@@ -92,7 +101,7 @@ public class PubSubCatalogEventPublisher implements CatalogEventPublisher {
     }
 
     private Publisher buildPublisher(String topicId) throws Exception {
-        ProjectTopicName topicName = ProjectTopicName.of(PROJECT, topicId);
+        ProjectTopicName topicName = ProjectTopicName.of(projectId, topicId);
 
         if (Boolean.TRUE.equals(usePlaintext.orElse(false)) && emulatorEndpoint.isPresent()) {
             if (channel == null) {

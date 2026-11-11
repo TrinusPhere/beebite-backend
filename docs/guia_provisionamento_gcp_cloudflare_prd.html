@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia Prático Google Cloud + Cloudflare + Edge — BiteFlow PRD</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <script>
+    (function () {
+      var bg = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
+      if (!bg) {
+        var s = document.documentElement.style;
+        s.setProperty('--background', '#0f172a');
+        s.setProperty('--foreground', '#f8fafc');
+        s.setProperty('--card', '#1e293b');
+        s.setProperty('--secondary', '#334155');
+        s.setProperty('--secondary-foreground', '#f1f5f9');
+        s.setProperty('--muted-foreground', '#94a3b8');
+        s.setProperty('--border', '#334155');
+        s.setProperty('--primary', '#3b82f6');
+        s.setProperty('--primary-foreground', '#ffffff');
+      }
+    })();
+  </script>
+</head>
+
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-blue-500/20">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+    <!-- HEADER -->
+    <header class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 sm:p-8 shadow-sm space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-500 border border-blue-500/30">
+            Google Cloud (us-east1 - e2-micro Free Tier + Quarkus Native)
+          </span>
+          <span
+            class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+            Cloudflare Pages &amp; DNS
+          </span>
+          <span
+            class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-500 border border-purple-500/30">
+            Mini-PC Edge + Tailscale
+          </span>
+        </div>
+        <div class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--secondary)] border border-[var(--border)]">
+          Progresso: <span id="step-progress" class="text-emerald-500 font-bold">0 / 9</span>
+        </div>
+      </div>
+
+      <h1 class="text-2xl sm:text-3xl font-bold">
+        Guia Passo a Passo de Infraestrutura — BiteFlow em Produção
+      </h1>
+      <p class="text-sm text-[var(--muted-foreground)] leading-relaxed">
+        Todos os comandos prontos para copiar e colar direto no <strong>Google Cloud Shell</strong> (<code
+          class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">&gt;_</code> no topo do console do GCP) e na VM de
+        produção.
+      </p>
+    </header>
+
+    <!-- PASSO 1 -->
+    <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-4">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" onchange="updateStepCount()" class="step-check w-4 h-4 accent-emerald-500" />
+          <h2 class="text-lg font-bold">Passo 1 — Criar Projeto no Google Cloud e Ativar APIs</h2>
+        </div>
+        <span class="text-xs font-semibold text-blue-500">Cloud Shell</span>
+      </label>
+      <div class="relative">
+        <button onclick="copyBlock(this)"
+          class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
+        <pre
+          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>export GCP_PROJECT_ID="biteflow-prd"
+export GCP_REGION="us-east1"
+export GCP_ZONE="us-east1-b"
+
+gcloud projects create $GCP_PROJECT_ID --name="BiteFlow Production"
+gcloud config set project $GCP_PROJECT_ID
+
+# Liste sua conta de faturamento e vincule:
+gcloud billing accounts list
+# gcloud billing projects link $GCP_PROJECT_ID --billing-account=SEU_BILLING_ACCOUNT_ID
+
+gcloud services enable \
+  compute.googleapis.com \
+  pubsub.googleapis.com \
+  artifactregistry.googleapis.com \
+        iam.googleapis.com
+
+        gcloud artifacts repositories create biteflow-repo \
+        --repository-format=docker \
+        --location="$GCP_REGION" \
+        --description="BiteFlow Quarkus Native Images" \
+        --project="$GCP_PROJECT_ID" || true</code></pre>
+      </div>
+    </section>
+
+    <!-- PASSO 2 -->
+    <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-3">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" onchange="updateStepCount()" class="step-check w-4 h-4 accent-emerald-500" />
+          <h2 class="text-lg font-bold">Passo 2 — Criar Alerta de Orçamento FinOps (R$ 30 / US$ 5 — Proteção Free Tier)
+          </h2>
+        </div>
+        <span class="text-xs font-semibold text-amber-500">Painel Billing</span>
+      </label>
+      <p class="text-xs sm:text-sm text-[var(--muted-foreground)] leading-relaxed">
+        No menu <strong>Faturamento → Orçamentos e alertas</strong>, crie o alerta
+        <code>Alerta Mensal BiteFlow PRD</code> com valor alvo de <strong>R$ 30,00 (US$ 5)</strong> e notificações em
+        <strong>50%, 80% e 100%</strong>. Com <code>e2-micro</code> + <code>30GB pd-standard</code> em
+        <code>us-east1</code> e Quarkus Nativo, a VM se enquadra no <strong>Always Free Tier</strong> do GCP.
+      </p>
+    </section>
+
+    <!-- PASSO 3 -->
+    <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-4">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" onchange="updateStepCount()" class="step-check w-4 h-4 accent-emerald-500" />
+          <h2 class="text-lg font-bold">Passo 3 — Criar os 9 Tópicos e 7 Subscriptions do Pub/Sub (R$ 0/mês)</h2>
+        </div>
+        <span class="text-xs font-semibold text-emerald-500">10 GB Free Tier</span>
+      </label>
+      <div class="relative">
+        <button onclick="copyBlock(this)"
+          class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
+        <pre
+          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>for TOPIC in \
+  ifood-order-placed \
+  ifood-order-status-changed \
+  ifood-chat-message \
+  ifood-order-dispute \
+  ifood-order-cancellation-requested \
+  biteflow-order-status-changed \
+  biteflow-order-cancelled \
+  biteflow-catalog-changed \
+  biteflow-chat-message-outbound; do
+  gcloud pubsub topics create "$TOPIC" --project="$GCP_PROJECT_ID" || true
+done
+
+gcloud pubsub subscriptions create ifood-order-placed-sub --topic=ifood-order-placed --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create ifood-order-status-changed-sub --topic=ifood-order-status-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create ifood-chat-message-sub --topic=ifood-chat-message --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create biteflow-order-status-changed-sub --topic=biteflow-order-status-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create biteflow-order-cancelled-sub --topic=biteflow-order-cancelled --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create biteflow-catalog-changed-sub --topic=biteflow-catalog-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create biteflow-chat-message-outbound-sub --topic=biteflow-chat-message-outbound --ack-deadline=60 --project="$GCP_PROJECT_ID"</code></pre>
+      </div>
+    </section>
+
+    <!-- PASSO 4 -->
+    <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-4">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" onchange="updateStepCount()" class="step-check w-4 h-4 accent-emerald-500" />
+          <h2 class="text-lg font-bold">Passo 4 — Criar Service Account com Menor Privilégio (IAM)</h2>
+        </div>
+        <span class="text-xs font-semibold text-blue-500">Zero-Trust</span>
+      </label>
+      <div class="relative">
+        <button onclick="copyBlock(this)"
+          class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
+        <pre
+          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>gcloud iam service-accounts create biteflow-runtime-sa \
+  --display-name="BiteFlow Production Runtime SA" \
+  --project="$GCP_PROJECT_ID"
+
+SA_EMAIL="biteflow-runtime-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
+
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccount:${SA_EMAIL}" --role="roles/pubsub.publisher"
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccount:${SA_EMAIL}" --role="roles/pubsub.subscriber"
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccount:${SA_EMAIL}" --role="roles/artifactregistry.reader"</code></pre>
+      </div>
+    </section>
+
+    <!-- PASSO 5 -->
+    <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-4">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" onchange="updateStepCount()" class="step-check w-4 h-4 accent-emerald-500" />
+          <h2 class="text-lg font-bold">Passo 5 — Reservar IP Fixo, Firewall (80/443) e Criar VM Free Tier (e2-micro em
+            us-east1)</h2>
+        </div>
+        <span class="text-xs font-semibold text-emerald-500">Always Free Tier (Quarkus Native)</span>
+      </label>
+      <div class="relative">
+        <button onclick="copyBlock(this)"
+          class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
+        <pre
+          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>gcloud compute addresses create biteflow-cloud-ip --region="$GCP_REGION" --project="$GCP_PROJECT_ID"
+STATIC_IP=$(gcloud compute addresses describe biteflow-cloud-ip --region="$GCP_REGION" --project="$GCP_PROJECT_ID" --format="get(address)")
+echo "IP Fixo da API: $STATIC_IP"
+
+gcloud compute firewall-rules create allow-biteflow-https \
+  --allow=tcp:80,tcp:443 \
+  --target-tags=biteflow-web \
+  --project="$GCP_PROJECT_ID"
+
+gcloud compute instances create biteflow-cloud-vm \
+  --project="$GCP_PROJECT_ID" \
+  --zone="$GCP_ZONE" \
+  --machine-type=e2-micro \
+  --address="$STATIC_IP" \
+  --service-account="$SA_EMAIL" \
+  --scopes=https://www.googleapis.com/auth/cloud-platform \
+  --tags=biteflow-web \
+  --image-family=ubuntu-2404-lts-amd64 \
+  --image-project=ubuntu-os-cloud \
+  --boot-disk-size=30GB \
+  --boot-disk-type=pd-standard</code></pre>
+      </div>
+      <div class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs space-y-2">
+        <p class="font-semibold text-blue-400">💡 Como fazer Upgrade Vertical da VM no futuro (em 1 minuto, sem perder
+          dados ou IP):</p>
+        <pre class="overflow-x-auto p-2.5 rounded-lg bg-[var(--secondary)] text-[11px]"><code>gcloud compute instances stop biteflow-cloud-vm --zone=us-east1-b
+gcloud compute instances set-machine-type biteflow-cloud-vm --machine-type=e2-small --zone=us-east1-b
+gcloud compute instances start biteflow-cloud-vm --zone=us-east1-b</code></pre>
+      </div>
+    </section>
+
+    <!-- PASSO 6 -->
+    <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-4">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" onchange="updateStepCount()" class="step-check w-4 h-4 accent-emerald-500" />
+          <h2 class="text-lg font-bold">Passo 6 — Instalar Docker, Swap e Gerar Chaves RSA/AES Exclusivas na VM</h2>
+        </div>
+        <span class="text-xs font-semibold text-emerald-500">SSH na VM</span>
+      </label>
+      <div class="relative">
+        <button onclick="copyBlock(this)"
+          class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
+        <pre
+          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
+
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+sudo mkdir -p /opt/biteflow/{secrets,init-db,uploads/images,backups}
+sudo chown -R $USER:$USER /opt/biteflow && cd /opt/biteflow
+
+openssl genpkey -algorithm RSA -out /opt/biteflow/secrets/privateKey.pem -pkeyopt rsa_keygen_bits:2048
+openssl rsa -pubout -in /opt/biteflow/secrets/privateKey.pem -out /opt/biteflow/secrets/publicKey.pem
+chmod 600 /opt/biteflow/secrets/privateKey.pem && chmod 644 /opt/biteflow/secrets/publicKey.pem
+
+echo "IFOOD_ENCRYPTION_KEY: $(openssl rand -base64 32 | head -c 32)"
+echo "DB_PASSWORD: $(openssl rand -hex 16)"</code></pre>
+      </div>
+    </section>
+
+    <!-- PASSO 7 -->
+    <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-4">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" onchange="updateStepCount()" class="step-check w-4 h-4 accent-emerald-500" />
+          <h2 class="text-lg font-bold">Passo 7 — Build Nativo (GraalVM) e Subir <code
+              class="text-base">docker-compose.yml</code> + <code class="text-base">Caddyfile</code></h2>
+        </div>
+        <span class="text-xs font-semibold text-blue-500">Quarkus Native (~60MB RAM/serviço)</span>
+      </label>
+      <p class="text-xs text-[var(--muted-foreground)]">
+        No Bitbucket, clique em <strong>Run pipeline → deploy-native-prd</strong> (ou compile localmente com os comandos
+        abaixo) e depois suba os arquivos da pasta <code
+          class="px-1 py-0.5 rounded bg-[var(--secondary)]">deploy/</code> + <code
+          class="px-1 py-0.5 rounded bg-[var(--secondary)]">docker-compose.cloud.yml</code> em <code
+          class="px-1 py-0.5 rounded bg-[var(--secondary)]">/opt/biteflow</code>:
+      </p>
+      <div class="relative">
+        <button onclick="copyBlock(this)"
+          class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
+        <pre class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code># Opção local (ou use o botão 'deploy-native-prd' no Bitbucket Pipelines):
+cd bite-flow && ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
+docker build -f src/main/docker/Dockerfile.native -t us-east1-docker.pkg.dev/$GCP_PROJECT_ID/biteflow-repo/bite-flow:latest .
+docker push us-east1-docker.pkg.dev/$GCP_PROJECT_ID/biteflow-repo/bite-flow:latest
+
+cd ../biteflow-ifood-service && ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
+        docker build -f src/main/docker/Dockerfile.native -t
+        us-east1-docker.pkg.dev/$GCP_PROJECT_ID/biteflow-repo/biteflow-ifood-service:latest .
+        docker push us-east1-docker.pkg.dev/$GCP_PROJECT_ID/biteflow-repo/biteflow-ifood-service:latest</code></pre>
+      </div>
+    </section>
+
+    <!-- PASSO 8 -->
+    <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-3">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" onchange="updateStepCount()" class="step-check w-4 h-4 accent-emerald-500" />
+          <h2 class="text-lg font-bold">Passo 8 — Apontar DNS (<code class="text-base">api.</code>) e Publicar Frontend
+            no Cloudflare Pages (<code class="text-base">app.</code>)</h2>
+        </div>
+        <span class="text-xs font-semibold text-emerald-500">Custo R$ 0</span>
+      </label>
+      <p class="text-xs text-[var(--muted-foreground)]">
+        Crie o registro <code>A</code> para <code>api.seudominio.com.br</code> apontando para o IP estático da VM e
+        conecte o diretório <code>biteflow-front</code> ao Cloudflare Pages em <code>app.seudominio.com.br</code>.
+      </p>
+    </section>
+
+    <!-- PASSO 9 -->
+    <section class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 space-y-4">
+      <label class="flex items-center justify-between gap-4 cursor-pointer">
+        <div class="flex items-center gap-3">
+          <input type="checkbox" onchange="updateStepCount()" class="step-check w-4 h-4 accent-emerald-500" />
+          <h2 class="text-lg font-bold">Passo 9 — Configurar Mini-PC Edge do Balcão (Docker + Tailscale + Watchtower
+            04:00h)</h2>
+        </div>
+        <span class="text-xs font-semibold text-purple-500">Loja Física</span>
+      </label>
+      <div class="relative">
+        <button onclick="copyBlock(this)"
+          class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
+        <pre
+          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>curl -fsSL https://get.docker.com | sudo sh
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up --ssh
+sudo apt-get update && sudo apt-get install -y chrony && sudo systemctl enable --now chrony</code></pre>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    function updateStepCount() {
+      const checks = document.querySelectorAll('.step-check');
+      let done = 0;
+      checks.forEach(c => { if (c.checked) done++; });
+      document.getElementById('step-progress').textContent = done + ' / ' + checks.length;
+    }
+
+    function copyBlock(btn) {
+      const code = btn.parentElement.querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const original = btn.innerText;
+        btn.innerText = 'Copiado ✓';
+        setTimeout(() => { btn.innerText = original; }, 1500);
+      });
+    }
+  </script>
+</body>
+
+</html>

@@ -59,12 +59,17 @@ import java.util.concurrent.TimeUnit;
 public class IfoodOrderSubscriber {
 
     private static final Logger LOG = Logger.getLogger(IfoodOrderSubscriber.class);
-    private static final String PROJECT = "biteflow-dev";
     private static final String TOPIC_PLACED = "ifood-order-placed";
     private static final String TOPIC_STATUS = "ifood-order-status-changed";
     private static final String SUBSCRIPTION_PLACED = "ifood-order-placed-sub";
     private static final String SUBSCRIPTION_STATUS = "ifood-order-status-changed-sub";
     private static final String SUBSCRIPTION_CHAT = "ifood-chat-message-sub";
+
+    @ConfigProperty(name = "quarkus.google.cloud.project-id", defaultValue = "biteflow-dev")
+    String projectId;
+
+    @ConfigProperty(name = "biteflow.feature.ifood-integration.enabled", defaultValue = "true")
+    boolean ifoodIntegrationEnabled;
 
     @ConfigProperty(name = "quarkus.google.cloud.pubsub.endpoint")
     Optional<String> emulatorEndpoint;
@@ -90,8 +95,8 @@ public class IfoodOrderSubscriber {
     private ManagedChannel channel;
 
     void onStart(@Observes StartupEvent event) {
-        if (emulatorEndpoint.isEmpty() && !Boolean.TRUE.equals(usePlaintext.orElse(false))) {
-            LOG.info("[IFOOD-SUB] Pub/Sub não configurado — subscriber iFood não iniciado.");
+        if (!ifoodIntegrationEnabled) {
+            LOG.info("[IFOOD-SUB] Integração iFood desabilitada — subscriber iFood não iniciado.");
             return;
         }
 
@@ -110,7 +115,7 @@ public class IfoodOrderSubscriber {
             statusSubscriber.startAsync().awaitRunning();
             chatSubscriber.startAsync().awaitRunning();
 
-            LOG.info("[IFOOD-SUB] Subscribers iFood iniciados.");
+            LOG.infof("[IFOOD-SUB] Subscribers iFood iniciados (project=%s).", projectId);
         } catch (Exception e) {
             LOG.errorf(e, "[IFOOD-SUB] Falha ao iniciar subscribers: %s", e.getMessage());
         }
@@ -273,7 +278,7 @@ public class IfoodOrderSubscriber {
                     .setCredentialsProvider(credentialsProvider)
                     .build();
             try (TopicAdminClient topicClient = TopicAdminClient.create(topicSettings)) {
-                ProjectTopicName topicName = ProjectTopicName.of(PROJECT, topicId);
+                ProjectTopicName topicName = ProjectTopicName.of(projectId, topicId);
                 try {
                     topicClient.getTopic(topicName);
                 } catch (Exception e) {
@@ -287,8 +292,8 @@ public class IfoodOrderSubscriber {
                     .setCredentialsProvider(credentialsProvider)
                     .build();
             try (SubscriptionAdminClient subClient = SubscriptionAdminClient.create(subSettings)) {
-                ProjectSubscriptionName subName = ProjectSubscriptionName.of(PROJECT, subId);
-                ProjectTopicName topicName = ProjectTopicName.of(PROJECT, topicId);
+                ProjectSubscriptionName subName = ProjectSubscriptionName.of(projectId, subId);
+                ProjectTopicName topicName = ProjectTopicName.of(projectId, topicId);
                 try {
                     subClient.getSubscription(subName);
                 } catch (Exception e) {
@@ -307,7 +312,7 @@ public class IfoodOrderSubscriber {
     }
 
     private Subscriber buildSubscriber(String subscriptionId, MessageReceiver receiver) {
-        ProjectSubscriptionName subName = ProjectSubscriptionName.of(PROJECT, subscriptionId);
+        ProjectSubscriptionName subName = ProjectSubscriptionName.of(projectId, subscriptionId);
 
         if (channel != null) {
             var channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));

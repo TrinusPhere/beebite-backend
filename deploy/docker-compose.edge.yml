@@ -1,0 +1,71 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# docker-compose.edge.yml — Unidade Local Offline-First (Balcão / PDV)
+# - Funciona 100% sem internet (LAN local < 2ms + Impressão Térmica TCP 9100)
+# - Sincroniza vendas/caixa/estoque automaticamente quando online (EDGE Outbox)
+# - Atualiza sozinho de madrugada às 04:00 AM via Watchtower
+# ═══════════════════════════════════════════════════════════════════════════
+services:
+  postgres-local:
+    image: postgres:17-alpine
+    container_name: biteflow-postgres-edge
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: biteflow_edge
+      POSTGRES_USER: biteflow
+      POSTGRES_PASSWORD: ${EDGE_DB_PASSWORD:?Defina EDGE_DB_PASSWORD no arquivo .env}
+    volumes:
+      - pgdata_edge:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U biteflow -d biteflow_edge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  biteflow-edge-api:
+    image: ${GCP_REGION:-us-east1}-docker.pkg.dev/${GCP_PROJECT_ID:-biteflow-prd}/biteflow-repo/bite-flow:${APP_VERSION:-latest}
+    container_name: biteflow-edge-api
+    restart: unless-stopped
+    depends_on:
+      postgres-local:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: prod
+      DB_HOST: postgres-local
+      DB_NAME: biteflow_edge
+      DB_USER: biteflow
+      DB_PASSWORD: ${EDGE_DB_PASSWORD}
+      BITEFLOW_COOKIE_SECURE: "false"
+      BITEFLOW_COOKIE_SAME_SITE: Lax
+      BITEFLOW_ENFORCE_PROD_GUARDS: "true"
+      BITEFLOW_INITIAL_ADMIN_PASSWORD: ${EDGE_INITIAL_ADMIN_PASSWORD}
+      BITEFLOW_IFOOD_ENABLED: "false"
+      BITEFLOW_SYNC_MODE: EDGE
+      BITEFLOW_CLOUD_SYNC_URL: ${CLOUD_SYNC_URL:-https://api.chefsburguer.com.br}
+      BITEFLOW_EDGE_DEVICE_TOKEN: ${EDGE_DEVICE_TOKEN:?Defina EDGE_DEVICE_TOKEN no arquivo .env}
+      BITEFLOW_EDGE_SYNC_INTERVAL: 15s
+    ports:
+      - "8080:8080"
+
+  biteflow-edge-front:
+    image: ghcr.io/fidecode/biteflow-front:${APP_VERSION:-latest}
+    container_name: biteflow-edge-front
+    restart: unless-stopped
+    depends_on:
+      - biteflow-edge-api
+    ports:
+      - "80:80"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: biteflow-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_SCHEDULE: "0 0 4 * * *"
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      TZ: America/Sao_Paulo
+
+volumes:
+  pgdata_edge:

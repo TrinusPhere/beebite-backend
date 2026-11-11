@@ -1,0 +1,114 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# docker-compose.cloud.yml — Nuvem Central (GCP us-east1 - e2-micro Free Tier)
+# - 1 instância PostgreSQL 17 com 2 bancos lógicos (biteflow + biteflow_ifood)
+# - bite-flow (Quarkus Native, Modo CLOUD, Multi-Loja + Ingestão Edge Sync)
+# - biteflow-ifood-service (Quarkus Native, Polling iFood 30s + Cloud Pub/Sub)
+# - Caddy Reverse Proxy (HTTPS / TLS automático)
+# ═══════════════════════════════════════════════════════════════════════════
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: biteflow-postgres-cloud
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no arquivo .env}
+      POSTGRES_DB: biteflow
+    volumes:
+      - pgdata_cloud:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c max_connections=60
+      -c work_mem=4MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d biteflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+
+  biteflow-core:
+    image: ghcr.io/fidecode/bite-flow:${APP_VERSION:-latest}
+    container_name: biteflow-core-cloud
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: prod
+      DB_HOST: postgres
+      DB_NAME: biteflow
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_PRIVATE_KEY_LOCATION: file:/secrets/privateKey.pem
+      JWT_PUBLIC_KEY_LOCATION: file:/secrets/publicKey.pem
+      BITEFLOW_COOKIE_SECURE: "true"
+      BITEFLOW_COOKIE_SAME_SITE: Lax
+      BITEFLOW_ENFORCE_PROD_GUARDS: "true"
+      BITEFLOW_INITIAL_ADMIN_PASSWORD: ${BITEFLOW_INITIAL_ADMIN_PASSWORD}
+      BITEFLOW_SYNC_MODE: CLOUD
+      BITEFLOW_IFOOD_ENABLED: "true"
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-biteflow-prd}
+    volumes:
+      - ./secrets:/secrets:ro
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+
+  biteflow-ifood:
+    image: ghcr.io/fidecode/biteflow-ifood-service:${APP_VERSION:-latest}
+    container_name: biteflow-ifood-cloud
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: prod
+      DB_HOST: postgres
+      DB_NAME: biteflow_ifood
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      IFOOD_ENCRYPTION_KEY: ${IFOOD_ENCRYPTION_KEY:?Defina IFOOD_ENCRYPTION_KEY no arquivo .env}
+      BITEFLOW_ENFORCE_PROD_KEY: "true"
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-biteflow-prd}
+      BITEFLOW_IMAGE_STORAGE_DIR: /data/images/catalog
+      BITEFLOW_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN:-api.chefsburguer.com.br}/api/images
+      BITEFLOW_API_BASE_URL: http://biteflow-core:8080
+    volumes:
+      - ./uploads/images:/data/images/catalog
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: biteflow-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:-api.chefsburguer.com.br}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - biteflow-core
+      - biteflow-ifood
+    deploy:
+      resources:
+        limits:
+          memory: 96M
+
+volumes:
+  pgdata_cloud:
+  caddy_data:
+  caddy_config:
