@@ -1,0 +1,29 @@
+package com.fidecode.beebite.application.catalog.category;
+
+import com.fidecode.beebite.domain.catalog.exception.CategoryNotFoundException;
+import com.fidecode.beebite.domain.catalog.entity.ProductCategory;
+import com.fidecode.beebite.domain.catalog.repository.ProductCategoryRepository;
+import com.fidecode.beebite.domain.shared.exception.ForbiddenAccessException;
+import com.fidecode.beebite.domain.shared.StoreGuard;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+import java.util.UUID;
+
+@ApplicationScoped
+public class DeleteCategoryUseCase {
+
+    private final ProductCategoryRepository categoryRepository;
+
+    @Inject
+    public DeleteCategoryUseCase(ProductCategoryRepository categoryRepository) {
+        this.categoryRepository = categoryRepository;
+    }
+
+    public void execute(UUID storeId, UUID id) {
+        ProductCategory category = categoryRepository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException(id.toString()));
+        StoreGuard.enforce(category, storeId);
+        categoryRepository.deleteById(id);
+    }
+}
