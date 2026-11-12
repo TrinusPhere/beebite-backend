@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BiteFlow PRD — Plano de Arquitetura, DevSecOps, FinOps &amp; Implementação (Opção A)</title>
+  <title>BeeBite PRD — Plano de Arquitetura, DevSecOps, FinOps &amp; Implementação (Opção A)</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     html {
@@ -77,7 +77,7 @@
 
       <div class="space-y-2">
         <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--foreground)]">
-          Plano de Arquitetura, DevSecOps, FinOps e Implementação PRD — BiteFlow SaaS
+          Plano de Arquitetura, DevSecOps, FinOps e Implementação PRD — BeeBite SaaS
         </h1>
         <p class="text-sm sm:text-base text-[var(--muted-foreground)] leading-relaxed">
           Arquitetura 100% genérica para atender desde clientes com <strong>1 único CNPJ</strong> até grupos com <strong>2 ou mais CNPJs/modalidades</strong>
@@ -152,7 +152,7 @@
       </div>
 
       <p class="text-sm text-[var(--muted-foreground)] leading-relaxed">
-        No BiteFlow, cada CNPJ ou unidade operacional é um registro isolado na tabela <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">store</code>
+        No BeeBite, cada CNPJ ou unidade operacional é um registro isolado na tabela <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">store</code>
         (estoque, cozinha, impressoras e caixa próprios). Através da tabela associativa genérica
         <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">user_store_access</code>, o sistema se adapta automaticamente ao porte de qualquer cliente:
       </p>
@@ -203,7 +203,7 @@
 
       <div class="space-y-3 text-sm text-[var(--muted-foreground)] leading-relaxed">
         <p>
-          Qualquer loja cadastrada no BiteFlow pode operar em modo <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">CLOUD</code> (direto na nuvem)
+          Qualquer loja cadastrada no BeeBite pode operar em modo <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">CLOUD</code> (direto na nuvem)
           ou em modo <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">EDGE</code> (servidor local na loja física + sincronização assíncrona via <code class="px-1.5 py-0.5 rounded bg-[var(--secondary)] text-xs">edge_sync_outbox</code>).
         </p>
       </div>
@@ -230,7 +230,7 @@
 
         <!-- SVG ARCHITECTURE DIAGRAM -->
         <div class="overflow-x-auto bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
-          <svg viewBox="0 0 920 340" class="w-full min-w-[680px] h-auto" role="img" aria-label="Diagrama de Arquitetura BiteFlow">
+          <svg viewBox="0 0 920 340" class="w-full min-w-[680px] h-auto" role="img" aria-label="Diagrama de Arquitetura BeeBite">
             <!-- Loja Balcão Box -->
             <rect x="16" y="20" width="270" height="295" rx="14" fill="none" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.5" />
             <text x="32" y="46" fill="currentColor" font-size="13" font-weight="700" id="svg-balcao-title">UNIDADE BALCÃO (MODO EDGE)</text>
@@ -253,11 +253,11 @@
             <text x="362" y="46" fill="#3b82f6" font-size="13" font-weight="700">NUVEM GCP (SÃO PAULO)</text>
 
             <rect x="362" y="64" width="220" height="56" rx="8" fill="#3b82f6" fill-opacity="0.12" stroke="#3b82f6" stroke-opacity="0.45" />
-            <text x="376" y="87" fill="currentColor" font-size="12" font-weight="600">BiteFlow Cloud API</text>
+            <text x="376" y="87" fill="currentColor" font-size="12" font-weight="600">BeeBite Cloud API</text>
             <text x="376" y="106" fill="currentColor" opacity="0.7" font-size="12">Multi-Store + Store Switcher</text>
 
             <rect x="362" y="138" width="220" height="54" rx="8" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-opacity="0.45" />
-            <text x="376" y="161" fill="currentColor" font-size="12" font-weight="600">biteflow-ifood-service</text>
+            <text x="376" y="161" fill="currentColor" font-size="12" font-weight="600">beebite-ifood-service</text>
             <text x="376" y="179" fill="currentColor" opacity="0.7" font-size="12">Polling 30s + Cloud Pub/Sub</text>
 
             <rect x="362" y="210" width="220" height="50" rx="8" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.45" />
@@ -355,7 +355,7 @@
         <h2 class="text-xl font-bold mt-1">Opção A Aprovada: Arquitetura Híbrida desde o Dia 1</h2>
       </div>
       <div class="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 text-xs sm:text-sm leading-relaxed">
-        <strong>✓ Decisão Definida:</strong> O BiteFlow terá suporte nativo aos modos <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">CLOUD</code> e <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">EDGE</code> por loja, com fila <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">edge_sync_outbox</code> e troca de unidade sem deslogar (<code class="px-1 py-0.5 rounded bg-[var(--secondary)]">Store Switcher</code>).
+        <strong>✓ Decisão Definida:</strong> O BeeBite terá suporte nativo aos modos <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">CLOUD</code> e <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">EDGE</code> por loja, com fila <code class="px-1 py-0.5 rounded bg-[var(--secondary)]">edge_sync_outbox</code> e troca de unidade sem deslogar (<code class="px-1 py-0.5 rounded bg-[var(--secondary)]">Store Switcher</code>).
       </div>
     </section>
 

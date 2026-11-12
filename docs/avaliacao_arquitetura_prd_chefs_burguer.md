@@ -1,18 +1,18 @@
-# Plano de Arquitetura, DevSecOps, FinOps e Implementação PRD — BiteFlow SaaS (Opção A: Híbrida)
+# Plano de Arquitetura, DevSecOps, FinOps e Implementação PRD — BeeBite SaaS (Opção A: Híbrida)
 
-Este documento consolida a arquitetura de produção do **BiteFlow** como um **SaaS Multi-Tenant e Multi-Loja 100% genérico** (atendendo desde clientes com 1 único CNPJ até grupos com 2 ou mais CNPJs/modalidades, como o caso de estreia do *Chefs Burguer*), os **5 bloqueadores de DevSecOps já resolvidos no código**, e a **Especificação Técnica de Implementação (Seção 8)** da **Opção A (Híbrida: Cloud + Edge Local com Outbox)**.
+Este documento consolida a arquitetura de produção do **BeeBite** como um **SaaS Multi-Tenant e Multi-Loja 100% genérico** (atendendo desde clientes com 1 único CNPJ até grupos com 2 ou mais CNPJs/modalidades, como o caso de estreia do *Chefs Burguer*), os **5 bloqueadores de DevSecOps já resolvidos no código**, e a **Especificação Técnica de Implementação (Seção 8)** da **Opção A (Híbrida: Cloud + Edge Local com Outbox)**.
 
 ---
 
 ## 1. Modelo SaaS Multi-Loja Genérico (1 Login Único, Sem Deslogar)
 
-No BiteFlow, cada CNPJ/unidade operacional é um registro isolado na tabela `store` (estoque, cozinha, impressoras e caixa próprios). Porém, um mesmo proprietário (ou gerente geral) pode ser dono de **1, 2 ou N lojas**.
+No BeeBite, cada CNPJ/unidade operacional é um registro isolado na tabela `store` (estoque, cozinha, impressoras e caixa próprios). Porém, um mesmo proprietário (ou gerente geral) pode ser dono de **1, 2 ou N lojas**.
 
 ### Como funciona para qualquer cliente do SaaS (Genérico)
 
-Em vez de amarrar o usuário a apenas uma loja fixa ([User.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/domain/auth/entity/User.java#L10-L29)), introduzimos a tabela associativa **`user_store_access`**:
+Em vez de amarrar o usuário a apenas uma loja fixa ([User.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/domain/auth/entity/User.java#L10-L29)), introduzimos a tabela associativa **`user_store_access`**:
 
-| Perfil de Cliente no BiteFlow | Comportamento no Login (`POST /api/v1/auth/login`) | Experiência na Interface (PC e Celular) |
+| Perfil de Cliente no BeeBite | Comportamento no Login (`POST /api/v1/auth/login`) | Experiência na Interface (PC e Celular) |
 |---|---|---|
 | **Cliente com 1 única loja (1 CNPJ)** | Retorna `accessibleStores` com **1 loja** e já emite o cookie `biteflow_jwt` nela. | **Transparente:** como `accessibleStores.length === 1`, o seletor de lojas **não é exibido**. A tela fica limpa como loja única. |
 | **Cliente com 2+ lojas/CNPJs** *(ex: 1 CNPJ Delivery + 1 CNPJ Balcão, ou Matriz + Filiais)* | Retorna `accessibleStores` com todas as lojas às quais o login tem acesso. | **Troca em 1 clique sem deslogar:** exibe o **Store Switcher** no topo. Ao tocar em outra unidade, chama `POST /api/v1/auth/switch-store/{storeId}`, que atualiza o cookie `biteflow_jwt` na hora sem pedir senha. |
@@ -22,20 +22,20 @@ Em vez de amarrar o usuário a apenas uma loja fixa ([User.java](file:///d:/fide
 
 ## 2. Arquitetura Híbrida (Opção A): Edge Local + Sincronização Outbox
 
-Para qualquer unidade física que não possa depender de internet para vender no balcão (`BITEFLOW_SYNC_MODE=EDGE`), o BiteFlow opera localmente e sincroniza de forma assíncrona com a Nuvem (`BITEFLOW_SYNC_MODE=CLOUD`):
+Para qualquer unidade física que não possa depender de internet para vender no balcão (`BITEFLOW_SYNC_MODE=EDGE`), o BeeBite opera localmente e sincroniza de forma assíncrona com a Nuvem (`BITEFLOW_SYNC_MODE=CLOUD`):
 
 ```mermaid
 flowchart LR
     subgraph LojaEdge["Unidade Local (Modo EDGE - ex: Balcão)"]
-        PDV["Navegador PDV / KDS"] --> EdgeApp["BiteFlow Edge (Quarkus)"]
+        PDV["Navegador PDV / KDS"] --> EdgeApp["BeeBite Edge (Quarkus)"]
         EdgeApp --> EdgeDB[("Postgres Local (Fonte da Verdade)")]
         EdgeApp --> PrinterLocal["Impressora Térmica (TCP 9100)"]
         EdgeDB --> Outbox["Worker Outbox Sync (15s)"]
     end
 
     subgraph Nuvem["Nuvem SaaS (GCP São Paulo - Modo CLOUD)"]
-        Outbox -->|"HTTPS Push + Edge API Key"| CloudApp["BiteFlow Cloud API"]
-        IfoodSvc["biteflow-ifood-service"] <-->|"Pub/Sub"| CloudApp
+        Outbox -->|"HTTPS Push + Edge API Key"| CloudApp["BeeBite Cloud API"]
+        IfoodSvc["beebite-ifood-service"] <-->|"Pub/Sub"| CloudApp
         CloudApp --> CloudDB[("Postgres Cloud (Multi-Tenant)")]
     end
 
@@ -62,7 +62,7 @@ flowchart LR
 
 | Componente | Papel na Máquina Local | Como Funciona |
 |---|---|---|
-| **Docker + GHCR / Artifact Registry** | Empacota `bite-flow` + `biteflow-front` em imagens versionadas (`v1.2.0`) | O GitHub Actions compila e publica a imagem automaticamente na nuvem a cada release. |
+| **Docker + GHCR / Artifact Registry** | Empacota `beebite-backend` + `beebite-front` em imagens versionadas (`v1.2.0`) | O GitHub Actions compila e publica a imagem automaticamente na nuvem a cada release. |
 | **Watchtower (Janela 04:00h)** | Atualiza puxando de dentro para fora (*Pull-based*) | Configurado com cron `0 0 4 * * *` (madrugada). Faz `pg_dump` preventivo, baixa a imagem nova, aplica migrations Flyway retrocompatíveis e reinicia fora do expediente. |
 | **Tailscale (VPN Mesh WireGuard)** | Rede privada ponto-a-ponto criptografada | Atravessa CGNAT/roteadores sem abrir portas. Permite SSH remoto (`100.x.y.z`) para suporte e diagnóstico. |
 
@@ -73,17 +73,17 @@ flowchart LR
 1. **Servidor Local Dedicado**: Rodar o Docker em um **Mini-PC dedicado (Intel N100, 8 GB RAM, SSD NVMe + Ubuntu Server LTS + Nobreak)** em vez do Windows compartilhado do caixa. O computador do caixa acessa apenas via navegador na LAN (`http://192.168.1.10`).
 2. **Backup Offsite Criptografado**: Cronjob horário (`pg_dump` + `rclone`/`restic`) enviando backups para **Cloudflare R2** ou **GCS** (`< R\$ 1,00/mês`).
 3. **Proteção de Propriedade Intelectual e Credenciais**:
-   - Compilação **GraalVM Native Image** (`-Pnative` em [pom.xml](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/pom.xml#L201-L213)) para ocultar bytecode e reduzir RAM para ~60 MB.
+   - Compilação **GraalVM Native Image** (`-Pnative` em [pom.xml](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/pom.xml#L201-L213)) para ocultar bytecode e reduzir RAM para ~60 MB.
    - A máquina local não possui credenciais do banco da nuvem — apenas um `edge_sync_token` revogável restrito ao seu `store_id`.
 4. **Sincronismo de Relógio (NTP) e Prefixo de Pedidos**: `chrony` ativo no Linux e suporte a prefixo de exibição por loja (`display_id`).
 5. **Pagamentos POS e Contingência Fiscal**: Maquininhas com chip 4G próprio + Contingência Offline NFC-e quando sem internet.
-6. **Impressão Térmica na Unidade Cloud (Delivery)**: Como [TcpPrinterGateway.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/infrastructure/printing/TcpPrinterGateway.java#L27-L33) conecta via TCP na porta `9100`, a unidade que roda 100% na nuvem utiliza **Tailscale Subnet Router** (ou agente local de impressão) para alcançar a impressora térmica na LAN da cozinha.
+6. **Impressão Térmica na Unidade Cloud (Delivery)**: Como [TcpPrinterGateway.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/infrastructure/printing/TcpPrinterGateway.java#L27-L33) conecta via TCP na porta `9100`, a unidade que roda 100% na nuvem utiliza **Tailscale Subnet Router** (ou agente local de impressão) para alcançar a impressora térmica na LAN da cozinha.
 
 ---
 
 ## 5. Decisão Consolidada de Arquitetura
 
-- ✅ **Opção A Definida (Híbrida desde o Dia 1)**: Suporte nativo no BiteFlow para unidades `CLOUD` (100% Nuvem com iFood) e unidades `EDGE` (Servidor Local Offline-First com `Transactional Outbox` sincronizando para a Nuvem), unificadas sob o mesmo login do proprietário via `Store Switcher`.
+- ✅ **Opção A Definida (Híbrida desde o Dia 1)**: Suporte nativo no BeeBite para unidades `CLOUD` (100% Nuvem com iFood) e unidades `EDGE` (Servidor Local Offline-First com `Transactional Outbox` sincronizando para a Nuvem), unificadas sob o mesmo login do proprietário via `Store Switcher`.
 
 ---
 
@@ -91,10 +91,10 @@ flowchart LR
 
 | Camada | Estágio 1: de 1 a ~15 Lojas (Foco em Margem) | Estágio 2: de 15 a 100+ Lojas (Escala HA) |
 |---|---|---|
-| **Frontend (`biteflow-front`)** | **Cloudflare Pages** (SPA estático, CDN, WAF, SSL grátis) → **R\$ 0/mês** | **Cloudflare Pages** → **R\$ 0/mês** |
+| **Frontend (`beebite-front`)** | **Cloudflare Pages** (SPA estático, CDN, WAF, SSL grátis) → **R\$ 0/mês** | **Cloudflare Pages** → **R\$ 0/mês** |
 | **Mensageria iFood** | **Google Cloud Pub/Sub** (10 GB Free Tier) → **R\$ 0/mês** | **Google Cloud Pub/Sub** → **~R\$ 0 a R\$ 25/mês** |
 | **Compute + Proxy TLS** | **1 VM GCP Compute Engine** (`e2-small` Native ou `e2-medium` JVM) em SP + **Caddy** | **GKE Autopilot** ou **Cloud Run** |
-| **Banco de Dados** | **1 único container PostgreSQL 17** com **2 databases lógicos** (`biteflow` e `biteflow_ifood`) | **Cloud SQL PostgreSQL** (HA) ou **Neon / Supabase** em SP |
+| **Banco de Dados** | **1 único container PostgreSQL 17** com **2 databases lógicos** (`biteflow` e `beebite_ifood`) | **Cloud SQL PostgreSQL** (HA) ou **Neon / Supabase** em SP |
 | **Backups + Imagens Cardápio** | **Cloudflare R2** (10 GB grátis, zero egress) → **R\$ 0 a R\$ 2/mês** | **Cloudflare R2 / GCS** → **~R\$ 15/mês** |
 | **Custo Mensal Total** | **~US\$ 16 a US\$ 28/mês (~R\$ 95 a R\$ 165/mês)** | **~US\$ 110 a US\$ 180/mês** |
 
@@ -102,13 +102,13 @@ flowchart LR
 
 ## 7. Auditoria DevSecOps: 5 Bloqueadores Pré-PRD — ✅ TODOS RESOLVIDOS (5/5)
 
-Todos os 5 bloqueadores foram corrigidos e validados por testes ([ProductionSecurityBlockersTest.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/test/java/com/fidecode/biteflow/infrastructure/security/ProductionSecurityBlockersTest.java) e [ProductionSecurityIfoodBlockersTest.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/biteflow-ifood-service/src/test/java/com/fidecode/biteflowifood/infrastructure/ProductionSecurityIfoodBlockersTest.java)):
+Todos os 5 bloqueadores foram corrigidos e validados por testes ([ProductionSecurityBlockersTest.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/test/java/com/fidecode/beebite/infrastructure/security/ProductionSecurityBlockersTest.java) e [ProductionSecurityIfoodBlockersTest.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-ifood-service/src/test/java/com/fidecode/beebiteifood/infrastructure/ProductionSecurityIfoodBlockersTest.java)):
 
-1. **✅ Bloqueador #1 (Chaves RSA fora de `META-INF/resources/`)**: Movidas para `src/main/resources/jwt/` e parametrizadas em [application.properties](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/resources/application.properties#L20-L22).
-2. **✅ Bloqueador #2 (Pub/Sub parametrizado para GCP Real e Modo Edge)**: Atualizados [IfoodOrderSubscriber.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/infrastructure/messaging/IfoodOrderSubscriber.java#L68-L120), publishers e subscribers para usar `quarkus.google.cloud.project-id` e desligar quando `biteflow.feature.ifood-integration.enabled=false`.
-3. **✅ Bloqueador #3 (Cookie `biteflow_jwt` com `Secure` e `SameSite=Lax`)**: Parametrizado em [AuthResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/presentation/rest/AuthResource.java#L29-L63).
-4. **✅ Bloqueador #4 (`ProductionAdminSeedGuard`, validação AES e `.gitignore`)**: Criados [ProductionAdminSeedGuard.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/infrastructure/security/ProductionAdminSeedGuard.java), validação de chave em [AesSecretEncryptor.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/biteflow-ifood-service/src/main/java/com/fidecode/biteflowifood/infrastructure/crypto/AesSecretEncryptor.java#L37-L50) e [.gitignore](file:///d:/fideCod%20Solucoes/projetos/biteflow/.gitignore).
-5. **✅ Bloqueador #5 (`LocalImageStorage` persistente e anti-SSRF)**: Parametrizado em [LocalImageStorage.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/biteflow-ifood-service/src/main/java/com/fidecode/biteflowifood/infrastructure/storage/LocalImageStorage.java#L22-L87).
+1. **✅ Bloqueador #1 (Chaves RSA fora de `META-INF/resources/`)**: Movidas para `src/main/resources/jwt/` e parametrizadas em [application.properties](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/resources/application.properties#L20-L22).
+2. **✅ Bloqueador #2 (Pub/Sub parametrizado para GCP Real e Modo Edge)**: Atualizados [IfoodOrderSubscriber.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/infrastructure/messaging/IfoodOrderSubscriber.java#L68-L120), publishers e subscribers para usar `quarkus.google.cloud.project-id` e desligar quando `biteflow.feature.ifood-integration.enabled=false`.
+3. **✅ Bloqueador #3 (Cookie `biteflow_jwt` com `Secure` e `SameSite=Lax`)**: Parametrizado em [AuthResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/presentation/rest/AuthResource.java#L29-L63).
+4. **✅ Bloqueador #4 (`ProductionAdminSeedGuard`, validação AES e `.gitignore`)**: Criados [ProductionAdminSeedGuard.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/infrastructure/security/ProductionAdminSeedGuard.java), validação de chave em [AesSecretEncryptor.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-ifood-service/src/main/java/com/fidecode/beebiteifood/infrastructure/crypto/AesSecretEncryptor.java#L37-L50) e [.gitignore](file:///d:/fideCod%20Solucoes/projetos/biteflow/.gitignore).
+5. **✅ Bloqueador #5 (`LocalImageStorage` persistente e anti-SSRF)**: Parametrizado em [LocalImageStorage.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-ifood-service/src/main/java/com/fidecode/beebiteifood/infrastructure/storage/LocalImageStorage.java#L22-L87).
 
 ---
 
@@ -120,11 +120,11 @@ Abaixo está o plano detalhado por camada (seguindo Clean Architecture e TDD) pa
 
 | Arquivo | O que faz e como será reutilizado |
 |---|---|
-| [Store.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/domain/store/entity/Store.java) | Entidade de domínio da loja; receberá metadados opcionais de sincronização (`syncMode`, `lastEdgeSyncAt`). |
-| [User.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/domain/auth/entity/User.java) | Entidade de usuário; mantém `storeId` como loja padrão e ganha acesso a múltiplas lojas via `UserStoreAccess`. |
-| [JwtTokenProvider.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/infrastructure/security/JwtTokenProvider.java) | Gerador RS256 do JWT; ganhará sobrecarga `generateTokenForStore(User user, UUID targetStoreId, Role role, List<Permission> permissions)` para o `SwitchStoreUseCase`. |
-| [AuthResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/presentation/rest/AuthResource.java) | Resource de autenticação; receberá `POST /api/v1/auth/switch-store/{storeId}` e `GET /api/v1/auth/stores`. |
-| [BaseResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/bite-flow/src/main/java/com/fidecode/biteflow/presentation/rest/BaseResource.java) | Continua extraindo `getStoreId()` do cookie JWT atual — **zero impacto nos Resources existentes** após a troca de loja! |
+| [Store.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/domain/store/entity/Store.java) | Entidade de domínio da loja; receberá metadados opcionais de sincronização (`syncMode`, `lastEdgeSyncAt`). |
+| [User.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/domain/auth/entity/User.java) | Entidade de usuário; mantém `storeId` como loja padrão e ganha acesso a múltiplas lojas via `UserStoreAccess`. |
+| [JwtTokenProvider.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/infrastructure/security/JwtTokenProvider.java) | Gerador RS256 do JWT; ganhará sobrecarga `generateTokenForStore(User user, UUID targetStoreId, Role role, List<Permission> permissions)` para o `SwitchStoreUseCase`. |
+| [AuthResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/presentation/rest/AuthResource.java) | Resource de autenticação; receberá `POST /api/v1/auth/switch-store/{storeId}` e `GET /api/v1/auth/stores`. |
+| [BaseResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/presentation/rest/BaseResource.java) | Continua extraindo `getStoreId()` do cookie JWT atual — **zero impacto nos Resources existentes** após a troca de loja! |
 
 ---
 
@@ -308,7 +308,7 @@ CREATE INDEX idx_edge_synced_log_store ON edge_synced_event_log(store_id, receiv
 |---|---|---|---|
 | **1** | 🔴🟢 Database & Domain | Migration `V17__multi_store_and_edge_outbox.sql` + testes unitários de `UserStoreAccess` e `EdgeOutboxEvent` | 0,5 dia |
 | **2** | 🔴🟢 Application (Multi-Store) | Testes + implementação de `SwitchStoreUseCase`, `ListAccessibleStoresUseCase` e atualização do `LoginUseCase` | 1,0 dia |
-| **3** | 🔴🟢 Infra & Presentation (Multi-Store) | `PanacheUserStoreAccessRepository`, endpoints `/auth/switch-store/{storeId}` e `/auth/stores` + seletor adaptativo no `biteflow-front` | 1,0 dia |
+| **3** | 🔴🟢 Infra & Presentation (Multi-Store) | `PanacheUserStoreAccessRepository`, endpoints `/auth/switch-store/{storeId}` e `/auth/stores` + seletor adaptativo no `beebite-front` | 1,0 dia |
 | **4** | 🔴🟢 Application & Infra (Edge Outbox) | `EnqueueEdgeOutboxUseCase`, `FlushEdgeOutboxUseCase`, `IngestEdgeSyncBatchUseCase` e `EdgeSyncResource` | 1,5 dias |
 | **5** | 🔵 DevSecOps & Deploy | `docker-compose.cloud.yml` (GCP SP + Caddy) e `docker-compose.edge.yml` (Mini-PC Balcão + Watchtower 04:00h) | 1,0 dia |
 

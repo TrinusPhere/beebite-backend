@@ -41,11 +41,11 @@ import io.grpc.ManagedChannelBuilder;
 public class PubSubBiteflowEventPublisher implements BiteflowEventPublisher {
 
     private static final Logger LOG = Logger.getLogger(PubSubBiteflowEventPublisher.class);
-    private static final String TOPIC_STATUS_CHANGED = "biteflow-order-status-changed";
-    private static final String TOPIC_CANCELLED = "biteflow-order-cancelled";
-    private static final String TOPIC_CHAT_MESSAGE = "biteflow-chat-message-outbound";
+    private static final String TOPIC_STATUS_CHANGED = "beebite-order-status-changed";
+    private static final String TOPIC_CANCELLED = "beebite-order-cancelled";
+    private static final String TOPIC_CHAT_MESSAGE = "beebite-chat-message-outbound";
 
-    @ConfigProperty(name = "quarkus.google.cloud.project-id", defaultValue = "biteflow-dev")
+    @ConfigProperty(name = "quarkus.google.cloud.project-id", defaultValue = "beebite-dev")
     String projectId;
 
     @ConfigProperty(name = "biteflow.feature.ifood-integration.enabled", defaultValue = "true")

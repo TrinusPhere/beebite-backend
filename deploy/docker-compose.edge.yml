@@ -22,9 +22,9 @@ services:
       retries: 5
 
   biteflow-edge-api:
-    image: ${GCP_REGION:-us-east1}-docker.pkg.dev/${GCP_PROJECT_ID:-biteflow-prd}/biteflow-repo/bite-flow:${APP_VERSION:-latest}
+    image: ${GCP_REGION:-us-east1}-docker.pkg.dev/${GCP_PROJECT_ID:-beebite-prd}/beebite-repo/beebite-backend:${APP_VERSION:-latest}
     build:
-      context: ./bite-flow
+      context: ./beebite-backend
       dockerfile: src/main/docker/Dockerfile.jvm
     container_name: biteflow-edge-api
     restart: unless-stopped
@@ -50,7 +50,7 @@ services:
       - "8080:8080"
 
   biteflow-edge-front:
-    image: ${GCP_REGION:-us-east1}-docker.pkg.dev/${GCP_PROJECT_ID:-biteflow-prd}/biteflow-repo/biteflow-front:${APP_VERSION:-latest}
+    image: ${GCP_REGION:-us-east1}-docker.pkg.dev/${GCP_PROJECT_ID:-beebite-prd}/beebite-repo/biteflow-front:${APP_VERSION:-latest}
     build:
       context: ./biteflow-front
       dockerfile: Dockerfile

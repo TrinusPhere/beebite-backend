@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Guia Prático Google Cloud + Cloudflare + Edge — BiteFlow PRD</title>
+  <title>Guia Prático Google Cloud + Cloudflare + Edge — BeeBite PRD</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <script>
     (function () {
@@ -51,7 +51,7 @@
       </div>
 
       <h1 class="text-2xl sm:text-3xl font-bold">
-        Guia Passo a Passo de Infraestrutura — BiteFlow em Produção
+        Guia Passo a Passo de Infraestrutura — BeeBite em Produção
       </h1>
       <p class="text-sm text-[var(--muted-foreground)] leading-relaxed">
         Todos os comandos prontos para copiar e colar direto no <strong>Google Cloud Shell</strong> (<code
@@ -73,11 +73,11 @@
         <button onclick="copyBlock(this)"
           class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
         <pre
-          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>export GCP_PROJECT_ID="biteflow-prd"
+          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>export GCP_PROJECT_ID="beebite-prd"
 export GCP_REGION="us-east1"
 export GCP_ZONE="us-east1-b"
 
-gcloud projects create $GCP_PROJECT_ID --name="BiteFlow Production"
+gcloud projects create $GCP_PROJECT_ID --name="BeeBite Production"
 gcloud config set project $GCP_PROJECT_ID
 
 # Liste sua conta de faturamento e vincule:
@@ -90,10 +90,10 @@ gcloud services enable \
   artifactregistry.googleapis.com \
         iam.googleapis.com
 
-        gcloud artifacts repositories create biteflow-repo \
+        gcloud artifacts repositories create beebite-repo \
         --repository-format=docker \
         --location="$GCP_REGION" \
-        --description="BiteFlow Quarkus Native Images" \
+        --description="BeeBite Quarkus Native Images" \
         --project="$GCP_PROJECT_ID" || true</code></pre>
       </div>
     </section>
@@ -110,7 +110,7 @@ gcloud services enable \
       </label>
       <p class="text-xs sm:text-sm text-[var(--muted-foreground)] leading-relaxed">
         No menu <strong>Faturamento → Orçamentos e alertas</strong>, crie o alerta
-        <code>Alerta Mensal BiteFlow PRD</code> com valor alvo de <strong>R$ 30,00 (US$ 5)</strong> e notificações em
+        <code>Alerta Mensal BeeBite PRD</code> com valor alvo de <strong>R$ 30,00 (US$ 5)</strong> e notificações em
         <strong>50%, 80% e 100%</strong>. Com <code>e2-micro</code> + <code>30GB pd-standard</code> em
         <code>us-east1</code> e Quarkus Nativo, a VM se enquadra no <strong>Always Free Tier</strong> do GCP.
       </p>
@@ -135,20 +135,20 @@ gcloud services enable \
   ifood-chat-message \
   ifood-order-dispute \
   ifood-order-cancellation-requested \
-  biteflow-order-status-changed \
-  biteflow-order-cancelled \
-  biteflow-catalog-changed \
-  biteflow-chat-message-outbound; do
+  beebite-order-status-changed \
+  beebite-order-cancelled \
+  beebite-catalog-changed \
+  beebite-chat-message-outbound; do
   gcloud pubsub topics create "$TOPIC" --project="$GCP_PROJECT_ID" || true
 done
 
 gcloud pubsub subscriptions create ifood-order-placed-sub --topic=ifood-order-placed --ack-deadline=60 --project="$GCP_PROJECT_ID"
 gcloud pubsub subscriptions create ifood-order-status-changed-sub --topic=ifood-order-status-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
 gcloud pubsub subscriptions create ifood-chat-message-sub --topic=ifood-chat-message --ack-deadline=60 --project="$GCP_PROJECT_ID"
-gcloud pubsub subscriptions create biteflow-order-status-changed-sub --topic=biteflow-order-status-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
-gcloud pubsub subscriptions create biteflow-order-cancelled-sub --topic=biteflow-order-cancelled --ack-deadline=60 --project="$GCP_PROJECT_ID"
-gcloud pubsub subscriptions create biteflow-catalog-changed-sub --topic=biteflow-catalog-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
-gcloud pubsub subscriptions create biteflow-chat-message-outbound-sub --topic=biteflow-chat-message-outbound --ack-deadline=60 --project="$GCP_PROJECT_ID"</code></pre>
+gcloud pubsub subscriptions create beebite-order-status-changed-sub --topic=beebite-order-status-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create beebite-order-cancelled-sub --topic=beebite-order-cancelled --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create beebite-catalog-changed-sub --topic=beebite-catalog-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create beebite-chat-message-outbound-sub --topic=beebite-chat-message-outbound --ack-deadline=60 --project="$GCP_PROJECT_ID"</code></pre>
       </div>
     </section>
 
@@ -166,7 +166,7 @@ gcloud pubsub subscriptions create biteflow-chat-message-outbound-sub --topic=bi
           class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
         <pre
           class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>gcloud iam service-accounts create biteflow-runtime-sa \
-  --display-name="BiteFlow Production Runtime SA" \
+  --display-name="BeeBite Production Runtime SA" \
   --project="$GCP_PROJECT_ID"
 
 SA_EMAIL="biteflow-runtime-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
@@ -242,12 +242,12 @@ gcloud auth configure-docker us-east1-docker.pkg.dev --quiet
 sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
-sudo mkdir -p /opt/biteflow/{secrets,init-db,uploads/images,backups}
-sudo chown -R $USER:$USER /opt/biteflow && cd /opt/biteflow
+sudo mkdir -p /opt/beebite/{secrets,init-db,uploads/images,backups}
+sudo chown -R $USER:$USER /opt/beebite && cd /opt/beebite
 
-openssl genpkey -algorithm RSA -out /opt/biteflow/secrets/privateKey.pem -pkeyopt rsa_keygen_bits:2048
-openssl rsa -pubout -in /opt/biteflow/secrets/privateKey.pem -out /opt/biteflow/secrets/publicKey.pem
-chmod 600 /opt/biteflow/secrets/privateKey.pem && chmod 644 /opt/biteflow/secrets/publicKey.pem
+openssl genpkey -algorithm RSA -out /opt/beebite/secrets/privateKey.pem -pkeyopt rsa_keygen_bits:2048
+openssl rsa -pubout -in /opt/beebite/secrets/privateKey.pem -out /opt/beebite/secrets/publicKey.pem
+chmod 600 /opt/beebite/secrets/privateKey.pem && chmod 644 /opt/beebite/secrets/publicKey.pem
 
 echo "IFOOD_ENCRYPTION_KEY: $(openssl rand -base64 32 | head -c 32)"
 echo "DB_PASSWORD: $(openssl rand -hex 16)"</code></pre>
@@ -269,20 +269,20 @@ echo "DB_PASSWORD: $(openssl rand -hex 16)"</code></pre>
         abaixo) e depois suba os arquivos da pasta <code
           class="px-1 py-0.5 rounded bg-[var(--secondary)]">deploy/</code> + <code
           class="px-1 py-0.5 rounded bg-[var(--secondary)]">docker-compose.cloud.yml</code> em <code
-          class="px-1 py-0.5 rounded bg-[var(--secondary)]">/opt/biteflow</code>:
+          class="px-1 py-0.5 rounded bg-[var(--secondary)]">/opt/beebite</code>:
       </p>
       <div class="relative">
         <button onclick="copyBlock(this)"
           class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
         <pre class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code># Opção local (ou use o botão 'deploy-native-prd' no Bitbucket Pipelines):
-cd bite-flow && ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
-docker build -f src/main/docker/Dockerfile.native -t us-east1-docker.pkg.dev/$GCP_PROJECT_ID/biteflow-repo/bite-flow:latest .
-docker push us-east1-docker.pkg.dev/$GCP_PROJECT_ID/biteflow-repo/bite-flow:latest
+cd beebite-backend && ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
+docker build -f src/main/docker/Dockerfile.native -t us-east1-docker.pkg.dev/$GCP_PROJECT_ID/beebite-repo/beebite-backend:latest .
+docker push us-east1-docker.pkg.dev/$GCP_PROJECT_ID/beebite-repo/beebite-backend:latest
 
-cd ../biteflow-ifood-service && ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
+cd ../beebite-ifood-service && ./mvnw package -Dnative -DskipTests -Dquarkus.native.container-build=true
         docker build -f src/main/docker/Dockerfile.native -t
-        us-east1-docker.pkg.dev/$GCP_PROJECT_ID/biteflow-repo/biteflow-ifood-service:latest .
-        docker push us-east1-docker.pkg.dev/$GCP_PROJECT_ID/biteflow-repo/biteflow-ifood-service:latest</code></pre>
+        us-east1-docker.pkg.dev/$GCP_PROJECT_ID/beebite-repo/beebite-ifood-service:latest .
+        docker push us-east1-docker.pkg.dev/$GCP_PROJECT_ID/beebite-repo/beebite-ifood-service:latest</code></pre>
       </div>
     </section>
 
@@ -298,7 +298,7 @@ cd ../biteflow-ifood-service && ./mvnw package -Dnative -DskipTests -Dquarkus.na
       </label>
       <p class="text-xs text-[var(--muted-foreground)]">
         Crie o registro <code>A</code> para <code>api.seudominio.com.br</code> apontando para o IP estático da VM e
-        conecte o diretório <code>biteflow-front</code> ao Cloudflare Pages em <code>app.seudominio.com.br</code>.
+        conecte o diretório <code>beebite-front</code> ao Cloudflare Pages em <code>app.seudominio.com.br</code>.
       </p>
     </section>
 

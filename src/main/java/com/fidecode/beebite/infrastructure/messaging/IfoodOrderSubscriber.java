@@ -65,7 +65,7 @@ public class IfoodOrderSubscriber {
     private static final String SUBSCRIPTION_STATUS = "ifood-order-status-changed-sub";
     private static final String SUBSCRIPTION_CHAT = "ifood-chat-message-sub";
 
-    @ConfigProperty(name = "quarkus.google.cloud.project-id", defaultValue = "biteflow-dev")
+    @ConfigProperty(name = "quarkus.google.cloud.project-id", defaultValue = "beebite-dev")
     String projectId;
 
     @ConfigProperty(name = "biteflow.feature.ifood-integration.enabled", defaultValue = "true")

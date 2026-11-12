@@ -1,8 +1,8 @@
 # ═══════════════════════════════════════════════════════════════════════════
 # docker-compose.cloud.yml — Nuvem Central (GCP us-east1 - e2-micro Free Tier)
 # - 1 instância PostgreSQL 17 com 2 bancos lógicos (biteflow + biteflow_ifood)
-# - bite-flow (Quarkus Native, Modo CLOUD, Multi-Loja + Ingestão Edge Sync)
-# - biteflow-ifood-service (Quarkus Native, Polling iFood 30s + Cloud Pub/Sub)
+# - beebite-backend (Quarkus Native, Modo CLOUD, Multi-Loja + Ingestão Edge Sync)
+# - beebite-ifood-service (Quarkus Native, Polling iFood 30s + Cloud Pub/Sub)
 # - Caddy Reverse Proxy (HTTPS / TLS automático)
 # ═══════════════════════════════════════════════════════════════════════════
 services:
@@ -33,7 +33,7 @@ services:
           memory: 300M
 
   biteflow-core:
-    image: ghcr.io/fidecode/bite-flow:${APP_VERSION:-latest}
+    image: ghcr.io/fidecode/beebite-backend:${APP_VERSION:-latest}
     container_name: biteflow-core-cloud
     restart: unless-stopped
     depends_on:
@@ -53,7 +53,7 @@ services:
       BITEFLOW_INITIAL_ADMIN_PASSWORD: ${BITEFLOW_INITIAL_ADMIN_PASSWORD}
       BITEFLOW_SYNC_MODE: CLOUD
       BITEFLOW_IFOOD_ENABLED: "true"
-      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-biteflow-prd}
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-beebite-prd}
     volumes:
       - ./secrets:/secrets:ro
     deploy:
@@ -62,7 +62,7 @@ services:
           memory: 192M
 
   biteflow-ifood:
-    image: ghcr.io/fidecode/biteflow-ifood-service:${APP_VERSION:-latest}
+    image: ghcr.io/fidecode/beebite-ifood-service:${APP_VERSION:-latest}
     container_name: biteflow-ifood-cloud
     restart: unless-stopped
     depends_on:
@@ -76,7 +76,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       IFOOD_ENCRYPTION_KEY: ${IFOOD_ENCRYPTION_KEY:?Defina IFOOD_ENCRYPTION_KEY no arquivo .env}
       BITEFLOW_ENFORCE_PROD_KEY: "true"
-      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-biteflow-prd}
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-beebite-prd}
       BITEFLOW_IMAGE_STORAGE_DIR: /data/images/catalog
       BITEFLOW_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN:-api.chefsburguer.com.br}/api/images
       BITEFLOW_API_BASE_URL: http://biteflow-core:8080

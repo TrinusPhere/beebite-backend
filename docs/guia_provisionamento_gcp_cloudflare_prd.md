@@ -1,6 +1,6 @@
-# Guia Passo a Passo de Infraestrutura em Produção — Google Cloud + Cloudflare + Edge (BiteFlow)
+# Guia Passo a Passo de Infraestrutura em Produção — Google Cloud + Cloudflare + Edge (BeeBite)
 
-Este guia prático traz **todos os comandos prontos (copiar e colar)** para você provisionar a infraestrutura de produção do **BiteFlow** seguindo a arquitetura **FinOps Estágio 1 (~R\$ 95 a R\$ 165/mês)** e **DevSecOps** para o modelo híbrido (**Opção A: Nuvem + Servidor Local Edge**).
+Este guia prático traz **todos os comandos prontos (copiar e colar)** para você provisionar a infraestrutura de produção do **BeeBite** seguindo a arquitetura **FinOps Estágio 1 (~R\$ 95 a R\$ 165/mês)** e **DevSecOps** para o modelo híbrido (**Opção A: Nuvem + Servidor Local Edge**).
 
 > **Dica:** Você não precisa instalar nada no seu computador para executar os comandos do Google Cloud. Basta abrir o [Google Cloud Console](https://console.cloud.google.com/) e clicar no ícone do **Cloud Shell (`>_`)** no canto superior direito da tela.
 
@@ -12,12 +12,12 @@ No **Cloud Shell** do Google Cloud, defina o ID do projeto de produção e ative
 
 ```bash
 # 1. Defina o ID do seu projeto de produção
-export GCP_PROJECT_ID="biteflow-prd"
+export GCP_PROJECT_ID="beebite-prd"
 export GCP_REGION="southamerica-east1"
 export GCP_ZONE="southamerica-east1-a"
 
 # 2. Crie o projeto (caso ainda não tenha criado pelo painel)
-gcloud projects create $GCP_PROJECT_ID --name="BiteFlow Production"
+gcloud projects create $GCP_PROJECT_ID --name="BeeBite Production"
 gcloud config set project $GCP_PROJECT_ID
 
 # 3. Vincule sua conta de faturamento (liste o ID e vincule)
@@ -41,7 +41,7 @@ Antes de subir qualquer máquina, trave seu teto financeiro para nunca ter surpr
 
 1. No menu do Google Cloud, acesse **Faturamento (Billing) → Orçamentos e alertas (Budgets & alerts)**.
 2. Clique em **Criar orçamento (Create Budget)**:
-   - **Nome:** `Alerta Mensal BiteFlow PRD`
+   - **Nome:** `Alerta Mensal BeeBite PRD`
    - **Valor alvo:** `R$ 180,00` (ou `US$ 30.00`)
    - **Limites de alerta:** `50%`, `80%` e `100%` (marque para enviar e-mail).
 
@@ -49,22 +49,22 @@ Antes de subir qualquer máquina, trave seu teto financeiro para nunca ter surpr
 
 ## Passo 3 — Criar os 9 Tópicos e 7 Subscriptions do Cloud Pub/Sub (Custo R\$ 0/mês)
 
-O Google Cloud oferece **10 GB/mês gratuitos** no Pub/Sub. Os nomes abaixo são **exatamente** os tópicos e subscriptions que o `bite-flow` e o `biteflow-ifood-service` consomem no código.
+O Google Cloud oferece **10 GB/mês gratuitos** no Pub/Sub. Os nomes abaixo são **exatamente** os tópicos e subscriptions que o `beebite-backend` e o `beebite-ifood-service` consomem no código.
 
 Copie e cole este bloco inteiro no **Cloud Shell**:
 
 ```bash
-# ── 1. Criar os 9 Tópicos Oficiais do BiteFlow ──────────────────────────────
+# ── 1. Criar os 9 Tópicos Oficiais do BeeBite ──────────────────────────────
 for TOPIC in \
   ifood-order-placed \
   ifood-order-status-changed \
   ifood-chat-message \
   ifood-order-dispute \
   ifood-order-cancellation-requested \
-  biteflow-order-status-changed \
-  biteflow-order-cancelled \
-  biteflow-catalog-changed \
-  biteflow-chat-message-outbound; do
+  beebite-order-status-changed \
+  beebite-order-cancelled \
+  beebite-catalog-changed \
+  beebite-chat-message-outbound; do
   gcloud pubsub topics create "$TOPIC" --project="$GCP_PROJECT_ID" || true
 done
 
@@ -78,17 +78,17 @@ gcloud pubsub subscriptions create ifood-order-status-changed-sub \
 gcloud pubsub subscriptions create ifood-chat-message-sub \
   --topic=ifood-chat-message --ack-deadline=60 --project="$GCP_PROJECT_ID"
 
-gcloud pubsub subscriptions create biteflow-order-status-changed-sub \
-  --topic=biteflow-order-status-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create beebite-order-status-changed-sub \
+  --topic=beebite-order-status-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
 
-gcloud pubsub subscriptions create biteflow-order-cancelled-sub \
-  --topic=biteflow-order-cancelled --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create beebite-order-cancelled-sub \
+  --topic=beebite-order-cancelled --ack-deadline=60 --project="$GCP_PROJECT_ID"
 
-gcloud pubsub subscriptions create biteflow-catalog-changed-sub \
-  --topic=biteflow-catalog-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create beebite-catalog-changed-sub \
+  --topic=beebite-catalog-changed --ack-deadline=60 --project="$GCP_PROJECT_ID"
 
-gcloud pubsub subscriptions create biteflow-chat-message-outbound-sub \
-  --topic=biteflow-chat-message-outbound --ack-deadline=60 --project="$GCP_PROJECT_ID"
+gcloud pubsub subscriptions create beebite-chat-message-outbound-sub \
+  --topic=beebite-chat-message-outbound --ack-deadline=60 --project="$GCP_PROJECT_ID"
 ```
 
 ---
@@ -100,7 +100,7 @@ Em vez de gerar arquivos `.json` de credenciais (que podem vazar), criamos uma i
 ```bash
 # 1. Criar a Service Account de runtime
 gcloud iam service-accounts create biteflow-runtime-sa \
-  --display-name="BiteFlow Production Runtime SA" \
+  --display-name="BeeBite Production Runtime SA" \
   --project="$GCP_PROJECT_ID"
 
 SA_EMAIL="biteflow-runtime-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
@@ -123,7 +123,7 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
 
 ## Passo 5 — Criar IP Fixo, Firewall Seguro e a VM em São Paulo (`southamerica-east1`)
 
-> **Segurança DevSecOps:** As portas `5432` (PostgreSQL), `8080` (`bite-flow`) e `8081` (`biteflow-ifood-service`) **NÃO** serão abertas na internet! Apenas as portas `80` e `443` (HTTPS gerenciado pelo proxy reverso **Caddy**) ficam abertas.
+> **Segurança DevSecOps:** As portas `5432` (PostgreSQL), `8080` (`beebite-backend`) e `8081` (`beebite-ifood-service`) **NÃO** serão abertas na internet! Apenas as portas `80` e `443` (HTTPS gerenciado pelo proxy reverso **Caddy**) ficam abertas.
 
 ```bash
 # 1. Reservar um IP Estático Regional em São Paulo
@@ -181,16 +181,16 @@ sudo mkswap /swapfile
 sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
-# 3. Criar estrutura de diretórios do BiteFlow em /opt/biteflow
-sudo mkdir -p /opt/biteflow/{secrets,init-db,uploads/images,backups}
-sudo chown -R $USER:$USER /opt/biteflow
-cd /opt/biteflow
+# 3. Criar estrutura de diretórios do BeeBite em /opt/beebite
+sudo mkdir -p /opt/beebite/{secrets,init-db,uploads/images,backups}
+sudo chown -R $USER:$USER /opt/beebite
+cd /opt/beebite
 
 # 4. Gerar par de chaves RSA 2048 EXCLUSIVO de produção para assinar o JWT
-openssl genpkey -algorithm RSA -out /opt/biteflow/secrets/privateKey.pem -pkeyopt rsa_keygen_bits:2048
-openssl rsa -pubout -in /opt/biteflow/secrets/privateKey.pem -out /opt/biteflow/secrets/publicKey.pem
-chmod 600 /opt/biteflow/secrets/privateKey.pem
-chmod 644 /opt/biteflow/secrets/publicKey.pem
+openssl genpkey -algorithm RSA -out /opt/beebite/secrets/privateKey.pem -pkeyopt rsa_keygen_bits:2048
+openssl rsa -pubout -in /opt/beebite/secrets/privateKey.pem -out /opt/beebite/secrets/publicKey.pem
+chmod 600 /opt/beebite/secrets/privateKey.pem
+chmod 644 /opt/beebite/secrets/publicKey.pem
 
 # 5. Gerar chave AES-256 de 32 caracteres aleatórios para o iFood e senha do Postgres
 echo "IFOOD_ENCRYPTION_KEY sugerida: $(openssl rand -base64 32 | head -c 32)"
@@ -201,21 +201,21 @@ echo "DB_PASSWORD sugerida: $(openssl rand -hex 16)"
 
 ## Passo 7 — Configurar o Docker Compose de Produção (1 Postgres com 2 Databases + Caddy TLS)
 
-Ainda dentro de `/opt/biteflow` na VM, crie os 4 arquivos abaixo:
+Ainda dentro de `/opt/beebite` na VM, crie os 4 arquivos abaixo:
 
-### 7.1. `/opt/biteflow/init-db/01-create-ifood-db.sql`
-Cria os dois bancos (`biteflow` e `biteflow_ifood`) dentro do **mesmo** container PostgreSQL 17 para economizar RAM:
+### 7.1. `/opt/beebite/init-db/01-create-ifood-db.sql`
+Cria os dois bancos (`biteflow` e `beebite_ifood`) dentro do **mesmo** container PostgreSQL 17 para economizar RAM:
 
 ```sql
-CREATE DATABASE biteflow_ifood;
-GRANT ALL PRIVILEGES ON DATABASE biteflow_ifood TO postgres;
+CREATE DATABASE beebite_ifood;
+GRANT ALL PRIVILEGES ON DATABASE beebite_ifood TO postgres;
 ```
 
-### 7.2. `/opt/biteflow/.env`
+### 7.2. `/opt/beebite/.env`
 Preencha com os valores gerados no Passo 6:
 
 ```dotenv
-GCP_PROJECT_ID=biteflow-prd
+GCP_PROJECT_ID=beebite-prd
 DB_USER=postgres
 DB_PASSWORD=COLE_AQUI_SUA_SENHA_FORTE_DO_BANCO
 BITEFLOW_INITIAL_ADMIN_PASSWORD=COLE_AQUI_SUA_SENHA_FORTE_DO_ADMIN
@@ -226,10 +226,10 @@ FRONTEND_ORIGIN=https://app.seudominio.com.br
 
 Proteja o arquivo `.env`:
 ```bash
-chmod 600 /opt/biteflow/.env
+chmod 600 /opt/beebite/.env
 ```
 
-### 7.3. `/opt/biteflow/Caddyfile`
+### 7.3. `/opt/beebite/Caddyfile`
 O Caddy emite e renova sozinho o certificado HTTPS (Let's Encrypt) e faz o roteamento para os dois microsserviços:
 
 ```caddyfile
@@ -241,23 +241,23 @@ O Caddy emite e renova sozinho o certificado HTTPS (Let's Encrypt) e faz o rotea
         path /api/v1/ifood/* /api/images/*
     }
     handle @ifood_service {
-        reverse_proxy biteflow-ifood:8081
+        reverse_proxy beebite-ifood:8081
     }
 
-    # Todas as demais rotas vão para o backend principal BiteFlow
+    # Todas as demais rotas vão para o backend principal BeeBite
     handle {
-        reverse_proxy biteflow-api:8080
+        reverse_proxy beebite-backend:8080
     }
 }
 ```
 
-### 7.4. `/opt/biteflow/docker-compose.yml`
+### 7.4. `/opt/beebite/docker-compose.yml`
 
 ```yaml
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: biteflow-postgres
+    container_name: beebite-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: biteflow
@@ -274,9 +274,9 @@ services:
       timeout: 5s
       retries: 5
 
-  biteflow-api:
-    image: ghcr.io/SEU_USUARIO_GITHUB/bite-flow:latest
-    container_name: biteflow-api
+  beebite-backend:
+    image: ghcr.io/SEU_USUARIO_GITHUB/beebite-backend:latest
+    container_name: beebite-backend
     restart: unless-stopped
     depends_on:
       postgres:
@@ -303,9 +303,9 @@ services:
         limits:
           memory: 768M
 
-  biteflow-ifood:
-    image: ghcr.io/SEU_USUARIO_GITHUB/biteflow-ifood-service:latest
-    container_name: biteflow-ifood
+  beebite-ifood:
+    image: ghcr.io/SEU_USUARIO_GITHUB/beebite-ifood-service:latest
+    container_name: beebite-ifood
     restart: unless-stopped
     depends_on:
       postgres:
@@ -313,7 +313,7 @@ services:
     environment:
       QUARKUS_PROFILE: prod
       DB_HOST: postgres
-      DB_NAME: biteflow_ifood
+      DB_NAME: beebite_ifood
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       GCP_PROJECT_ID: ${GCP_PROJECT_ID}
@@ -331,7 +331,7 @@ services:
 
   caddy:
     image: caddy:2-alpine
-    container_name: biteflow-caddy
+    container_name: beebite-caddy
     restart: unless-stopped
     ports:
       - "80:80"
@@ -343,8 +343,8 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - biteflow-api
-      - biteflow-ifood
+      - beebite-backend
+      - beebite-ifood
 
 volumes:
   pgdata:
@@ -354,17 +354,17 @@ volumes:
 
 ---
 
-## Passo 8 — Configurar DNS e Hospedar o `biteflow-front` Grátis na Cloudflare
+## Passo 8 — Configurar DNS e Hospedar o `beebite-front` Grátis na Cloudflare
 
 1. **Apontar o DNS da API:**
    - No painel da Cloudflare do seu domínio, crie um registro tipo `A`:
      - **Nome:** `api`
      - **Endereço IPv4:** `<STATIC_IP_DA_VM_DO_PASSO_5>`
      - **Proxy status:** Nuvem cinza (DNS Only) no primeiro minuto para o Caddy emitir o certificado Let's Encrypt; depois pode ativar a nuvem laranja com SSL em modo **Full (Strict)**.
-2. **Publicar o `biteflow-front` no Cloudflare Pages (Custo R\$ 0/mês):**
+2. **Publicar o `beebite-front` no Cloudflare Pages (Custo R\$ 0/mês):**
    - No menu da Cloudflare, acesse **Workers & Pages → Create → Pages → Connect to Git**.
    - Selecione seu repositório, defina:
-     - **Root directory:** `biteflow-front`
+     - **Root directory:** `beebite-front`
      - **Build command:** `npm run build`
      - **Build output directory:** `dist`
      - **Environment variable:** `VITE_API_URL=https://api.seudominio.com.br`
@@ -388,7 +388,7 @@ sudo systemctl enable --now chrony
 ```
 
 No `docker-compose.edge.yml` do Mini-PC local:
-- O `bite-flow` roda com `BITEFLOW_SYNC_MODE=EDGE`, `BITEFLOW_IFOOD_ENABLED=false`, `BITEFLOW_COOKIE_SECURE=false` (para acesso rápido via HTTP na LAN local `http://192.168.1.10`) e `BITEFLOW_CLOUD_SYNC_URL=https://api.seudominio.com.br`.
+- O `beebite-backend` roda com `BITEFLOW_SYNC_MODE=EDGE`, `BITEFLOW_IFOOD_ENABLED=false`, `BITEFLOW_COOKIE_SECURE=false` (para acesso rápido via HTTP na LAN local `http://192.168.1.10`) e `BITEFLOW_CLOUD_SYNC_URL=https://api.seudominio.com.br`.
 - Adicione o container **Watchtower** agendado para **04:00 da manhã**:
 
 ```yaml

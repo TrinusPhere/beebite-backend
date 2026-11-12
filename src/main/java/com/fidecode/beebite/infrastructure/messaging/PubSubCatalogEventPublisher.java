@@ -31,9 +31,9 @@ import io.grpc.ManagedChannelBuilder;
 public class PubSubCatalogEventPublisher implements CatalogEventPublisher {
 
     private static final Logger LOG = Logger.getLogger(PubSubCatalogEventPublisher.class);
-    private static final String TOPIC_CATALOG_CHANGED = "biteflow-catalog-changed";
+    private static final String TOPIC_CATALOG_CHANGED = "beebite-catalog-changed";
 
-    @ConfigProperty(name = "quarkus.google.cloud.project-id", defaultValue = "biteflow-dev")
+    @ConfigProperty(name = "quarkus.google.cloud.project-id", defaultValue = "beebite-dev")
     String projectId;
 
     @ConfigProperty(name = "biteflow.feature.ifood-integration.enabled", defaultValue = "true")

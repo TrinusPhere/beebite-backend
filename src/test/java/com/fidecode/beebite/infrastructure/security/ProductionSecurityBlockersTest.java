@@ -65,7 +65,7 @@ class ProductionSecurityBlockersTest {
     }
 
     @Test
-    @DisplayName("Bloqueador #2: Classes Pub/Sub no bite-flow devem injetar projectId configurável e respeitar feature flag iFood")
+    @DisplayName("Bloqueador #2: Classes Pub/Sub no beebite-backend devem injetar projectId configurável e respeitar feature flag iFood")
     void pubSubClassesShouldInjectConfigurableProjectIdAndFeatureFlag() throws Exception {
         Field subProjectField = IfoodOrderSubscriber.class.getDeclaredField("projectId");
         ConfigProperty subProjectCfg = subProjectField.getAnnotation(ConfigProperty.class);

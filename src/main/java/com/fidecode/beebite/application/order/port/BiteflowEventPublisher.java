@@ -12,11 +12,11 @@ import com.fidecode.beebite.domain.messaging.entity.ConversationMessage;
  */
 public interface BiteflowEventPublisher {
 
-    /** Publica evento de mudança de status no tópico biteflow-order-status-changed. */
+    /** Publica evento de mudança de status no tópico beebite-order-status-changed. */
     void publishStatusChanged(Order order);
 
     /**
-     * Publica evento de cancelamento no tópico biteflow-order-cancelled.
+     * Publica evento de cancelamento no tópico beebite-order-cancelled.
      *
      * @param cancellationCode
      *            código de cancelamento do iFood
