@@ -73,7 +73,7 @@ public class AdvanceOrderStatusUseCase {
                 if (settings.getDispatchMode() == DispatchMode.AUTO) {
                     dispatchOrderToKdsUseCase.execute(storeId, result.getId());
                 }
-            } else if (result.getStatus() == OrderStatus.EM_ROTA || result.getStatus() == OrderStatus.FINALIZADO || result.getStatus() == OrderStatus.CANCELADO) {
+            } else if (result.getStatus() == OrderStatus.EM_ROTA || result.getStatus() == OrderStatus.ENTREGUE || result.getStatus() == OrderStatus.FINALIZADO || result.getStatus() == OrderStatus.CANCELADO) {
                 if (cancelProductionTasksByOrderUseCase != null) {
                     cancelProductionTasksByOrderUseCase.execute(storeId, result.getId());
                 }

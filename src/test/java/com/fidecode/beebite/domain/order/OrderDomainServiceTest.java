@@ -43,9 +43,20 @@ class OrderDomainServiceTest {
     }
 
     @Test
-    void deveAvancarDeEmRotaParaFinalizado() {
+    void deveAvancarDeEmRotaParaEntregue() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.changeStatus(OrderStatus.EM_ROTA);
+        order.assignDriver(UUID.randomUUID(), "Motoboy");
+
+        service.advanceStatus(order);
+        assertEquals(OrderStatus.ENTREGUE, order.getStatus());
+        assertNull(order.getFinishedAt());
+    }
+
+    @Test
+    void deveAvancarDeEntregueParaFinalizado() {
+        Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.changeStatus(OrderStatus.ENTREGUE);
         order.assignDriver(UUID.randomUUID(), "Motoboy");
 
         service.advanceStatus(order);
@@ -54,9 +65,12 @@ class OrderDomainServiceTest {
     }
 
     @Test
-    void balcaoDevePularEmRotaEIrDiretoParaFinalizado() {
+    void balcaoDeveAvancarDePreparoParaEntregueEDepoisFinalizado() {
         Order order = new Order(STORE_ID, OrderType.BALCAO, PaymentMethod.DINHEIRO);
         order.changeStatus(OrderStatus.PREPARO);
+
+        service.advanceStatus(order);
+        assertEquals(OrderStatus.ENTREGUE, order.getStatus());
 
         service.advanceStatus(order);
         assertEquals(OrderStatus.FINALIZADO, order.getStatus());
@@ -64,21 +78,27 @@ class OrderDomainServiceTest {
     }
 
     @Test
-    void retiradaDevePularEmRotaEIrDiretoParaFinalizadoMesmoSendoDeliveryType() {
+    void retiradaDevePularEmRotaEIrParaEntregueEDepoisFinalizado() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.defineContext("DELIVERY", "CARDAPIO_PROPRIO", "RETIRADA", "WEB");
         order.changeStatus(OrderStatus.PREPARO);
 
         service.advanceStatus(order);
+        assertEquals(OrderStatus.ENTREGUE, order.getStatus());
+
+        service.advanceStatus(order);
         assertEquals(OrderStatus.FINALIZADO, order.getStatus());
         assertNotNull(order.getFinishedAt());
     }
 
     @Test
-    void salaoDevePularEmRotaEIrDiretoParaFinalizado() {
+    void salaoDevePularEmRotaEIrParaEntregueEDepoisFinalizado() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.defineContext("SALAO", "PDV", "MESA", "PDV_CAIXA");
         order.changeStatus(OrderStatus.PREPARO);
+
+        service.advanceStatus(order);
+        assertEquals(OrderStatus.ENTREGUE, order.getStatus());
 
         service.advanceStatus(order);
         assertEquals(OrderStatus.FINALIZADO, order.getStatus());
@@ -164,6 +184,14 @@ class OrderDomainServiceTest {
     void naoDeveCancelarPedidoQueJaSaiuParaEntrega() {
         Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
         order.changeStatus(OrderStatus.EM_ROTA);
+
+        assertThrows(InvalidOrderTransitionException.class, () -> service.moveToColumn(order, OrderStatus.CANCELADO));
+    }
+
+    @Test
+    void naoDeveCancelarPedidoEntregue() {
+        Order order = new Order(STORE_ID, OrderType.DELIVERY, PaymentMethod.PIX);
+        order.changeStatus(OrderStatus.ENTREGUE);
 
         assertThrows(InvalidOrderTransitionException.class, () -> service.moveToColumn(order, OrderStatus.CANCELADO));
     }

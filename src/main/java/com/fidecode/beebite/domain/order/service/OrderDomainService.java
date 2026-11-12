@@ -17,9 +17,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class OrderDomainService {
 
     /**
-     * Avança o status do pedido sequencialmente. ANALISE → PREPARO → EM_ROTA → FINALIZADO
+     * Avança o status do pedido sequencialmente: ANALISE → PREPARO → EM_ROTA → ENTREGUE → FINALIZADO
      * Pedidos que não necessitam de motoboy (Balcão, Retirada no local, Salão, Consumo Local, Mesa, Comanda)
-     * pulam EM_ROTA e vão direto para FINALIZADO.
+     * pulam EM_ROTA e vão para ENTREGUE, e de ENTREGUE vão para FINALIZADO.
      */
     public void advanceStatus(Order order) {
         OrderStatus current = order.getStatus();
@@ -34,13 +34,14 @@ public class OrderDomainService {
         OrderStatus next = switch (current) {
         case ANALISE -> OrderStatus.PREPARO;
         case PREPARO -> {
-            // Apenas pedidos delivery com entregador vão para EM_ROTA; retirada e salão vão direto para FINALIZADO
+            // Apenas pedidos delivery com entregador vão para EM_ROTA; retirada e salão vão direto para ENTREGUE
             if (!isDeliveryWithDriver(order)) {
-                yield OrderStatus.FINALIZADO;
+                yield OrderStatus.ENTREGUE;
             }
             yield OrderStatus.EM_ROTA;
         }
-        case EM_ROTA -> OrderStatus.FINALIZADO;
+        case EM_ROTA -> OrderStatus.ENTREGUE;
+        case ENTREGUE -> OrderStatus.FINALIZADO;
         default -> throw new InvalidOrderTransitionException("Transição não permitida a partir de " + current);
         };
 
@@ -57,8 +58,8 @@ public class OrderDomainService {
             throw new InvalidOrderTransitionException("Pedido cancelado não pode ser movido.");
         }
         if (targetStatus == OrderStatus.CANCELADO
-                && (current == OrderStatus.EM_ROTA || current == OrderStatus.FINALIZADO)) {
-            throw new InvalidOrderTransitionException("Pedido em rota ou finalizado não pode ser cancelado.");
+                && (current == OrderStatus.EM_ROTA || current == OrderStatus.ENTREGUE || current == OrderStatus.FINALIZADO)) {
+            throw new InvalidOrderTransitionException("Pedido em rota, entregue ou finalizado não pode ser cancelado.");
         }
         if (current == OrderStatus.FINALIZADO) {
             throw new InvalidOrderTransitionException("Pedido finalizado não pode ser movido.");
