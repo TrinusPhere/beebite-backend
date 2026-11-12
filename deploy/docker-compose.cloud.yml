@@ -1,6 +1,6 @@
 # ═══════════════════════════════════════════════════════════════════════════
 # docker-compose.cloud.yml — Nuvem Central (GCP us-east1 - e2-micro Free Tier)
-# - 1 instância PostgreSQL 17 com 2 bancos lógicos (biteflow + biteflow_ifood)
+# - 1 instância PostgreSQL 17 com 2 bancos lógicos (beebite + beebite_ifood)
 # - beebite-backend (Quarkus Native, Modo CLOUD, Multi-Loja + Ingestão Edge Sync)
 # - beebite-ifood-service (Quarkus Native, Polling iFood 30s + Cloud Pub/Sub)
 # - Caddy Reverse Proxy (HTTPS / TLS automático)
@@ -8,12 +8,12 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: biteflow-postgres-cloud
+    container_name: beebite-postgres-cloud
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no arquivo .env}
-      POSTGRES_DB: biteflow
+      POSTGRES_DB: beebite
     volumes:
       - pgdata_cloud:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d:ro
@@ -23,7 +23,7 @@ services:
       -c max_connections=60
       -c work_mem=4MB
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d biteflow"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d beebite"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,9 +32,9 @@ services:
         limits:
           memory: 300M
 
-  biteflow-core:
+  beebite-backend:
     image: ghcr.io/fidecode/beebite-backend:${APP_VERSION:-latest}
-    container_name: biteflow-core-cloud
+    container_name: beebite-backend-cloud
     restart: unless-stopped
     depends_on:
       postgres:
@@ -42,17 +42,17 @@ services:
     environment:
       QUARKUS_PROFILE: prod
       DB_HOST: postgres
-      DB_NAME: biteflow
+      DB_NAME: beebite
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_PRIVATE_KEY_LOCATION: file:/secrets/privateKey.pem
       JWT_PUBLIC_KEY_LOCATION: file:/secrets/publicKey.pem
-      BITEFLOW_COOKIE_SECURE: "true"
-      BITEFLOW_COOKIE_SAME_SITE: Lax
-      BITEFLOW_ENFORCE_PROD_GUARDS: "true"
-      BITEFLOW_INITIAL_ADMIN_PASSWORD: ${BITEFLOW_INITIAL_ADMIN_PASSWORD}
-      BITEFLOW_SYNC_MODE: CLOUD
-      BITEFLOW_IFOOD_ENABLED: "true"
+      BEEBITE_COOKIE_SECURE: "true"
+      BEEBITE_COOKIE_SAME_SITE: Lax
+      BEEBITE_ENFORCE_PROD_GUARDS: "true"
+      BEEBITE_INITIAL_ADMIN_PASSWORD: ${BEEBITE_INITIAL_ADMIN_PASSWORD}
+      BEEBITE_SYNC_MODE: CLOUD
+      BEEBITE_IFOOD_ENABLED: "true"
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-beebite-prd}
     volumes:
       - ./secrets:/secrets:ro
@@ -61,9 +61,9 @@ services:
         limits:
           memory: 192M
 
-  biteflow-ifood:
+  beebite-ifood:
     image: ghcr.io/fidecode/beebite-ifood-service:${APP_VERSION:-latest}
-    container_name: biteflow-ifood-cloud
+    container_name: beebite-ifood-cloud
     restart: unless-stopped
     depends_on:
       postgres:
@@ -71,15 +71,15 @@ services:
     environment:
       QUARKUS_PROFILE: prod
       DB_HOST: postgres
-      DB_NAME: biteflow_ifood
+      DB_NAME: beebite_ifood
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD}
       IFOOD_ENCRYPTION_KEY: ${IFOOD_ENCRYPTION_KEY:?Defina IFOOD_ENCRYPTION_KEY no arquivo .env}
-      BITEFLOW_ENFORCE_PROD_KEY: "true"
+      BEEBITE_ENFORCE_PROD_KEY: "true"
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-beebite-prd}
-      BITEFLOW_IMAGE_STORAGE_DIR: /data/images/catalog
-      BITEFLOW_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN:-api.chefsburguer.com.br}/api/images
-      BITEFLOW_API_BASE_URL: http://biteflow-core:8080
+      BEEBITE_IMAGE_STORAGE_DIR: /data/images/catalog
+      BEEBITE_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN:-api.fidecode.com.br}/api/images
+      BEEBITE_API_BASE_URL: http://beebite-backend:8080
     volumes:
       - ./uploads/images:/data/images/catalog
     deploy:
@@ -89,20 +89,20 @@ services:
 
   caddy:
     image: caddy:2-alpine
-    container_name: biteflow-caddy
+    container_name: beebite-caddy
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     environment:
-      API_DOMAIN: ${API_DOMAIN:-api.chefsburguer.com.br}
+      API_DOMAIN: ${API_DOMAIN:-api.fidecode.com.br}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - biteflow-core
-      - biteflow-ifood
+      - beebite-backend
+      - beebite-ifood
     deploy:
       resources:
         limits:
