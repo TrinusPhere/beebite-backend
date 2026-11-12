@@ -99,11 +99,11 @@ Em vez de gerar arquivos `.json` de credenciais (que podem vazar), criamos uma i
 
 ```bash
 # 1. Criar a Service Account de runtime
-gcloud iam service-accounts create biteflow-runtime-sa \
+gcloud iam service-accounts create beebite-runtime-sa \
   --display-name="BeeBite Production Runtime SA" \
   --project="$GCP_PROJECT_ID"
 
-SA_EMAIL="biteflow-runtime-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
+SA_EMAIL="beebite-runtime-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 
 # 2. Conceder APENAS permissão de publicar e consumir no Pub/Sub + ler imagens no Artifact Registry
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
@@ -127,30 +127,30 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
 
 ```bash
 # 1. Reservar um IP Estático Regional em São Paulo
-gcloud compute addresses create biteflow-cloud-ip \
+gcloud compute addresses create beebite-cloud-ip \
   --region="$GCP_REGION" \
   --project="$GCP_PROJECT_ID"
 
-STATIC_IP=$(gcloud compute addresses describe biteflow-cloud-ip \
+STATIC_IP=$(gcloud compute addresses describe beebite-cloud-ip \
   --region="$GCP_REGION" --project="$GCP_PROJECT_ID" --format="get(address)")
 echo "Guarde este IP para configurar no DNS da Cloudflare: $STATIC_IP"
 
 # 2. Criar regra de Firewall liberando APENAS HTTP (80) e HTTPS (443)
-gcloud compute firewall-rules create allow-biteflow-https \
+gcloud compute firewall-rules create allow-beebite-https \
   --allow=tcp:80,tcp:443 \
-  --target-tags=biteflow-web \
+  --target-tags=beebite-web \
   --description="Permite trafego HTTP/HTTPS para o proxy reverso Caddy" \
   --project="$GCP_PROJECT_ID"
 
 # 3. Criar a VM Ubuntu 24.04 LTS em São Paulo (e2-medium: 2 vCPU, 4GB RAM, 30GB SSD Balanceado)
-gcloud compute instances create biteflow-cloud-vm \
+gcloud compute instances create beebite-cloud-vm \
   --project="$GCP_PROJECT_ID" \
   --zone="$GCP_ZONE" \
   --machine-type=e2-medium \
   --address="$STATIC_IP" \
   --service-account="$SA_EMAIL" \
   --scopes=https://www.googleapis.com/auth/cloud-platform \
-  --tags=biteflow-web \
+  --tags=beebite-web \
   --image-family=ubuntu-2404-lts-amd64 \
   --image-project=ubuntu-os-cloud \
   --boot-disk-size=30GB \
@@ -164,7 +164,7 @@ gcloud compute instances create biteflow-cloud-vm \
 Conecte-se à VM pelo Cloud Shell:
 
 ```bash
-gcloud compute ssh biteflow-cloud-vm --zone="$GCP_ZONE" --project="$GCP_PROJECT_ID"
+gcloud compute ssh beebite-cloud-vm --zone="$GCP_ZONE" --project="$GCP_PROJECT_ID"
 ```
 
 Dentro da VM, instale o Docker, ative 2 GB de Swap (proteção extra contra picos de memória) e gere as chaves criptográficas exclusivas de produção:
@@ -204,7 +204,7 @@ echo "DB_PASSWORD sugerida: $(openssl rand -hex 16)"
 Ainda dentro de `/opt/beebite` na VM, crie os 4 arquivos abaixo:
 
 ### 7.1. `/opt/beebite/init-db/01-create-ifood-db.sql`
-Cria os dois bancos (`biteflow` e `beebite_ifood`) dentro do **mesmo** container PostgreSQL 17 para economizar RAM:
+Cria os dois bancos (`beebite` e `beebite_ifood`) dentro do **mesmo** container PostgreSQL 17 para economizar RAM:
 
 ```sql
 CREATE DATABASE beebite_ifood;
@@ -218,7 +218,7 @@ Preencha com os valores gerados no Passo 6:
 GCP_PROJECT_ID=beebite-prd
 DB_USER=postgres
 DB_PASSWORD=COLE_AQUI_SUA_SENHA_FORTE_DO_BANCO
-BITEFLOW_INITIAL_ADMIN_PASSWORD=COLE_AQUI_SUA_SENHA_FORTE_DO_ADMIN
+BEEBITE_INITIAL_ADMIN_PASSWORD=COLE_AQUI_SUA_SENHA_FORTE_DO_ADMIN
 IFOOD_ENCRYPTION_KEY=COLE_AQUI_OS_32_CARACTERES_GERADOS
 API_DOMAIN=api.seudominio.com.br
 FRONTEND_ORIGIN=https://app.seudominio.com.br
@@ -260,7 +260,7 @@ services:
     container_name: beebite-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: biteflow
+      POSTGRES_DB: beebite
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
@@ -269,7 +269,7 @@ services:
     command: >
       postgres -c shared_buffers=256MB -c max_connections=100
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d biteflow"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d beebite"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -284,16 +284,16 @@ services:
     environment:
       QUARKUS_PROFILE: prod
       DB_HOST: postgres
-      DB_NAME: biteflow
+      DB_NAME: beebite
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       GCP_PROJECT_ID: ${GCP_PROJECT_ID}
       JWT_PRIVATE_KEY_LOCATION: file:/run/secrets/privateKey.pem
       JWT_PUBLIC_KEY_LOCATION: file:/run/secrets/publicKey.pem
-      BITEFLOW_COOKIE_SECURE: "true"
-      BITEFLOW_COOKIE_SAME_SITE: Lax
-      BITEFLOW_ENFORCE_PROD_GUARDS: "true"
-      BITEFLOW_INITIAL_ADMIN_PASSWORD: ${BITEFLOW_INITIAL_ADMIN_PASSWORD}
+      BEEBITE_COOKIE_SECURE: "true"
+      BEEBITE_COOKIE_SAME_SITE: Lax
+      BEEBITE_ENFORCE_PROD_GUARDS: "true"
+      BEEBITE_INITIAL_ADMIN_PASSWORD: ${BEEBITE_INITIAL_ADMIN_PASSWORD}
       JAVA_OPTS_APPEND: "-XX:MaxRAMPercentage=75.0"
     volumes:
       - ./secrets/privateKey.pem:/run/secrets/privateKey.pem:ro
@@ -318,12 +318,12 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       GCP_PROJECT_ID: ${GCP_PROJECT_ID}
       IFOOD_ENCRYPTION_KEY: ${IFOOD_ENCRYPTION_KEY}
-      BITEFLOW_ENFORCE_PROD_KEY: "true"
-      BITEFLOW_IMAGE_STORAGE_DIR: /var/lib/biteflow/images
-      BITEFLOW_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN}/api/images
+      BEEBITE_ENFORCE_PROD_KEY: "true"
+      BEEBITE_IMAGE_STORAGE_DIR: /var/lib/beebite/images
+      BEEBITE_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN}/api/images
       JAVA_OPTS_APPEND: "-XX:MaxRAMPercentage=75.0"
     volumes:
-      - ./uploads/images:/var/lib/biteflow/images
+      - ./uploads/images:/var/lib/beebite/images
     deploy:
       resources:
         limits:
@@ -368,7 +368,7 @@ volumes:
      - **Build command:** `npm run build`
      - **Build output directory:** `dist`
      - **Environment variable:** `VITE_API_URL=https://api.seudominio.com.br`
-   - Adicione o domínio customizado `app.seudominio.com.br` (dica: mantendo `app.` e `api.` sob o mesmo domínio raiz `.seudominio.com.br`, o cookie `biteflow_jwt` com `SameSite=Lax` funciona perfeitamente em qualquer celular Safari/iOS e Android!).
+   - Adicione o domínio customizado `app.seudominio.com.br` (dica: mantendo `app.` e `api.` sob o mesmo domínio raiz `.seudominio.com.br`, o cookie `beebite_jwt` com `SameSite=Lax` funciona perfeitamente em qualquer celular Safari/iOS e Android!).
 
 ---
 
@@ -388,13 +388,13 @@ sudo systemctl enable --now chrony
 ```
 
 No `docker-compose.edge.yml` do Mini-PC local:
-- O `beebite-backend` roda com `BITEFLOW_SYNC_MODE=EDGE`, `BITEFLOW_IFOOD_ENABLED=false`, `BITEFLOW_COOKIE_SECURE=false` (para acesso rápido via HTTP na LAN local `http://192.168.1.10`) e `BITEFLOW_CLOUD_SYNC_URL=https://api.seudominio.com.br`.
+- O `beebite-backend` roda com `BEEBITE_SYNC_MODE=EDGE`, `BEEBITE_IFOOD_ENABLED=false`, `BEEBITE_COOKIE_SECURE=false` (para acesso rápido via HTTP na LAN local `http://192.168.1.10`) e `BEEBITE_CLOUD_SYNC_URL=https://api.seudominio.com.br`.
 - Adicione o container **Watchtower** agendado para **04:00 da manhã**:
 
 ```yaml
   watchtower:
     image: containrrr/watchtower:latest
-    container_name: biteflow-auto-updater
+    container_name: beebite-auto-updater
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

@@ -165,11 +165,11 @@ gcloud pubsub subscriptions create beebite-chat-message-outbound-sub --topic=bee
         <button onclick="copyBlock(this)"
           class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
         <pre
-          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>gcloud iam service-accounts create biteflow-runtime-sa \
+          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>gcloud iam service-accounts create beebite-runtime-sa \
   --display-name="BeeBite Production Runtime SA" \
   --project="$GCP_PROJECT_ID"
 
-SA_EMAIL="biteflow-runtime-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
+SA_EMAIL="beebite-runtime-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccount:${SA_EMAIL}" --role="roles/pubsub.publisher"
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccount:${SA_EMAIL}" --role="roles/pubsub.subscriber"
@@ -191,23 +191,23 @@ gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccoun
         <button onclick="copyBlock(this)"
           class="absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--card)] border border-[var(--border)] hover:opacity-80 cursor-pointer">Copiar</button>
         <pre
-          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>gcloud compute addresses create biteflow-cloud-ip --region="$GCP_REGION" --project="$GCP_PROJECT_ID"
-STATIC_IP=$(gcloud compute addresses describe biteflow-cloud-ip --region="$GCP_REGION" --project="$GCP_PROJECT_ID" --format="get(address)")
+          class="overflow-x-auto p-4 rounded-xl bg-[var(--secondary)] border border-[var(--border)] text-xs leading-relaxed"><code>gcloud compute addresses create beebite-cloud-ip --region="$GCP_REGION" --project="$GCP_PROJECT_ID"
+STATIC_IP=$(gcloud compute addresses describe beebite-cloud-ip --region="$GCP_REGION" --project="$GCP_PROJECT_ID" --format="get(address)")
 echo "IP Fixo da API: $STATIC_IP"
 
-gcloud compute firewall-rules create allow-biteflow-https \
+gcloud compute firewall-rules create allow-beebite-https \
   --allow=tcp:80,tcp:443 \
-  --target-tags=biteflow-web \
+  --target-tags=beebite-web \
   --project="$GCP_PROJECT_ID"
 
-gcloud compute instances create biteflow-cloud-vm \
+gcloud compute instances create beebite-cloud-vm \
   --project="$GCP_PROJECT_ID" \
   --zone="$GCP_ZONE" \
   --machine-type=e2-micro \
   --address="$STATIC_IP" \
   --service-account="$SA_EMAIL" \
   --scopes=https://www.googleapis.com/auth/cloud-platform \
-  --tags=biteflow-web \
+  --tags=beebite-web \
   --image-family=ubuntu-2404-lts-amd64 \
   --image-project=ubuntu-os-cloud \
   --boot-disk-size=30GB \
@@ -216,9 +216,9 @@ gcloud compute instances create biteflow-cloud-vm \
       <div class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs space-y-2">
         <p class="font-semibold text-blue-400">💡 Como fazer Upgrade Vertical da VM no futuro (em 1 minuto, sem perder
           dados ou IP):</p>
-        <pre class="overflow-x-auto p-2.5 rounded-lg bg-[var(--secondary)] text-[11px]"><code>gcloud compute instances stop biteflow-cloud-vm --zone=us-east1-b
-gcloud compute instances set-machine-type biteflow-cloud-vm --machine-type=e2-small --zone=us-east1-b
-gcloud compute instances start biteflow-cloud-vm --zone=us-east1-b</code></pre>
+        <pre class="overflow-x-auto p-2.5 rounded-lg bg-[var(--secondary)] text-[11px]"><code>gcloud compute instances stop beebite-cloud-vm --zone=us-east1-b
+gcloud compute instances set-machine-type beebite-cloud-vm --machine-type=e2-small --zone=us-east1-b
+gcloud compute instances start beebite-cloud-vm --zone=us-east1-b</code></pre>
       </div>
     </section>
 
