@@ -46,6 +46,7 @@ public class GetOrderKanbanUseCase {
                     buildColumn("ANALISE", "Pedido em Análise", "Search", List.of()),
                     buildColumn("PREPARO", "Em Preparo", "ChefHat", List.of()),
                     buildColumn("EM_ROTA", "Saiu para Entrega", "Truck", List.of()),
+                    buildColumn("ENTREGUE", "Entregue", "PackageCheck", List.of()),
                     buildColumn("FINALIZADO", "Finalizado", "CheckCircle2", List.of())
             ));
         }
@@ -79,6 +80,8 @@ public class GetOrderKanbanUseCase {
                 buildColumn("PREPARO", "Em Preparo", "ChefHat", grouped.getOrDefault(OrderStatus.PREPARO, List.of())),
                 buildColumn("EM_ROTA", "Saiu para Entrega", "Truck",
                         grouped.getOrDefault(OrderStatus.EM_ROTA, List.of())),
+                buildColumn("ENTREGUE", "Entregue", "PackageCheck",
+                        grouped.getOrDefault(OrderStatus.ENTREGUE, List.of())),
                 buildColumn("FINALIZADO", "Finalizado", "CheckCircle2",
                         finishedAndCancelled));
 

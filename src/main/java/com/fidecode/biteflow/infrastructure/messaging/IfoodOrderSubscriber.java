@@ -49,10 +49,12 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Subscriber do tópico: ifood-order-placed. Recebe novos pedidos do iFood e cria no banco do BiteFlow com status
+ * Subscriber do tópico: ifood-order-placed. Recebe novos pedidos do iFood e
+ * cria no banco do BiteFlow com status
  * ANALISE.
  *
- * Nota: Pedidos iFood chegam sem referência ao catálogo interno. Os itens são criados com nome/preço snapshot do evento
+ * Nota: Pedidos iFood chegam sem referência ao catálogo interno. Os itens são
+ * criados com nome/preço snapshot do evento
  * (ex: "X-Burger", R$ 25,90). A loja pode opcionalmente mapear depois.
  */
 @ApplicationScoped
@@ -189,6 +191,10 @@ public class IfoodOrderSubscriber {
         if (root.has("customerName") && !root.get("customerName").isNull()) {
             order.updateCustomerInfo(root.get("customerName").asText(), buildAddress(root));
         }
+        if (root.has("customerPhone") && !root.get("customerPhone").isNull()
+                && !root.get("customerPhone").asText().isBlank()) {
+            order.setCustomerPhone(root.get("customerPhone").asText());
+        }
 
         // Items
         if (root.has("items")) {
@@ -228,16 +234,17 @@ public class IfoodOrderSubscriber {
         String sender = root.get("sender").asText();
 
         orderRepository.findByExternalOrderId(ifoodOrderId).ifPresentOrElse(order -> {
-            Conversation conversation = conversationRepository.findByStoreOrderChannel(storeId, order.getId(), "IFOOD").orElse(null);
+            Conversation conversation = conversationRepository.findByStoreOrderChannel(storeId, order.getId(), "IFOOD")
+                    .orElse(null);
             if (conversation == null) {
                 conversation = new Conversation(storeId, "IFOOD");
-                conversation.associateOrder(order.getId(), order.getDisplayId(), order.getCustomerName(), order.getCustomerPhone());
+                conversation.associateOrder(order.getId(), order.getDisplayId(), order.getCustomerName(),
+                        order.getCustomerPhone());
             }
             ConversationMessage message = new ConversationMessage(
-                    conversation.getId(), 
+                    conversation.getId(),
                     "RESTAURANT".equalsIgnoreCase(sender) ? "OUTBOUND" : "INBOUND",
-                    content
-            );
+                    content);
             conversation.addMessage(message);
             conversationRepository.save(conversation);
             LOG.infof("[IFOOD-SUB] Chat salvo: orderId=%s", ifoodOrderId);
@@ -263,7 +270,8 @@ public class IfoodOrderSubscriber {
     }
 
     private void ensureSubscriptionExists(String subId, String topicId) {
-        if (channel == null) return;
+        if (channel == null)
+            return;
         try {
             var channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
             var credentialsProvider = NoCredentialsProvider.create();

@@ -64,6 +64,11 @@ public class UpdateIfoodOrderStatusUseCase {
                 return null;
             }
 
+            if (order.getStatus() == OrderStatus.ENTREGUE && (targetStatus == OrderStatus.EM_ROTA || targetStatus == OrderStatus.PREPARO || targetStatus == OrderStatus.ANALISE)) {
+                LOG.infof("[IFOOD-STATUS] Pedido %s já está ENTREGUE — ignorando regressão para %s.", ifoodOrderId, targetStatus);
+                return null;
+            }
+
             order.changeStatus(targetStatus);
             var saved = repo.save(order);
             publisher.publishIfFinalized(saved);
@@ -75,7 +80,7 @@ public class UpdateIfoodOrderStatusUseCase {
                 if (settings.getDispatchMode() == DispatchMode.AUTO) {
                     dispatchOrderToKdsUseCase.execute(saved.getStoreId(), saved.getId());
                 }
-            } else if (saved.getStatus() == OrderStatus.EM_ROTA || saved.getStatus() == OrderStatus.FINALIZADO || saved.getStatus() == OrderStatus.CANCELADO) {
+            } else if (saved.getStatus() == OrderStatus.EM_ROTA || saved.getStatus() == OrderStatus.ENTREGUE || saved.getStatus() == OrderStatus.FINALIZADO || saved.getStatus() == OrderStatus.CANCELADO) {
                 if (cancelProductionTasksByOrderUseCase != null) {
                     cancelProductionTasksByOrderUseCase.execute(saved.getStoreId(), saved.getId());
                 }
