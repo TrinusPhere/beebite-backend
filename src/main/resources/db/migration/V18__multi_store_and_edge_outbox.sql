@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- V17__multi_store_and_edge_outbox.sql
+-- V18__multi_store_and_edge_outbox.sql
 -- 1. Acesso Multi-Loja Genérico (User <-> N Stores sem deslogar)
 -- 2. Sincronização Híbrida Edge -> Cloud (Transactional Outbox + Idempotência)
 -- ═══════════════════════════════════════════════════════════════════════════

@@ -1,4 +1,4 @@
--- V18: Rebranding default store name from BiteFlow to BeeBite
+-- V19: Rebranding default store name from BiteFlow to BeeBite
 UPDATE store
 SET name = 'BeeBite Lanchonete',
     updated_at = CURRENT_TIMESTAMP
