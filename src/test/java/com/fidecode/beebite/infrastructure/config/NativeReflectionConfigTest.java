@@ -1,5 +1,6 @@
 package com.fidecode.beebite.infrastructure.config;
 
+import com.fidecode.beebite.application.auth.dto.LoginResponse;
 import com.fidecode.beebite.domain.printing.valueobject.ReceiptSections;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ class NativeReflectionConfigTest {
         assertNotNull(annotation, "NativeReflectionConfig deve ter @RegisterForReflection para compilacao GraalVM Native");
         assertTrue(Arrays.asList(annotation.targets()).contains(ReceiptSections.class),
                 "ReceiptSections deve estar registrado para serializacao Jackson em imagem nativa");
+        assertTrue(Arrays.asList(annotation.targets()).contains(LoginResponse.class),
+                "LoginResponse deve estar registrado para serializacao Jackson em imagem nativa");
     }
 }
-
