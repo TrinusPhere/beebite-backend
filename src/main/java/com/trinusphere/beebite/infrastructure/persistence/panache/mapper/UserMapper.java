@@ -1,0 +1,36 @@
+package com.trinusphere.beebite.infrastructure.persistence.panache.mapper;
+
+import com.trinusphere.beebite.domain.auth.entity.User;
+import com.trinusphere.beebite.domain.auth.valueobject.Permission;
+import com.trinusphere.beebite.domain.auth.valueobject.Role;
+import com.trinusphere.beebite.infrastructure.persistence.panache.entity.UserEntity;
+
+import java.util.List;
+
+public final class UserMapper {
+
+    private UserMapper() {
+    }
+
+    public static User toDomain(UserEntity e) {
+        if (e == null)
+            return null;
+        List<Permission> perms = e.permissions != null ? e.permissions.stream().map(Permission::fromValue).toList()
+                : List.of();
+        return User.reconstitute(e.id, e.storeId, e.name, e.login, e.passwordHash, Role.valueOf(e.role), perms,
+                e.active);
+    }
+
+    public static UserEntity toEntity(User u) {
+        UserEntity e = new UserEntity();
+        e.id = u.getId();
+        e.storeId = u.getStoreId();
+        e.name = u.getName();
+        e.login = u.getLogin();
+        e.passwordHash = u.getPasswordHash();
+        e.role = u.getRole().name();
+        e.permissions = u.getPermissions().stream().map(Permission::getValue).toList();
+        e.active = u.isActive();
+        return e;
+    }
+}

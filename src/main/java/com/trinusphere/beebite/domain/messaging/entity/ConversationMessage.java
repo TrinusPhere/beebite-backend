@@ -1,0 +1,85 @@
+package com.trinusphere.beebite.domain.messaging.entity;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+public class ConversationMessage {
+    private UUID id;
+    private final UUID conversationId;
+    private final String direction;
+    private final String content;
+    private String deliveryStatus;
+    private String externalId;
+    private LocalDateTime createdAt;
+    private LocalDateTime readAt;
+
+    public ConversationMessage(UUID conversationId, String direction, String content) {
+        if (conversationId == null)
+            throw new IllegalArgumentException("conversationId é obrigatório.");
+        if (content == null || content.isBlank())
+            throw new IllegalArgumentException("content é obrigatório.");
+        this.conversationId = conversationId;
+        this.direction = direction;
+        this.content = content;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public static ConversationMessage outbound(UUID conversationId, String content) {
+        return new ConversationMessage(conversationId, "OUTBOUND", content);
+    }
+
+    public static ConversationMessage reconstitute(UUID id, UUID conversationId, String direction, String content,
+            String deliveryStatus, String externalId, LocalDateTime createdAt, LocalDateTime readAt) {
+        var m = new ConversationMessage(conversationId, direction, content);
+        m.id = id;
+        m.deliveryStatus = deliveryStatus;
+        m.externalId = externalId;
+        m.createdAt = createdAt;
+        m.readAt = readAt;
+        return m;
+    }
+
+    public void markPendingIntegration() {
+        this.deliveryStatus = "PENDING_INTEGRATION";
+    }
+
+    public void markRead(LocalDateTime readAt) {
+        this.readAt = readAt;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getConversationId() {
+        return conversationId;
+    }
+
+    public String getDirection() {
+        return direction;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public String getDeliveryStatus() {
+        return deliveryStatus;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getReadAt() {
+        return readAt;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+}

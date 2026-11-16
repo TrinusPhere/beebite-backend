@@ -1,0 +1,10 @@
+package com.trinusphere.beebite.application.messaging.dto;
+
+import java.util.List;
+
+public record ConversationResponse(String id, String channel, String customerName, String customerPhone, String status,
+        String operation, String orderId, int unread, List<MessageResponse> messages) {
+    public record MessageResponse(String id, String direction, String content, String createdAt,
+            String deliveryStatus) {
+    }
+}

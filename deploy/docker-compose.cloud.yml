@@ -33,7 +33,7 @@ services:
           memory: 300M
 
   beebite-backend:
-    image: ghcr.io/fidecode/beebite-backend:${APP_VERSION:-latest}
+    image: ghcr.io/trinusphere/beebite-backend:${APP_VERSION:-latest}
     container_name: beebite-backend-cloud
     restart: unless-stopped
     depends_on:
@@ -62,7 +62,7 @@ services:
           memory: 192M
 
   beebite-ifood:
-    image: ghcr.io/fidecode/beebite-ifood-service:${APP_VERSION:-latest}
+    image: ghcr.io/trinusphere/beebite-ifood-service:${APP_VERSION:-latest}
     container_name: beebite-ifood-cloud
     restart: unless-stopped
     depends_on:
@@ -78,7 +78,7 @@ services:
       BEEBITE_ENFORCE_PROD_KEY: "true"
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-beebite-prd}
       BEEBITE_IMAGE_STORAGE_DIR: /data/images/catalog
-      BEEBITE_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN:-api.fidecode.com.br}/api/images
+      BEEBITE_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN:-api.trinusphere.com.br}/api/images
       BEEBITE_API_BASE_URL: http://beebite-backend:8080
     volumes:
       - ./uploads/images:/data/images/catalog
@@ -95,7 +95,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      API_DOMAIN: ${API_DOMAIN:-api.fidecode.com.br}
+      API_DOMAIN: ${API_DOMAIN:-api.trinusphere.com.br}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

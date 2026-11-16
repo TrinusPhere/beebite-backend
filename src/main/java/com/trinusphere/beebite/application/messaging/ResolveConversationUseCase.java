@@ -1,0 +1,37 @@
+package com.trinusphere.beebite.application.messaging;
+
+import com.trinusphere.beebite.application.messaging.dto.*;
+import com.trinusphere.beebite.domain.messaging.entity.Conversation;
+import com.trinusphere.beebite.domain.messaging.repository.ConversationRepository;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.util.UUID;
+
+@ApplicationScoped
+public class ResolveConversationUseCase {
+    private final ConversationRepository repo;
+
+    @Inject
+    public ResolveConversationUseCase(ConversationRepository repo) {
+        this.repo = repo;
+    }
+
+    public ConversationResponse execute(UUID storeId, ResolveConversationRequest request) {
+        UUID orderId = parse(request.orderId());
+        var c = orderId != null ? repo.findByStoreOrderChannel(storeId, orderId, request.channel()).orElse(null) : null;
+        if (c == null)
+            c = new Conversation(storeId, request.channel());
+        c.associateOrder(orderId, request.operation(), request.customerName(), request.customerPhone());
+        return ConversationDtoMapper.toResponse(repo.save(c));
+    }
+
+    private static UUID parse(String value) {
+        if (value == null || value.isBlank())
+            return null;
+        try {
+            return UUID.fromString(value.replace("#", ""));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+}

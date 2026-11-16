@@ -10,7 +10,7 @@ No BeeBite, cada CNPJ/unidade operacional é um registro isolado na tabela `stor
 
 ### Como funciona para qualquer cliente do SaaS (Genérico)
 
-Em vez de amarrar o usuário a apenas uma loja fixa ([User.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/domain/auth/entity/User.java#L10-L29)), introduzimos a tabela associativa **`user_store_access`**:
+Em vez de amarrar o usuário a apenas uma loja fixa ([User.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/domain/auth/entity/User.java#L10-L29)), introduzimos a tabela associativa **`user_store_access`**:
 
 | Perfil de Cliente no BeeBite | Comportamento no Login (`POST /api/v1/auth/login`) | Experiência na Interface (PC e Celular) |
 |---|---|---|
@@ -77,7 +77,7 @@ flowchart LR
    - A máquina local não possui credenciais do banco da nuvem — apenas um `edge_sync_token` revogável restrito ao seu `store_id`.
 4. **Sincronismo de Relógio (NTP) e Prefixo de Pedidos**: `chrony` ativo no Linux e suporte a prefixo de exibição por loja (`display_id`).
 5. **Pagamentos POS e Contingência Fiscal**: Maquininhas com chip 4G próprio + Contingência Offline NFC-e quando sem internet.
-6. **Impressão Térmica na Unidade Cloud (Delivery)**: Como [TcpPrinterGateway.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/infrastructure/printing/TcpPrinterGateway.java#L27-L33) conecta via TCP na porta `9100`, a unidade que roda 100% na nuvem utiliza **Tailscale Subnet Router** (ou agente local de impressão) para alcançar a impressora térmica na LAN da cozinha.
+6. **Impressão Térmica na Unidade Cloud (Delivery)**: Como [TcpPrinterGateway.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/infrastructure/printing/TcpPrinterGateway.java#L27-L33) conecta via TCP na porta `9100`, a unidade que roda 100% na nuvem utiliza **Tailscale Subnet Router** (ou agente local de impressão) para alcançar a impressora térmica na LAN da cozinha.
 
 ---
 
@@ -102,13 +102,13 @@ flowchart LR
 
 ## 7. Auditoria DevSecOps: 5 Bloqueadores Pré-PRD — ✅ TODOS RESOLVIDOS (5/5)
 
-Todos os 5 bloqueadores foram corrigidos e validados por testes ([ProductionSecurityBlockersTest.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/test/java/com/fidecode/beebite/infrastructure/security/ProductionSecurityBlockersTest.java) e [ProductionSecurityIfoodBlockersTest.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-ifood-service/src/test/java/com/fidecode/beebiteifood/infrastructure/ProductionSecurityIfoodBlockersTest.java)):
+Todos os 5 bloqueadores foram corrigidos e validados por testes ([ProductionSecurityBlockersTest.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/test/java/com/trinusphere/beebite/infrastructure/security/ProductionSecurityBlockersTest.java) e [ProductionSecurityIfoodBlockersTest.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-ifood-service/src/test/java/com/trinusphere/beebiteifood/infrastructure/ProductionSecurityIfoodBlockersTest.java)):
 
 1. **✅ Bloqueador #1 (Chaves RSA fora de `META-INF/resources/`)**: Movidas para `src/main/resources/jwt/` e parametrizadas em [application.properties](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/resources/application.properties#L20-L22).
-2. **✅ Bloqueador #2 (Pub/Sub parametrizado para GCP Real e Modo Edge)**: Atualizados [IfoodOrderSubscriber.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/infrastructure/messaging/IfoodOrderSubscriber.java#L68-L120), publishers e subscribers para usar `quarkus.google.cloud.project-id` e desligar quando `biteflow.feature.ifood-integration.enabled=false`.
-3. **✅ Bloqueador #3 (Cookie `biteflow_jwt` com `Secure` e `SameSite=Lax`)**: Parametrizado em [AuthResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/presentation/rest/AuthResource.java#L29-L63).
-4. **✅ Bloqueador #4 (`ProductionAdminSeedGuard`, validação AES e `.gitignore`)**: Criados [ProductionAdminSeedGuard.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/infrastructure/security/ProductionAdminSeedGuard.java), validação de chave em [AesSecretEncryptor.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-ifood-service/src/main/java/com/fidecode/beebiteifood/infrastructure/crypto/AesSecretEncryptor.java#L37-L50) e [.gitignore](file:///d:/fideCod%20Solucoes/projetos/biteflow/.gitignore).
-5. **✅ Bloqueador #5 (`LocalImageStorage` persistente e anti-SSRF)**: Parametrizado em [LocalImageStorage.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-ifood-service/src/main/java/com/fidecode/beebiteifood/infrastructure/storage/LocalImageStorage.java#L22-L87).
+2. **✅ Bloqueador #2 (Pub/Sub parametrizado para GCP Real e Modo Edge)**: Atualizados [IfoodOrderSubscriber.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/infrastructure/messaging/IfoodOrderSubscriber.java#L68-L120), publishers e subscribers para usar `quarkus.google.cloud.project-id` e desligar quando `biteflow.feature.ifood-integration.enabled=false`.
+3. **✅ Bloqueador #3 (Cookie `biteflow_jwt` com `Secure` e `SameSite=Lax`)**: Parametrizado em [AuthResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/presentation/rest/AuthResource.java#L29-L63).
+4. **✅ Bloqueador #4 (`ProductionAdminSeedGuard`, validação AES e `.gitignore`)**: Criados [ProductionAdminSeedGuard.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/infrastructure/security/ProductionAdminSeedGuard.java), validação de chave em [AesSecretEncryptor.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-ifood-service/src/main/java/com/trinusphere/beebiteifood/infrastructure/crypto/AesSecretEncryptor.java#L37-L50) e [.gitignore](file:///d:/fideCod%20Solucoes/projetos/biteflow/.gitignore).
+5. **✅ Bloqueador #5 (`LocalImageStorage` persistente e anti-SSRF)**: Parametrizado em [LocalImageStorage.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-ifood-service/src/main/java/com/trinusphere/beebiteifood/infrastructure/storage/LocalImageStorage.java#L22-L87).
 
 ---
 
@@ -120,11 +120,11 @@ Abaixo está o plano detalhado por camada (seguindo Clean Architecture e TDD) pa
 
 | Arquivo | O que faz e como será reutilizado |
 |---|---|
-| [Store.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/domain/store/entity/Store.java) | Entidade de domínio da loja; receberá metadados opcionais de sincronização (`syncMode`, `lastEdgeSyncAt`). |
-| [User.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/domain/auth/entity/User.java) | Entidade de usuário; mantém `storeId` como loja padrão e ganha acesso a múltiplas lojas via `UserStoreAccess`. |
-| [JwtTokenProvider.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/infrastructure/security/JwtTokenProvider.java) | Gerador RS256 do JWT; ganhará sobrecarga `generateTokenForStore(User user, UUID targetStoreId, Role role, List<Permission> permissions)` para o `SwitchStoreUseCase`. |
-| [AuthResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/presentation/rest/AuthResource.java) | Resource de autenticação; receberá `POST /api/v1/auth/switch-store/{storeId}` e `GET /api/v1/auth/stores`. |
-| [BaseResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/fidecode/beebite/presentation/rest/BaseResource.java) | Continua extraindo `getStoreId()` do cookie JWT atual — **zero impacto nos Resources existentes** após a troca de loja! |
+| [Store.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/domain/store/entity/Store.java) | Entidade de domínio da loja; receberá metadados opcionais de sincronização (`syncMode`, `lastEdgeSyncAt`). |
+| [User.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/domain/auth/entity/User.java) | Entidade de usuário; mantém `storeId` como loja padrão e ganha acesso a múltiplas lojas via `UserStoreAccess`. |
+| [JwtTokenProvider.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/infrastructure/security/JwtTokenProvider.java) | Gerador RS256 do JWT; ganhará sobrecarga `generateTokenForStore(User user, UUID targetStoreId, Role role, List<Permission> permissions)` para o `SwitchStoreUseCase`. |
+| [AuthResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/presentation/rest/AuthResource.java) | Resource de autenticação; receberá `POST /api/v1/auth/switch-store/{storeId}` e `GET /api/v1/auth/stores`. |
+| [BaseResource.java](file:///d:/fideCod%20Solucoes/projetos/biteflow/beebite-backend/src/main/java/com/trinusphere/beebite/presentation/rest/BaseResource.java) | Continua extraindo `getStoreId()` do cookie JWT atual — **zero impacto nos Resources existentes** após a troca de loja! |
 
 ---
 
@@ -319,5 +319,5 @@ CREATE INDEX idx_edge_synced_log_store ON edge_synced_event_log(store_id, receiv
 ./mvnw test-compile surefire:test -Dtest="ProductionSecurityBlockersTest,SwitchStoreUseCaseTest,EdgeOutboxSyncUseCaseTest"
 
 # 2. Gate obrigatório de Arquitetura (17 regras ArchUnit)
-./mvnw surefire:test -Dtest="com.fidecode.biteflow.architecture.CleanArchitectureTest"
+./mvnw surefire:test -Dtest="com.trinusphere.biteflow.architecture.CleanArchitectureTest"
 ```

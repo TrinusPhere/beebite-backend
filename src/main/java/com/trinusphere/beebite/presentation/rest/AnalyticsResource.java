@@ -1,0 +1,28 @@
+package com.trinusphere.beebite.presentation.rest;
+
+import com.trinusphere.beebite.application.analytics.GetAnalyticsOverviewUseCase;
+import io.quarkus.security.PermissionsAllowed;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
+import java.time.LocalDate;
+
+@Path("/api/v1/analytics")
+@Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed({ "ADMIN", "GERENTE" })
+public class AnalyticsResource extends BaseResource {
+    @Inject
+    GetAnalyticsOverviewUseCase useCase;
+
+    @GET
+    @Path("/overview")
+    @PermissionsAllowed("financeiro")
+    public Response overview(@QueryParam("startDate") String start, @QueryParam("endDate") String end) {
+        return Response.ok(useCase.execute(getStoreId(), parse(start), parse(end))).build();
+    }
+
+    private static LocalDate parse(String s) {
+        return s == null || s.isBlank() ? null : LocalDate.parse(s);
+    }
+}
