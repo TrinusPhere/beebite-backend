@@ -8,7 +8,14 @@
 -- 5. Tabela saas_invoice (Mensalidades, taxas de implantação e contas a receber)
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- ── 1. Permitir role SUPER_ADMIN em user_store_access ─────────────────────
+-- ── 1. Permitir role SUPER_ADMIN em users e user_store_access ────────────
+ALTER TABLE users
+    DROP CONSTRAINT IF EXISTS users_role_check;
+
+ALTER TABLE users
+    ADD CONSTRAINT users_role_check
+        CHECK (role IN ('SUPER_ADMIN', 'ADMIN', 'GERENTE', 'CAIXA'));
+
 ALTER TABLE user_store_access
     DROP CONSTRAINT IF EXISTS user_store_access_role_check;
 
