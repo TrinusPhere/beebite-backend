@@ -6,10 +6,12 @@ import com.trinusphere.beebite.domain.auth.exception.UserNotFoundException;
 import com.trinusphere.beebite.domain.auth.repository.UserRepository;
 import com.trinusphere.beebite.domain.auth.repository.UserStoreAccessRepository;
 import com.trinusphere.beebite.domain.auth.valueobject.Permission;
+import com.trinusphere.beebite.domain.auth.valueobject.Role;
 import com.trinusphere.beebite.domain.shared.StoreGuard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +33,19 @@ public class GetUserUseCase {
 
     public UserResponse execute(UUID storeId, UUID id) {
         var user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
+
+        if (user.getRole() == Role.SUPER_ADMIN) {
+            return new UserResponse(
+                    user.getId() != null ? user.getId().toString() : null,
+                    user.getName(),
+                    user.getLogin(),
+                    Role.SUPER_ADMIN.name(),
+                    Arrays.stream(Permission.values()).map(Permission::getValue).toList(),
+                    user.isActive(),
+                    null,
+                    storeId.toString()
+            );
+        }
 
         if (!user.getStoreId().equals(storeId) && userStoreAccessRepository != null) {
             Optional<UserStoreAccess> accessOpt = userStoreAccessRepository.findByUserAndStore(id, storeId);

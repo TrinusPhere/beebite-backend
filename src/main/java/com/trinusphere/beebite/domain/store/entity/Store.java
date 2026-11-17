@@ -5,9 +5,12 @@ import java.util.UUID;
 
 public class Store {
     private UUID id;
+    private UUID tenantId;
     private String name;
+    private String cnpj;
     private String logoUrl;
     private boolean open;
+    private boolean active;
     private String openingHours;
     private String address;
     private String publicSlug;
@@ -19,15 +22,23 @@ public class Store {
         validate(name);
         this.name = name;
         this.syncMode = "CLOUD";
+        this.active = true;
     }
 
     public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
             String slug) {
-        return reconstitute(id, name, logoUrl, open, hours, address, slug, "CLOUD", null, null);
+        return reconstitute(id, name, logoUrl, open, hours, address, slug, "CLOUD", null, null, null, null, true);
     }
 
     public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
             String slug, String syncMode, String edgeApiKeyHash, Instant lastEdgeSyncAt) {
+        return reconstitute(id, name, logoUrl, open, hours, address, slug, syncMode, edgeApiKeyHash, lastEdgeSyncAt,
+                null, null, true);
+    }
+
+    public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
+            String slug, String syncMode, String edgeApiKeyHash, Instant lastEdgeSyncAt, UUID tenantId, String cnpj,
+            boolean active) {
         Store s = new Store(name);
         s.id = id;
         s.logoUrl = logoUrl;
@@ -38,6 +49,9 @@ public class Store {
         s.syncMode = (syncMode == null || syncMode.isBlank()) ? "CLOUD" : syncMode;
         s.edgeApiKeyHash = edgeApiKeyHash;
         s.lastEdgeSyncAt = lastEdgeSyncAt;
+        s.tenantId = tenantId;
+        s.cnpj = cnpj;
+        s.active = active;
         return s;
     }
 
@@ -57,6 +71,20 @@ public class Store {
 
     public void definePublicSlug(String slug) {
         this.publicSlug = slug;
+    }
+
+    public void assignToTenant(UUID tenantId, String cnpj) {
+        this.tenantId = tenantId;
+        this.cnpj = cnpj;
+    }
+
+    public void activateStore() {
+        this.active = true;
+    }
+
+    public void deactivateStore() {
+        this.active = false;
+        this.open = false;
     }
 
     public void configureEdgeSync(String syncMode, String edgeApiKeyHash) {
@@ -83,8 +111,16 @@ public class Store {
         return id;
     }
 
+    public UUID getTenantId() {
+        return tenantId;
+    }
+
     public String getName() {
         return name;
+    }
+
+    public String getCnpj() {
+        return cnpj;
     }
 
     public String getLogoUrl() {
@@ -93,6 +129,10 @@ public class Store {
 
     public boolean isOpen() {
         return open;
+    }
+
+    public boolean isActive() {
+        return active;
     }
 
     public String getOpeningHours() {

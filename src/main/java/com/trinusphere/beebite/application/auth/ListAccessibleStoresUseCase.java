@@ -7,12 +7,14 @@ import com.trinusphere.beebite.domain.auth.exception.UserNotFoundException;
 import com.trinusphere.beebite.domain.auth.repository.UserRepository;
 import com.trinusphere.beebite.domain.auth.repository.UserStoreAccessRepository;
 import com.trinusphere.beebite.domain.auth.valueobject.Permission;
+import com.trinusphere.beebite.domain.auth.valueobject.Role;
 import com.trinusphere.beebite.domain.store.entity.Store;
 import com.trinusphere.beebite.domain.store.repository.StoreRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,6 +39,22 @@ public class ListAccessibleStoresUseCase {
     public List<AccessibleStoreResponse> execute(UUID userId, UUID activeStoreId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
+
+        if (user.getRole() == Role.SUPER_ADMIN) {
+            List<String> allPerms = Arrays.stream(Permission.values()).map(Permission::getValue).toList();
+            List<Store> allStores = storeRepository.findAll();
+            return allStores.stream()
+                    .map(store -> new AccessibleStoreResponse(
+                            store.getId().toString(),
+                            store.getName(),
+                            Role.SUPER_ADMIN.name(),
+                            allPerms,
+                            store.getSyncMode(),
+                            store.getLastEdgeSyncAt(),
+                            store.getId().equals(activeStoreId)
+                    ))
+                    .toList();
+        }
 
         List<UserStoreAccess> accesses = userStoreAccessRepository.findByUserId(userId);
         List<AccessibleStoreResponse> result = new ArrayList<>();

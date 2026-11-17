@@ -21,16 +21,22 @@ public final class StoreMapper {
                 e.publicSlug,
                 e.syncMode,
                 e.edgeApiKeyHash,
-                e.lastEdgeSyncAt
+                e.lastEdgeSyncAt,
+                e.tenantId,
+                e.cnpj,
+                e.active
         );
     }
 
     public static StoreEntity toEntity(Store s) {
         StoreEntity e = new StoreEntity();
         e.id = s.getId();
+        e.tenantId = s.getTenantId();
         e.name = s.getName();
+        e.cnpj = s.getCnpj();
         e.logoUrl = s.getLogoUrl();
         e.isOpen = s.isOpen();
+        e.active = s.isActive();
         e.openingHours = s.getOpeningHours();
         e.address = s.getAddress();
         e.publicSlug = s.getPublicSlug();

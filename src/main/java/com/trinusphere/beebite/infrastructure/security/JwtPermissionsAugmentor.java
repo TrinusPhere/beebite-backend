@@ -16,16 +16,13 @@ import java.util.Set;
  * Augmenta o {@link SecurityIdentity} com as permissões granulares do claim {@code permissions} do JWT.
  *
  * <p>
- * Isso habilita o uso de {@code @PermissionsAllowed("pedidos")} nos Resources, substituindo o {@code checkPermission()}
- * imperativo pelo modelo declarativo do Quarkus.
- *
- * <p>
- * ADMIN recebe TODAS as permissões do sistema automaticamente, independentemente do que está no claim
- * {@code permissions} do token.
+ * SUPER_ADMIN e ADMIN recebem TODAS as permissões do sistema automaticamente. Além disso, SUPER_ADMIN herda o papel
+ * ADMIN no SecurityIdentity para poder inspecionar qualquer endpoint administrativo de loja sem duplicar anotações.
  */
 @ApplicationScoped
 public class JwtPermissionsAugmentor implements SecurityIdentityAugmentor {
 
+    private static final String SUPER_ADMIN_ROLE = "SUPER_ADMIN";
     private static final String ADMIN_ROLE = "ADMIN";
     private static final String PERMISSIONS_CLAIM = "permissions";
 
@@ -37,12 +34,13 @@ public class JwtPermissionsAugmentor implements SecurityIdentityAugmentor {
 
         QuarkusSecurityIdentity.Builder builder = QuarkusSecurityIdentity.builder(identity);
 
-        if (identity.hasRole(ADMIN_ROLE)) {
-            // ADMIN recebe todas as permissões do sistema
+        if (identity.hasRole(SUPER_ADMIN_ROLE) || identity.hasRole(ADMIN_ROLE)) {
+            if (identity.hasRole(SUPER_ADMIN_ROLE) && !identity.hasRole(ADMIN_ROLE)) {
+                builder.addRole(ADMIN_ROLE);
+            }
             Permission.allValues().forEach(perm -> builder
                     .addPermissionChecker(requested -> Uni.createFrom().item(requested.getName().equals(perm))));
         } else {
-            // Demais roles recebem apenas as permissões do claim JWT
             extractPermissions(identity).forEach(perm -> builder
                     .addPermissionChecker(requested -> Uni.createFrom().item(requested.getName().equals(perm))));
         }
@@ -53,8 +51,6 @@ public class JwtPermissionsAugmentor implements SecurityIdentityAugmentor {
     @SuppressWarnings("unchecked")
     private Set<String> extractPermissions(SecurityIdentity identity) {
         if (identity.getPrincipal() instanceof JWTCallerPrincipal jwt) {
-            // O SmallRye JWT pode retornar List<JsonString> ao invés de List<String>
-            // para claims array. Convertemos via toString() para garantir compatibilidade.
             List<?> perms = jwt.getClaim(PERMISSIONS_CLAIM);
             if (perms != null) {
                 return perms.stream().map(Object::toString).map(s -> s.replace("\"", ""))

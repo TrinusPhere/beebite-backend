@@ -9,13 +9,14 @@ class RoleTest {
 
     @Test
     void shouldHaveAllRequiredRoles() {
+        assertNotNull(Role.valueOf("SUPER_ADMIN"));
         assertNotNull(Role.valueOf("ADMIN"));
         assertNotNull(Role.valueOf("GERENTE"));
         assertNotNull(Role.valueOf("CAIXA"));
     }
 
     @Test
-    void shouldHaveExactlyThreeRoles() {
-        assertEquals(3, Role.values().length);
+    void shouldHaveExactlyFourRoles() {
+        assertEquals(4, Role.values().length);
     }
 }

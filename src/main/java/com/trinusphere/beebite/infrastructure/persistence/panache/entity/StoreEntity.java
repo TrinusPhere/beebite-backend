@@ -19,14 +19,23 @@ public class StoreEntity extends PanacheEntityBase {
     @Column(name = "id", updatable = false, nullable = false)
     public UUID id;
 
+    @Column(name = "tenant_id")
+    public UUID tenantId;
+
     @Column(name = "name", nullable = false)
     public String name;
+
+    @Column(name = "cnpj", length = 20)
+    public String cnpj;
 
     @Column(name = "logo_url")
     public String logoUrl;
 
     @Column(name = "is_open", nullable = false)
     public boolean isOpen;
+
+    @Column(name = "active", nullable = false)
+    public boolean active = true;
 
     @Column(name = "opening_hours", columnDefinition = "TEXT")
     public String openingHours;
