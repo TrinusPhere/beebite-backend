@@ -150,7 +150,7 @@ public class AuthResource extends BaseResource {
     @Path("/store-access")
     @RolesAllowed("ADMIN")
     public Response grantStoreAccess(@Valid GrantUserStoreAccessRequest request) {
-        AccessibleStoreResponse granted = grantUserStoreAccessUseCase.execute(request);
+        AccessibleStoreResponse granted = grantUserStoreAccessUseCase.execute(getStoreId(), getUserId(), request);
         return Response.status(Response.Status.CREATED).entity(granted).build();
     }
 }

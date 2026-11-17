@@ -1,8 +1,11 @@
 package com.trinusphere.beebite.presentation.rest;
 
+import com.trinusphere.beebite.domain.auth.valueobject.Role;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -61,5 +64,24 @@ public abstract class BaseResource {
             throw new IllegalStateException("Token JWT inválido: claim 'userId' ausente.");
         }
         return UUID.fromString(userIdClaim);
+    }
+
+    /**
+     * Extrai o papel principal ({@link Role}) do claim {@code groups} do JWT.
+     */
+    protected Role getCallerRole() {
+        if (jwt == null) {
+            return null;
+        }
+        Set<String> groups = jwt.getGroups();
+        if (groups == null || groups.isEmpty()) {
+            return null;
+        }
+        for (Role candidate : List.of(Role.SUPER_ADMIN, Role.ADMIN, Role.GERENTE, Role.CAIXA)) {
+            if (groups.contains(candidate.name())) {
+                return candidate;
+            }
+        }
+        return null;
     }
 }

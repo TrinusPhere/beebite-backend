@@ -1,15 +1,19 @@
 package com.trinusphere.beebite.presentation.filter;
 
+import com.trinusphere.beebite.application.platform.CanSuperAdminMutateStoreUseCase;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -20,15 +24,22 @@ class SuperAdminReadOnlyStoreFilterTest {
     private SuperAdminReadOnlyStoreFilter filter;
 
     @Mock
+    CanSuperAdminMutateStoreUseCase canSuperAdminMutateStoreUseCase;
+    @Mock
+    JsonWebToken jwt;
+    @Mock
     ContainerRequestContext requestContext;
     @Mock
     SecurityContext securityContext;
     @Mock
     UriInfo uriInfo;
 
+    private static final UUID CLIENT_STORE_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final UUID BETA_STORE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     @BeforeEach
     void setUp() {
-        filter = new SuperAdminReadOnlyStoreFilter();
+        filter = new SuperAdminReadOnlyStoreFilter(canSuperAdminMutateStoreUseCase, jwt);
         lenient().when(requestContext.getSecurityContext()).thenReturn(securityContext);
         lenient().when(requestContext.getUriInfo()).thenReturn(uriInfo);
     }
@@ -62,6 +73,8 @@ class SuperAdminReadOnlyStoreFilterTest {
         when(securityContext.isUserInRole("SUPER_ADMIN")).thenReturn(true);
         when(requestContext.getMethod()).thenReturn("POST");
         when(uriInfo.getPath()).thenReturn("/api/v1/orders");
+        when(jwt.getClaim("storeId")).thenReturn(CLIENT_STORE_ID.toString());
+        when(canSuperAdminMutateStoreUseCase.execute(CLIENT_STORE_ID)).thenReturn(false);
 
         filter.filter(requestContext);
 
@@ -71,18 +84,16 @@ class SuperAdminReadOnlyStoreFilterTest {
     }
 
     @Test
-    void shouldBlockPutAndDeleteForSuperAdminOnStoreProductsOrStoreSettings() {
+    void shouldAllowWriteRequestsForSuperAdminInsideTrinusphereBetaStore() {
         when(securityContext.isUserInRole("SUPER_ADMIN")).thenReturn(true);
+        when(requestContext.getMethod()).thenReturn("POST");
+        when(uriInfo.getPath()).thenReturn("/api/v1/products");
+        when(jwt.getClaim("storeId")).thenReturn(BETA_STORE_ID.toString());
+        when(canSuperAdminMutateStoreUseCase.execute(BETA_STORE_ID)).thenReturn(true);
 
-        when(requestContext.getMethod()).thenReturn("PUT");
-        when(uriInfo.getPath()).thenReturn("/api/v1/store");
         filter.filter(requestContext);
 
-        when(requestContext.getMethod()).thenReturn("DELETE");
-        when(uriInfo.getPath()).thenReturn("/api/v1/products/123");
-        filter.filter(requestContext);
-
-        verify(requestContext, times(2)).abortWith(any(Response.class));
+        verify(requestContext, never()).abortWith(any());
     }
 
     @Test

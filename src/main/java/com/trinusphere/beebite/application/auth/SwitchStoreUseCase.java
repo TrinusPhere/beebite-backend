@@ -11,6 +11,7 @@ import com.trinusphere.beebite.domain.auth.repository.UserStoreAccessRepository;
 import com.trinusphere.beebite.domain.auth.valueobject.Permission;
 import com.trinusphere.beebite.domain.auth.valueobject.Role;
 import com.trinusphere.beebite.domain.shared.exception.ForbiddenAccessException;
+import com.trinusphere.beebite.domain.store.entity.Store;
 import com.trinusphere.beebite.domain.store.exception.StoreNotFoundException;
 import com.trinusphere.beebite.domain.store.repository.StoreRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -74,11 +75,20 @@ public class SwitchStoreUseCase {
         } else {
             access = userStoreAccessRepository.findByUserAndStore(userId, targetStoreId)
                     .orElseGet(() -> {
-                        if (user.getStoreId().equals(targetStoreId)) {
+                        if (user.getStoreId().equals(targetStoreId)
+                                && userStoreAccessRepository.findByUserId(userId).isEmpty()) {
                             return new UserStoreAccess(userId, targetStoreId, user.getRole(), user.getPermissions());
                         }
                         throw new ForbiddenAccessException("Usuário não possui acesso à loja informada: " + targetStoreId);
                     });
+
+            if (storeRepository != null) {
+                Store targetStore = storeRepository.findById(targetStoreId)
+                        .orElseThrow(() -> new StoreNotFoundException(targetStoreId));
+                if (!targetStore.isActive()) {
+                    throw new ForbiddenAccessException("Esta unidade está suspensa ou inativa no SaaS.");
+                }
+            }
         }
 
         String token = tokenProvider.generateTokenForStore(

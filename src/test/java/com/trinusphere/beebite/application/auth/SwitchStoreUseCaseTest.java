@@ -59,7 +59,7 @@ class SwitchStoreUseCaseTest {
         listAccessibleStoresUseCase = new ListAccessibleStoresUseCase(
                 userRepository, userStoreAccessRepository, storeRepository);
         switchStoreUseCase = new SwitchStoreUseCase(
-                userRepository, userStoreAccessRepository, tokenProvider, listAccessibleStoresUseCase);
+                userRepository, userStoreAccessRepository, tokenProvider, listAccessibleStoresUseCase, storeRepository);
         grantUserStoreAccessUseCase = new GrantUserStoreAccessUseCase(
                 userRepository, storeRepository, userStoreAccessRepository);
 
@@ -150,5 +150,62 @@ class SwitchStoreUseCaseTest {
         assertEquals("ADMIN", granted.role());
         assertEquals(3, granted.permissions().size());
         verify(userStoreAccessRepository).save(any(UserStoreAccess.class));
+    }
+
+    @Test
+    void shouldRejectSwitchWhenTargetStoreIsInactiveForClientUser() {
+        UserStoreAccess balcaoAccess = new UserStoreAccess(
+                USER_ID, STORE_BALCAO_ID, Role.ADMIN, List.of(Permission.DASHBOARD));
+        balcaoStore.deactivateStore();
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(ownerUser));
+        when(userStoreAccessRepository.findByUserAndStore(USER_ID, STORE_BALCAO_ID))
+                .thenReturn(Optional.of(balcaoAccess));
+        when(storeRepository.findById(STORE_BALCAO_ID)).thenReturn(Optional.of(balcaoStore));
+
+        assertThrows(ForbiddenAccessException.class,
+                () -> switchStoreUseCase.execute(USER_ID, STORE_BALCAO_ID));
+        verify(tokenProvider, never()).generateTokenForStore(any(), any(), any(), any());
+    }
+
+    @Test
+    void shouldRejectCrossTenantGrantUserStoreAccess() {
+        UUID tenantA = UUID.randomUUID();
+        UUID tenantB = UUID.randomUUID();
+        UUID foreignStoreId = UUID.fromString("00000000-0000-0000-0000-000000000098");
+
+        Store callerStore = Store.reconstitute(STORE_DELIVERY_ID, "Chefs", null, true, null, null, "chefs",
+                "CLOUD", null, null, tenantA, null, true);
+        Store foreignStore = Store.reconstitute(foreignStoreId, "Concorrente", null, true, null, null, "conc",
+                "CLOUD", null, null, tenantB, null, true);
+
+        GrantUserStoreAccessRequest request = new GrantUserStoreAccessRequest(
+                USER_ID.toString(),
+                foreignStoreId.toString(),
+                "ADMIN",
+                List.of("dashboard")
+        );
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(ownerUser));
+        when(storeRepository.findById(STORE_DELIVERY_ID)).thenReturn(Optional.of(callerStore));
+        when(storeRepository.findById(foreignStoreId)).thenReturn(Optional.of(foreignStore));
+
+        assertThrows(ForbiddenAccessException.class,
+                () -> grantUserStoreAccessUseCase.execute(STORE_DELIVERY_ID, USER_ID, request));
+        verify(userStoreAccessRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectGrantingSuperAdminRoleViaStoreAccess() {
+        GrantUserStoreAccessRequest request = new GrantUserStoreAccessRequest(
+                USER_ID.toString(),
+                STORE_BALCAO_ID.toString(),
+                "SUPER_ADMIN",
+                List.of("dashboard")
+        );
+
+        assertThrows(ForbiddenAccessException.class,
+                () -> grantUserStoreAccessUseCase.execute(STORE_DELIVERY_ID, USER_ID, request));
+        verify(userStoreAccessRepository, never()).save(any());
     }
 }

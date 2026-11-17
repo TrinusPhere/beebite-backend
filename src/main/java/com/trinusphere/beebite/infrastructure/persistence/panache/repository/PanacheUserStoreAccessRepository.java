@@ -27,6 +27,14 @@ public class PanacheUserStoreAccessRepository implements UserStoreAccessReposito
     }
 
     @Override
+    public List<UserStoreAccess> findByStoreId(UUID storeId) {
+        return repo.find("storeId = ?1 order by createdAt asc", storeId)
+                .stream()
+                .map(UserStoreAccessMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public Optional<UserStoreAccess> findByUserAndStore(UUID userId, UUID storeId) {
         return repo.find("userId = ?1 and storeId = ?2", userId, storeId)
                 .firstResultOptional()
@@ -43,5 +51,11 @@ public class PanacheUserStoreAccessRepository implements UserStoreAccessReposito
             entity = repo.getEntityManager().merge(entity);
         }
         return UserStoreAccessMapper.toDomain(entity);
+    }
+
+    @Override
+    @Transactional
+    public void deleteByUserAndStore(UUID userId, UUID storeId) {
+        repo.delete("userId = ?1 and storeId = ?2", userId, storeId);
     }
 }

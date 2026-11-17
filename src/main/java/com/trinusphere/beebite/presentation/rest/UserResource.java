@@ -19,7 +19,7 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
-@RolesAllowed("ADMIN")
+@RolesAllowed({ "ADMIN", "GERENTE" })
 public class UserResource extends BaseResource {
 
     @Inject
@@ -60,7 +60,7 @@ public class UserResource extends BaseResource {
     @PermissionsAllowed("usuarios")
     @POST
     public Response createUser(@Valid CreateUserRequest request) {
-        UserResponse created = createUserUseCase.execute(getStoreId(), request);
+        UserResponse created = createUserUseCase.execute(getStoreId(), getCallerRole(), request);
         return Response.created(URI.create("/api/v1/users/" + created.id())).entity(created).build();
     }
 
@@ -71,7 +71,7 @@ public class UserResource extends BaseResource {
     @PUT
     @Path("/{id}")
     public Response updateUser(@PathParam("id") UUID id, @Valid UpdateUserRequest request) {
-        UserResponse updated = updateUserUseCase.execute(getStoreId(), id, request);
+        UserResponse updated = updateUserUseCase.execute(getStoreId(), getCallerRole(), id, request);
         return Response.ok(updated).build();
     }
 
@@ -82,7 +82,7 @@ public class UserResource extends BaseResource {
     @DELETE
     @Path("/{id}")
     public Response deleteUser(@PathParam("id") UUID id) {
-        deleteUserUseCase.execute(getStoreId(), id);
+        deleteUserUseCase.execute(getStoreId(), getCallerRole(), id);
         return Response.noContent().build();
     }
 }
