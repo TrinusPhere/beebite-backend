@@ -6,6 +6,7 @@ import com.trinusphere.beebite.application.auth.dto.CreateUserRequest;
 import com.trinusphere.beebite.application.auth.dto.GrantUserStoreAccessRequest;
 import com.trinusphere.beebite.application.auth.dto.LoginRequest;
 import com.trinusphere.beebite.application.auth.dto.LoginResponse;
+import com.trinusphere.beebite.application.auth.dto.UpdateProfileRequest;
 import com.trinusphere.beebite.application.auth.dto.UpdateUserRequest;
 import com.trinusphere.beebite.application.auth.dto.UserResponse;
 
@@ -150,6 +151,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
         AccessibleStoreResponse.class,
         CreateUserRequest.class,
         UpdateUserRequest.class,
+        UpdateProfileRequest.class,
         UserResponse.class,
         GrantUserStoreAccessRequest.class,
 

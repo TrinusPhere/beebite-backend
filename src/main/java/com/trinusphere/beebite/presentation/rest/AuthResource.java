@@ -5,10 +5,12 @@ import com.trinusphere.beebite.application.auth.GrantUserStoreAccessUseCase;
 import com.trinusphere.beebite.application.auth.ListAccessibleStoresUseCase;
 import com.trinusphere.beebite.application.auth.LoginUseCase;
 import com.trinusphere.beebite.application.auth.SwitchStoreUseCase;
+import com.trinusphere.beebite.application.auth.UpdateMyProfileUseCase;
 import com.trinusphere.beebite.application.auth.dto.AccessibleStoreResponse;
 import com.trinusphere.beebite.application.auth.dto.GrantUserStoreAccessRequest;
 import com.trinusphere.beebite.application.auth.dto.LoginRequest;
 import com.trinusphere.beebite.application.auth.dto.LoginResponse;
+import com.trinusphere.beebite.application.auth.dto.UpdateProfileRequest;
 import com.trinusphere.beebite.application.auth.dto.UserResponse;
 import io.quarkus.security.Authenticated;
 import jakarta.annotation.security.PermitAll;
@@ -39,6 +41,8 @@ public class AuthResource extends BaseResource {
     SwitchStoreUseCase switchStoreUseCase;
     @Inject
     GrantUserStoreAccessUseCase grantUserStoreAccessUseCase;
+    @Inject
+    UpdateMyProfileUseCase updateMyProfileUseCase;
 
     @ConfigProperty(name = "biteflow.auth.cookie.secure", defaultValue = "true")
     boolean cookieSecure;
@@ -104,6 +108,17 @@ public class AuthResource extends BaseResource {
     public Response me() {
         UserResponse user = getUserUseCase.execute(getStoreId(), getUserId());
         return Response.ok(user).build();
+    }
+
+    /**
+     * PUT /api/v1/auth/me — atualiza nome e/ou senha do próprio usuário autenticado
+     */
+    @PUT
+    @Path("/me")
+    @Authenticated
+    public Response updateMyProfile(@Valid UpdateProfileRequest request) {
+        UserResponse updated = updateMyProfileUseCase.execute(getUserId(), request);
+        return Response.ok(updated).build();
     }
 
     /**
