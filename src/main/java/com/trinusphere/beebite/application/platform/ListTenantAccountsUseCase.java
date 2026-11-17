@@ -1,6 +1,9 @@
 package com.trinusphere.beebite.application.platform;
 
 import com.trinusphere.beebite.application.platform.dto.TenantAccountResponse;
+import com.trinusphere.beebite.domain.auth.entity.User;
+import com.trinusphere.beebite.domain.auth.repository.UserRepository;
+import com.trinusphere.beebite.domain.auth.valueobject.Role;
 import com.trinusphere.beebite.domain.platform.entity.SaasContract;
 import com.trinusphere.beebite.domain.platform.entity.TenantAccount;
 import com.trinusphere.beebite.domain.platform.repository.SaasContractRepository;
@@ -23,15 +26,18 @@ public class ListTenantAccountsUseCase {
     private final TenantAccountRepository tenantAccountRepository;
     private final StoreRepository storeRepository;
     private final SaasContractRepository saasContractRepository;
+    private final UserRepository userRepository;
 
     @Inject
     public ListTenantAccountsUseCase(
             TenantAccountRepository tenantAccountRepository,
             StoreRepository storeRepository,
-            SaasContractRepository saasContractRepository) {
+            SaasContractRepository saasContractRepository,
+            UserRepository userRepository) {
         this.tenantAccountRepository = tenantAccountRepository;
         this.storeRepository = storeRepository;
         this.saasContractRepository = saasContractRepository;
+        this.userRepository = userRepository;
     }
 
     public List<TenantAccountResponse> execute() {
@@ -51,37 +57,53 @@ public class ListTenantAccountsUseCase {
                 ));
 
         return tenants.stream()
-                .map(t -> {
-                    List<Store> tenantStores = storesByTenant.getOrDefault(t.getId(), List.of());
-                    List<TenantAccountResponse.StoreSummaryDto> storeDtos = tenantStores.stream()
-                            .map(s -> new TenantAccountResponse.StoreSummaryDto(
-                                    s.getId().toString(),
-                                    s.getName(),
-                                    s.getCnpj(),
-                                    s.getSyncMode(),
-                                    s.isActive(),
-                                    s.getEdgeApiKeyHash(),
-                                    s.getLastEdgeSyncAt()
-                            ))
-                            .toList();
-
-                    return new TenantAccountResponse(
-                            t.getId().toString(),
-                            t.getCompanyName(),
-                            t.getTradeName(),
-                            t.getOwnerName(),
-                            t.getDocumentNumber(),
-                            t.getEmail(),
-                            t.getPhone(),
-                            t.getStatus().name(),
-                            t.getNotes(),
-                            storeDtos.size(),
-                            mrrByTenant.getOrDefault(t.getId(), BigDecimal.ZERO),
-                            storeDtos,
-                            t.getCreatedAt()
-                    );
-                })
+                .map(t -> toResponse(
+                        t,
+                        storesByTenant.getOrDefault(t.getId(), List.of()),
+                        mrrByTenant.getOrDefault(t.getId(), BigDecimal.ZERO)
+                ))
                 .toList();
     }
-}
 
+    private TenantAccountResponse toResponse(TenantAccount t, List<Store> tenantStores, BigDecimal activeMrr) {
+        List<TenantAccountResponse.StoreSummaryDto> storeDtos = tenantStores.stream()
+                .map(UpdatePlatformStoreUseCase::toStoreSummaryDto)
+                .toList();
+
+        String ownerLogin = resolveOwnerLogin(tenantStores);
+
+        return new TenantAccountResponse(
+                t.getId().toString(),
+                t.getCompanyName(),
+                t.getTradeName(),
+                t.getOwnerName(),
+                ownerLogin,
+                t.getDocumentNumber(),
+                t.getEmail(),
+                t.getPhone(),
+                t.getStatus().name(),
+                t.getNotes(),
+                storeDtos.size(),
+                activeMrr,
+                storeDtos,
+                t.getCreatedAt()
+        );
+    }
+
+    private String resolveOwnerLogin(List<Store> tenantStores) {
+        if (userRepository == null || tenantStores == null || tenantStores.isEmpty()) {
+            return null;
+        }
+        for (Store store : tenantStores) {
+            List<User> storeUsers = userRepository.findAllByStoreId(store.getId());
+            if (storeUsers != null && !storeUsers.isEmpty()) {
+                return storeUsers.stream()
+                        .filter(u -> u.getRole() == Role.ADMIN || u.getRole() == Role.SUPER_ADMIN)
+                        .map(User::getLogin)
+                        .findFirst()
+                        .orElse(storeUsers.get(0).getLogin());
+            }
+        }
+        return null;
+    }
+}

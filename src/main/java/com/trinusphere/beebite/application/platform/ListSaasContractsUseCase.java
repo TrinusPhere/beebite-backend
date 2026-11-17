@@ -1,6 +1,7 @@
 package com.trinusphere.beebite.application.platform;
 
 import com.trinusphere.beebite.application.platform.dto.SaasContractResponse;
+import com.trinusphere.beebite.domain.platform.entity.SaasContract;
 import com.trinusphere.beebite.domain.platform.entity.TenantAccount;
 import com.trinusphere.beebite.domain.platform.repository.SaasContractRepository;
 import com.trinusphere.beebite.domain.platform.repository.TenantAccountRepository;
@@ -31,25 +32,28 @@ public class ListSaasContractsUseCase {
                 .collect(Collectors.toMap(TenantAccount::getId, TenantAccount::getTradeName, (a, b) -> a));
 
         return saasContractRepository.findAll().stream()
-                .map(c -> new SaasContractResponse(
-                        c.getId().toString(),
-                        c.getTenantId().toString(),
-                        tenantNames.getOrDefault(c.getTenantId(), "Cliente"),
-                        c.getPlanName(),
-                        c.getBillingCycle().name(),
-                        c.getMonthlyFee(),
-                        c.getSetupFee(),
-                        c.getMaxStores(),
-                        c.isIncludesIfood(),
-                        c.isIncludesEdgeSync(),
-                        c.getBillingDay(),
-                        c.getStartDate(),
-                        c.getEndDate(),
-                        c.getStatus().name(),
-                        c.getContractNotes(),
-                        c.getCreatedAt()
-                ))
+                .map(c -> toResponse(c, tenantNames.getOrDefault(c.getTenantId(), "Cliente")))
                 .toList();
     }
-}
 
+    static SaasContractResponse toResponse(SaasContract c, String tenantTradeName) {
+        return new SaasContractResponse(
+                c.getId() != null ? c.getId().toString() : null,
+                c.getTenantId().toString(),
+                tenantTradeName,
+                c.getPlanName(),
+                c.getBillingCycle().name(),
+                c.getMonthlyFee(),
+                c.getSetupFee(),
+                c.getMaxStores(),
+                c.isIncludesIfood(),
+                c.isIncludesEdgeSync(),
+                c.getBillingDay(),
+                c.getStartDate(),
+                c.getEndDate(),
+                c.getStatus().name(),
+                c.getContractNotes(),
+                c.getCreatedAt()
+        );
+    }
+}

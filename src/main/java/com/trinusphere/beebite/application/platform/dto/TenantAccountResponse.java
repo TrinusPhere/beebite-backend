@@ -9,6 +9,7 @@ public record TenantAccountResponse(
         String companyName,
         String tradeName,
         String ownerName,
+        String ownerLogin,
         String documentNumber,
         String email,
         String phone,
@@ -23,6 +24,8 @@ public record TenantAccountResponse(
             String id,
             String name,
             String cnpj,
+            String address,
+            String publicSlug,
             String syncMode,
             boolean active,
             String edgeDeviceToken,
@@ -30,4 +33,3 @@ public record TenantAccountResponse(
     ) {
     }
 }
-

@@ -124,7 +124,9 @@ import com.trinusphere.beebite.application.sync.dto.EdgeSyncEventDto;
 import com.trinusphere.beebite.domain.printing.valueobject.ReceiptSections;
 
 // Platform / Trinusphere Backoffice
+import com.trinusphere.beebite.application.platform.dto.CancelSaasInvoiceRequest;
 import com.trinusphere.beebite.application.platform.dto.ChangeTenantStatusRequest;
+import com.trinusphere.beebite.application.platform.dto.CreateSaasInvoiceRequest;
 import com.trinusphere.beebite.application.platform.dto.CreateStoreForTenantRequest;
 import com.trinusphere.beebite.application.platform.dto.MarkInvoicePaidRequest;
 import com.trinusphere.beebite.application.platform.dto.OnboardClientRequest;
@@ -133,6 +135,9 @@ import com.trinusphere.beebite.application.platform.dto.PlatformOverviewResponse
 import com.trinusphere.beebite.application.platform.dto.SaasContractResponse;
 import com.trinusphere.beebite.application.platform.dto.SaasInvoiceResponse;
 import com.trinusphere.beebite.application.platform.dto.TenantAccountResponse;
+import com.trinusphere.beebite.application.platform.dto.UpdatePlatformStoreRequest;
+import com.trinusphere.beebite.application.platform.dto.UpdateSaasContractRequest;
+import com.trinusphere.beebite.application.platform.dto.UpdateTenantAccountRequest;
 
 // Shared
 import com.trinusphere.beebite.application.shared.PageResponse;
@@ -293,10 +298,15 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
         TenantAccountResponse.class,
         TenantAccountResponse.StoreSummaryDto.class,
         CreateStoreForTenantRequest.class,
+        UpdatePlatformStoreRequest.class,
+        UpdateTenantAccountRequest.class,
         ChangeTenantStatusRequest.class,
         PlatformOverviewResponse.class,
         SaasContractResponse.class,
+        UpdateSaasContractRequest.class,
         SaasInvoiceResponse.class,
+        CreateSaasInvoiceRequest.class,
+        CancelSaasInvoiceRequest.class,
         MarkInvoicePaidRequest.class,
 
         // Shared

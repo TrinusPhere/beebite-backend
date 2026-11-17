@@ -25,17 +25,29 @@ public class PlatformBackofficeResource extends BaseResource {
     @Inject
     OnboardClientTenantUseCase onboardClientTenantUseCase;
     @Inject
+    UpdateTenantAccountUseCase updateTenantAccountUseCase;
+    @Inject
     AddStoreToTenantUseCase addStoreToTenantUseCase;
+    @Inject
+    UpdatePlatformStoreUseCase updatePlatformStoreUseCase;
+    @Inject
+    RegenerateEdgeTokenUseCase regenerateEdgeTokenUseCase;
     @Inject
     ChangeTenantStatusUseCase changeTenantStatusUseCase;
     @Inject
     ListSaasContractsUseCase listSaasContractsUseCase;
     @Inject
+    UpdateSaasContractUseCase updateSaasContractUseCase;
+    @Inject
     ListSaasInvoicesUseCase listSaasInvoicesUseCase;
     @Inject
     GenerateMonthlyInvoicesUseCase generateMonthlyInvoicesUseCase;
     @Inject
+    CreateSaasInvoiceUseCase createSaasInvoiceUseCase;
+    @Inject
     MarkSaasInvoicePaidUseCase markSaasInvoicePaidUseCase;
+    @Inject
+    CancelSaasInvoiceUseCase cancelSaasInvoiceUseCase;
 
     @GET
     @Path("/overview")
@@ -58,6 +70,15 @@ public class PlatformBackofficeResource extends BaseResource {
         return Response.status(Response.Status.CREATED).entity(response).build();
     }
 
+    @PUT
+    @Path("/tenants/{tenantId}")
+    public Response updateTenant(
+            @PathParam("tenantId") UUID tenantId,
+            @Valid UpdateTenantAccountRequest request) {
+        updateTenantAccountUseCase.execute(tenantId, request);
+        return Response.noContent().build();
+    }
+
     @POST
     @Path("/tenants/{tenantId}/stores")
     public Response addStoreToTenant(
@@ -65,6 +86,22 @@ public class PlatformBackofficeResource extends BaseResource {
             @Valid CreateStoreForTenantRequest request) {
         OnboardClientResponse.ProvisionedStoreDto created = addStoreToTenantUseCase.execute(tenantId, request);
         return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+
+    @PUT
+    @Path("/stores/{storeId}")
+    public Response updateStore(
+            @PathParam("storeId") UUID storeId,
+            @Valid UpdatePlatformStoreRequest request) {
+        TenantAccountResponse.StoreSummaryDto updated = updatePlatformStoreUseCase.execute(storeId, request);
+        return Response.ok(updated).build();
+    }
+
+    @POST
+    @Path("/stores/{storeId}/regenerate-edge-token")
+    public Response regenerateEdgeToken(@PathParam("storeId") UUID storeId) {
+        TenantAccountResponse.StoreSummaryDto updated = regenerateEdgeTokenUseCase.execute(storeId);
+        return Response.ok(updated).build();
     }
 
     @PATCH
@@ -83,6 +120,15 @@ public class PlatformBackofficeResource extends BaseResource {
         return Response.ok(contracts).build();
     }
 
+    @PUT
+    @Path("/contracts/{contractId}")
+    public Response updateContract(
+            @PathParam("contractId") UUID contractId,
+            @Valid UpdateSaasContractRequest request) {
+        SaasContractResponse updated = updateSaasContractUseCase.execute(contractId, request);
+        return Response.ok(updated).build();
+    }
+
     @GET
     @Path("/invoices")
     public Response listInvoices(
@@ -90,6 +136,13 @@ public class PlatformBackofficeResource extends BaseResource {
             @QueryParam("tenantId") UUID tenantId) {
         List<SaasInvoiceResponse> invoices = listSaasInvoicesUseCase.execute(status, tenantId);
         return Response.ok(invoices).build();
+    }
+
+    @POST
+    @Path("/invoices")
+    public Response createInvoice(@Valid CreateSaasInvoiceRequest request) {
+        SaasInvoiceResponse created = createSaasInvoiceUseCase.execute(request);
+        return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
     @POST
@@ -107,5 +160,14 @@ public class PlatformBackofficeResource extends BaseResource {
         SaasInvoiceResponse paid = markSaasInvoicePaidUseCase.execute(invoiceId, request);
         return Response.ok(paid).build();
     }
-}
 
+    @PATCH
+    @Path("/invoices/{invoiceId}/cancel")
+    public Response cancelInvoice(
+            @PathParam("invoiceId") UUID invoiceId,
+            CancelSaasInvoiceRequest request) {
+        String notes = request != null ? request.notes() : null;
+        SaasInvoiceResponse cancelled = cancelSaasInvoiceUseCase.execute(invoiceId, notes);
+        return Response.ok(cancelled).build();
+    }
+}
