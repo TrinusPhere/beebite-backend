@@ -35,8 +35,6 @@ import java.util.UUID;
 @ApplicationScoped
 public class OnboardClientTenantUseCase {
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-
     private final TenantAccountRepository tenantAccountRepository;
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
@@ -204,7 +202,7 @@ public class OnboardClientTenantUseCase {
 
     static String generateEdgeDeviceToken() {
         byte[] bytes = new byte[16];
-        SECURE_RANDOM.nextBytes(bytes);
+        new SecureRandom().nextBytes(bytes);
         return "bf_edge_" + HexFormat.of().formatHex(bytes);
     }
 
