@@ -3,7 +3,6 @@
 # - Funciona 100% sem internet na rede local (http://localhost ou IP da máquina)
 # - Quando BEEBITE_SYNC_MODE=EDGE, sincroniza automaticamente a cada 15s
 #   com a Nuvem Central (https://api.trinusphere.com)
-# - Atualiza sozinho de madrugada às 04:00 AM via Watchtower
 # ═══════════════════════════════════════════════════════════════════════════
 services:
   postgres-local:
@@ -68,18 +67,6 @@ services:
       - beebite-edge-api
     ports:
       - "80:80"
-
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: beebite-watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_SCHEDULE: "0 0 4 * * *"
-      WATCHTOWER_INCLUDE_RESTARTING: "true"
-      TZ: America/Sao_Paulo
 
 volumes:
   pgdata_edge:

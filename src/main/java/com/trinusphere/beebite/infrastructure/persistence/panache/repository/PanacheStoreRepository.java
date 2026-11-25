@@ -20,6 +20,12 @@ public class PanacheStoreRepository implements StoreRepository {
     @Inject
     StorePanacheRepo repo;
 
+    @Inject
+    com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase;
+
+    @Inject
+    com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer;
+
     @Override
     public Optional<Store> findById(UUID id) {
         return repo.findByIdOptional(id).map(StoreMapper::toDomain);
@@ -47,6 +53,15 @@ public class PanacheStoreRepository implements StoreRepository {
         } else {
             entity = repo.getEntityManager().merge(entity);
         }
-        return StoreMapper.toDomain(entity);
+        Store saved = StoreMapper.toDomain(entity);
+        if (enqueueEdgeOutboxUseCase != null && payloadSerializer != null && saved.getId() != null) {
+            enqueueEdgeOutboxUseCase.execute(
+                    saved.getId(),
+                    "STORE_STATUS_UPSERT",
+                    saved.getId(),
+                    payloadSerializer.serializeStoreStatus(saved)
+            );
+        }
+        return saved;
     }
 }

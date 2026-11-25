@@ -17,10 +17,21 @@ import java.util.stream.Collectors;
 public class PanacheCashMovementRepository implements CashMovementRepository {
 
     private final CashMovementPanacheRepo repo;
+    private final com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase;
+    private final com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer;
+
+    public PanacheCashMovementRepository(CashMovementPanacheRepo repo) {
+        this(repo, null, null);
+    }
 
     @Inject
-    public PanacheCashMovementRepository(CashMovementPanacheRepo repo) {
+    public PanacheCashMovementRepository(
+            CashMovementPanacheRepo repo,
+            com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase,
+            com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer) {
         this.repo = repo;
+        this.enqueueEdgeOutboxUseCase = enqueueEdgeOutboxUseCase;
+        this.payloadSerializer = payloadSerializer;
     }
 
     @Override
@@ -32,7 +43,16 @@ public class PanacheCashMovementRepository implements CashMovementRepository {
         } else {
             entity = repo.getEntityManager().merge(entity);
         }
-        return CashMovementMapper.toDomain(entity);
+        CashMovement saved = CashMovementMapper.toDomain(entity);
+        if (enqueueEdgeOutboxUseCase != null && payloadSerializer != null && saved.getId() != null) {
+            enqueueEdgeOutboxUseCase.execute(
+                    saved.getStoreId(),
+                    "CASH_MOVEMENT_UPSERT",
+                    saved.getId(),
+                    payloadSerializer.serializeCashMovement(saved)
+            );
+        }
+        return saved;
     }
 
     @Override

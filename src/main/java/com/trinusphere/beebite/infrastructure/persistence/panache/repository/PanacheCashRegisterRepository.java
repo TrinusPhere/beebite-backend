@@ -17,10 +17,21 @@ import java.util.stream.Collectors;
 public class PanacheCashRegisterRepository implements CashRegisterRepository {
 
     private final CashRegisterPanacheRepo repo;
+    private final com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase;
+    private final com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer;
+
+    public PanacheCashRegisterRepository(CashRegisterPanacheRepo repo) {
+        this(repo, null, null);
+    }
 
     @Inject
-    public PanacheCashRegisterRepository(CashRegisterPanacheRepo repo) {
+    public PanacheCashRegisterRepository(
+            CashRegisterPanacheRepo repo,
+            com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase,
+            com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer) {
         this.repo = repo;
+        this.enqueueEdgeOutboxUseCase = enqueueEdgeOutboxUseCase;
+        this.payloadSerializer = payloadSerializer;
     }
 
     @Override
@@ -32,7 +43,16 @@ public class PanacheCashRegisterRepository implements CashRegisterRepository {
         } else {
             entity = repo.getEntityManager().merge(entity);
         }
-        return CashRegisterMapper.toDomain(entity);
+        CashRegister saved = CashRegisterMapper.toDomain(entity);
+        if (enqueueEdgeOutboxUseCase != null && payloadSerializer != null && saved.getId() != null) {
+            enqueueEdgeOutboxUseCase.execute(
+                    saved.getStoreId(),
+                    "CASH_REGISTER_UPSERT",
+                    saved.getId(),
+                    payloadSerializer.serializeCashRegister(saved)
+            );
+        }
+        return saved;
     }
 
     @Override
@@ -59,7 +79,16 @@ public class PanacheCashRegisterRepository implements CashRegisterRepository {
     @Transactional
     public void delete(CashRegister register) {
         if (register.getId() != null) {
+            register.markDeleted();
             repo.update("deletedAt = now() where id = ?1", register.getId());
+            if (enqueueEdgeOutboxUseCase != null && payloadSerializer != null) {
+                enqueueEdgeOutboxUseCase.execute(
+                        register.getStoreId(),
+                        "CASH_REGISTER_UPSERT",
+                        register.getId(),
+                        payloadSerializer.serializeCashRegister(register)
+                );
+            }
         }
     }
 }

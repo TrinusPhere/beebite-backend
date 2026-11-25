@@ -48,7 +48,12 @@ public class HttpEdgeCloudSyncClient implements EdgeCloudSyncClient {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalStateException("Cloud sync endpoint returned HTTP " + response.statusCode());
+                String detail = response.body() != null ? response.body().strip() : "";
+                if (detail.length() > 180) {
+                    detail = detail.substring(0, 180) + "...";
+                }
+                throw new IllegalStateException("Cloud sync endpoint returned HTTP " + response.statusCode()
+                        + (detail.isEmpty() ? "" : ": " + detail));
             }
             return objectMapper.readValue(response.body(), EdgeSyncBatchResponse.class);
         } catch (Exception e) {

@@ -290,18 +290,6 @@ services:
     ports:
       - "80:80"
 
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: beebite-watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_SCHEDULE: "0 0 4 * * *"
-      WATCHTOWER_INCLUDE_RESTARTING: "true"
-      TZ: America/Sao_Paulo
-
 volumes:
   pgdata_edge:
 '@
@@ -335,7 +323,8 @@ try {
         Write-Err "Falha ao baixar as imagens do Google Artifact Registry. Verifique a internet e a chave de leitura."
         exit 1
     }
-    & docker compose up -d --no-build
+    & docker rm -f beebite-watchtower *> $null
+    & docker compose up -d --no-build --remove-orphans
     if ($LASTEXITCODE -ne 0) {
         Write-Err "Falha ao iniciar os containers Docker."
         exit 1

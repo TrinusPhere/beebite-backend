@@ -20,10 +20,21 @@ import java.util.stream.Collectors;
 public class PanacheCashSessionRepository implements CashSessionRepository {
 
     private final CashSessionPanacheRepo repo;
+    private final com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase;
+    private final com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer;
+
+    public PanacheCashSessionRepository(CashSessionPanacheRepo repo) {
+        this(repo, null, null);
+    }
 
     @Inject
-    public PanacheCashSessionRepository(CashSessionPanacheRepo repo) {
+    public PanacheCashSessionRepository(
+            CashSessionPanacheRepo repo,
+            com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase,
+            com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer) {
         this.repo = repo;
+        this.enqueueEdgeOutboxUseCase = enqueueEdgeOutboxUseCase;
+        this.payloadSerializer = payloadSerializer;
     }
 
     @Override
@@ -35,7 +46,16 @@ public class PanacheCashSessionRepository implements CashSessionRepository {
         } else {
             entity = repo.getEntityManager().merge(entity);
         }
-        return CashSessionMapper.toDomain(entity);
+        CashSession saved = CashSessionMapper.toDomain(entity);
+        if (enqueueEdgeOutboxUseCase != null && payloadSerializer != null && saved.getId() != null) {
+            enqueueEdgeOutboxUseCase.execute(
+                    saved.getStoreId(),
+                    "CASH_SESSION_UPSERT",
+                    saved.getId(),
+                    payloadSerializer.serializeCashSession(saved)
+            );
+        }
+        return saved;
     }
 
     @Override

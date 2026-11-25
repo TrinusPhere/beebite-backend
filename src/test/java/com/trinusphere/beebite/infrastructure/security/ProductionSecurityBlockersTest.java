@@ -207,20 +207,30 @@ class ProductionSecurityBlockersTest {
         assertEquals("https://api.trinusphere.com", defaultConfig.getValue("biteflow.sync.cloud-url", String.class));
         assertTrue(defaultConfig.getOptionalValue("biteflow.security.initial-admin-password", String.class).isEmpty());
 
-        // Regressão crítica: todas as propriedades opcionais de BootstrapEdgeStoreUseCase devem ser Optional<String>
-        // para nunca causar SRCFG00014 quando vazias no ambiente CLOUD.
-        var ctor = com.trinusphere.beebite.application.sync.BootstrapEdgeStoreUseCase.class.getConstructors()[0];
-        for (var param : ctor.getParameters()) {
-            ConfigProperty cp = param.getAnnotation(ConfigProperty.class);
-            if (cp == null) {
-                continue;
-            }
-            if (param.getType().equals(Optional.class)) {
-                assertDoesNotThrow(() -> defaultConfig.getOptionalValue(cp.name(), String.class),
-                        "Optional @ConfigProperty não deve falhar em CLOUD: " + cp.name());
-            } else {
-                assertDoesNotThrow(() -> defaultConfig.getValue(cp.name(), String.class),
-                        "Propriedade obrigatória @ConfigProperty faltando valor default em application.properties: " + cp.name());
+        // Regressão crítica: todas as propriedades opcionais dos Use Cases de Edge devem ser Optional<String>
+        // (ou possuir defaultValue não-vazio) para nunca causar SRCFG00014 no ambiente CLOUD.
+        for (Class<?> beanClass : java.util.List.of(
+                com.trinusphere.beebite.application.sync.BootstrapEdgeStoreUseCase.class,
+                com.trinusphere.beebite.application.sync.BackfillEdgeOutboxUseCase.class,
+                com.trinusphere.beebite.application.cash.GetCurrentCashSessionUseCase.class)) {
+            for (var ctor : beanClass.getConstructors()) {
+                for (var param : ctor.getParameters()) {
+                    ConfigProperty cp = param.getAnnotation(ConfigProperty.class);
+                    if (cp == null) {
+                        continue;
+                    }
+                    if (param.getType().equals(Optional.class)) {
+                        assertDoesNotThrow(() -> defaultConfig.getOptionalValue(cp.name(), String.class),
+                                "Optional @ConfigProperty não deve falhar em CLOUD: " + cp.name());
+                    } else {
+                        String effectiveDefault = cp.defaultValue().equals(ConfigProperty.UNCONFIGURED_VALUE)
+                                ? null : cp.defaultValue();
+                        if (effectiveDefault == null) {
+                            assertDoesNotThrow(() -> defaultConfig.getValue(cp.name(), String.class),
+                                    "Propriedade obrigatória @ConfigProperty faltando valor default em application.properties: " + cp.name());
+                        }
+                    }
+                }
             }
         }
     }

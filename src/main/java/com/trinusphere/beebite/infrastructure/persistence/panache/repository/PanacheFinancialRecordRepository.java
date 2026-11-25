@@ -22,19 +22,43 @@ import java.util.UUID;
 public class PanacheFinancialRecordRepository implements FinancialRecordRepository {
 
     private final FinancialRecordPanacheRepo repo;
+    private final com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase;
+    private final com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer;
+
+    public PanacheFinancialRecordRepository(FinancialRecordPanacheRepo repo) {
+        this(repo, null, null);
+    }
 
     @Inject
-    public PanacheFinancialRecordRepository(FinancialRecordPanacheRepo repo) {
+    public PanacheFinancialRecordRepository(
+            FinancialRecordPanacheRepo repo,
+            com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase,
+            com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer) {
         this.repo = repo;
+        this.enqueueEdgeOutboxUseCase = enqueueEdgeOutboxUseCase;
+        this.payloadSerializer = payloadSerializer;
     }
 
     @Override
     @Transactional
     public FinancialRecord save(FinancialRecord record) {
         FinancialRecordEntity entity = FinancialRecordMapper.toEntity(record);
-        repo.getEntityManager().persist(entity);
+        if (entity.id == null) {
+            repo.getEntityManager().persist(entity);
+        } else {
+            entity = repo.getEntityManager().merge(entity);
+        }
+        FinancialRecord saved = FinancialRecordMapper.toDomain(entity);
         record.setId(entity.id);
-        return record;
+        if (enqueueEdgeOutboxUseCase != null && payloadSerializer != null && saved.getId() != null) {
+            enqueueEdgeOutboxUseCase.execute(
+                    saved.getStoreId(),
+                    "FINANCIAL_RECORD_UPSERT",
+                    saved.getId(),
+                    payloadSerializer.serializeFinancialRecord(saved)
+            );
+        }
+        return saved;
     }
 
     @Override

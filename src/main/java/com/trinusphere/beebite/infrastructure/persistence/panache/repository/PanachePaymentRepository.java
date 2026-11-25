@@ -19,10 +19,21 @@ import java.util.stream.Collectors;
 public class PanachePaymentRepository implements PaymentRepository {
 
     private final PaymentPanacheRepo repo;
+    private final com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase;
+    private final com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer;
+
+    public PanachePaymentRepository(PaymentPanacheRepo repo) {
+        this(repo, null, null);
+    }
 
     @Inject
-    public PanachePaymentRepository(PaymentPanacheRepo repo) {
+    public PanachePaymentRepository(
+            PaymentPanacheRepo repo,
+            com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase,
+            com.trinusphere.beebite.infrastructure.sync.EdgeSyncPayloadSerializer payloadSerializer) {
         this.repo = repo;
+        this.enqueueEdgeOutboxUseCase = enqueueEdgeOutboxUseCase;
+        this.payloadSerializer = payloadSerializer;
     }
 
     @Override
@@ -34,7 +45,16 @@ public class PanachePaymentRepository implements PaymentRepository {
         } else {
             entity = repo.getEntityManager().merge(entity);
         }
-        return PaymentMapper.toDomain(entity);
+        Payment saved = PaymentMapper.toDomain(entity);
+        if (enqueueEdgeOutboxUseCase != null && payloadSerializer != null && saved.getId() != null) {
+            enqueueEdgeOutboxUseCase.execute(
+                    saved.getStoreId(),
+                    "PAYMENT_UPSERT",
+                    saved.getId(),
+                    payloadSerializer.serializePayment(saved)
+            );
+        }
+        return saved;
     }
 
     @Override
