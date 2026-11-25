@@ -27,10 +27,10 @@ class BootstrapEdgeStoreUseCaseTest {
                 bootstrapPort,
                 "CLOUD",
                 Optional.of(CLIENT_STORE_ID.toString()),
-                "Chefs Burguer - Balcão",
-                "chefs-burguer-balcao",
-                "Rua Central, 100",
-                "admin"
+                Optional.of("Chefs Burguer - Balcão"),
+                Optional.of("chefs-burguer-balcao"),
+                Optional.of("Rua Central, 100"),
+                Optional.of("admin")
         );
 
         boolean ran = useCase.execute();
@@ -45,10 +45,10 @@ class BootstrapEdgeStoreUseCaseTest {
                 bootstrapPort,
                 "EDGE",
                 Optional.empty(),
-                "Chefs Burguer - Balcão",
-                "",
-                "",
-                "admin"
+                Optional.of("Chefs Burguer - Balcão"),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of("admin")
         );
 
         boolean ran = useCase.execute();
@@ -63,10 +63,10 @@ class BootstrapEdgeStoreUseCaseTest {
                 bootstrapPort,
                 "EDGE",
                 Optional.of(CLIENT_STORE_ID.toString()),
-                "Chef's Burguer - Balcão",
-                "",
-                "",
-                ""
+                Optional.of("Chef's Burguer - Balcão"),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()
         );
 
         boolean ran = useCase.execute();
@@ -93,10 +93,10 @@ class BootstrapEdgeStoreUseCaseTest {
                 bootstrapPort,
                 "EDGE",
                 Optional.of(CLIENT_STORE_ID.toString()),
-                "Chefs Burguer - Loja 2",
-                "chefs-loja-2",
-                "Av Brasil, 500",
-                "chefsburguer"
+                Optional.of("Chefs Burguer - Loja 2"),
+                Optional.of("chefs-loja-2"),
+                Optional.of("Av Brasil, 500"),
+                Optional.of("chefsburguer")
         );
 
         boolean ran = useCase.execute();
@@ -123,10 +123,10 @@ class BootstrapEdgeStoreUseCaseTest {
                 bootstrapPort,
                 "EDGE",
                 Optional.of("not-a-uuid"),
-                "Loja Teste",
-                "",
-                "",
-                "admin"
+                Optional.of("Loja Teste"),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of("admin")
         );
 
         boolean ran = useCase.execute();

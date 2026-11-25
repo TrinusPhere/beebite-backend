@@ -22,3 +22,4 @@ public class EdgeStoreBootstrapStartup {
         bootstrapEdgeStoreUseCase.execute();
     }
 }
+

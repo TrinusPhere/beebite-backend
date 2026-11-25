@@ -206,6 +206,23 @@ class ProductionSecurityBlockersTest {
         assertTrue(defaultConfig.getValue("biteflow.auth.cookie.secure", Boolean.class));
         assertEquals("https://api.trinusphere.com", defaultConfig.getValue("biteflow.sync.cloud-url", String.class));
         assertTrue(defaultConfig.getOptionalValue("biteflow.security.initial-admin-password", String.class).isEmpty());
+
+        // Regressão crítica: todas as propriedades opcionais de BootstrapEdgeStoreUseCase devem ser Optional<String>
+        // para nunca causar SRCFG00014 quando vazias no ambiente CLOUD.
+        var ctor = com.trinusphere.beebite.application.sync.BootstrapEdgeStoreUseCase.class.getConstructors()[0];
+        for (var param : ctor.getParameters()) {
+            ConfigProperty cp = param.getAnnotation(ConfigProperty.class);
+            if (cp == null) {
+                continue;
+            }
+            if (param.getType().equals(Optional.class)) {
+                assertDoesNotThrow(() -> defaultConfig.getOptionalValue(cp.name(), String.class),
+                        "Optional @ConfigProperty não deve falhar em CLOUD: " + cp.name());
+            } else {
+                assertDoesNotThrow(() -> defaultConfig.getValue(cp.name(), String.class),
+                        "Propriedade obrigatória @ConfigProperty faltando valor default em application.properties: " + cp.name());
+            }
+        }
     }
 }
 

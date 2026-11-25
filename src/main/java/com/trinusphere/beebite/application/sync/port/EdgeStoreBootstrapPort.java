@@ -22,3 +22,4 @@ public interface EdgeStoreBootstrapPort {
             String adminDisplayName
     );
 }
+

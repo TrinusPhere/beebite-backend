@@ -25,27 +25,27 @@ public class BootstrapEdgeStoreUseCase {
     private final EdgeStoreBootstrapPort bootstrapPort;
     private final String syncMode;
     private final Optional<String> edgeStoreIdRaw;
-    private final String edgeStoreName;
-    private final String edgeStoreSlug;
-    private final String edgeStoreAddress;
-    private final String edgeAdminLogin;
+    private final Optional<String> edgeStoreName;
+    private final Optional<String> edgeStoreSlug;
+    private final Optional<String> edgeStoreAddress;
+    private final Optional<String> edgeAdminLogin;
 
     @Inject
     public BootstrapEdgeStoreUseCase(
             EdgeStoreBootstrapPort bootstrapPort,
             @ConfigProperty(name = "biteflow.sync.mode", defaultValue = "CLOUD") String syncMode,
             @ConfigProperty(name = "biteflow.edge.store-id") Optional<String> edgeStoreIdRaw,
-            @ConfigProperty(name = "biteflow.edge.store-name", defaultValue = "") String edgeStoreName,
-            @ConfigProperty(name = "biteflow.edge.store-slug", defaultValue = "") String edgeStoreSlug,
-            @ConfigProperty(name = "biteflow.edge.store-address", defaultValue = "") String edgeStoreAddress,
-            @ConfigProperty(name = "biteflow.edge.admin-login", defaultValue = "admin") String edgeAdminLogin) {
+            @ConfigProperty(name = "biteflow.edge.store-name") Optional<String> edgeStoreName,
+            @ConfigProperty(name = "biteflow.edge.store-slug") Optional<String> edgeStoreSlug,
+            @ConfigProperty(name = "biteflow.edge.store-address") Optional<String> edgeStoreAddress,
+            @ConfigProperty(name = "biteflow.edge.admin-login") Optional<String> edgeAdminLogin) {
         this.bootstrapPort = bootstrapPort;
         this.syncMode = syncMode != null ? syncMode.trim().toUpperCase(Locale.ROOT) : "CLOUD";
         this.edgeStoreIdRaw = edgeStoreIdRaw != null ? edgeStoreIdRaw : Optional.empty();
-        this.edgeStoreName = edgeStoreName;
-        this.edgeStoreSlug = edgeStoreSlug;
-        this.edgeStoreAddress = edgeStoreAddress;
-        this.edgeAdminLogin = edgeAdminLogin;
+        this.edgeStoreName = edgeStoreName != null ? edgeStoreName : Optional.empty();
+        this.edgeStoreSlug = edgeStoreSlug != null ? edgeStoreSlug : Optional.empty();
+        this.edgeStoreAddress = edgeStoreAddress != null ? edgeStoreAddress : Optional.empty();
+        this.edgeAdminLogin = edgeAdminLogin != null ? edgeAdminLogin : Optional.empty();
     }
 
     public boolean execute() {
@@ -67,18 +67,15 @@ public class BootstrapEdgeStoreUseCase {
             return false;
         }
 
-        String resolvedName = (edgeStoreName != null && !edgeStoreName.isBlank())
-                ? edgeStoreName.trim()
-                : "Unidade Balcão";
-        String resolvedSlug = (edgeStoreSlug != null && !edgeStoreSlug.isBlank())
-                ? edgeStoreSlug.trim().toLowerCase(Locale.ROOT)
-                : slugify(resolvedName);
-        String resolvedAddress = (edgeStoreAddress != null && !edgeStoreAddress.isBlank())
-                ? edgeStoreAddress.trim()
-                : "Unidade Presencial / Balcão";
-        String resolvedAdminLogin = (edgeAdminLogin != null && !edgeAdminLogin.isBlank())
-                ? edgeAdminLogin.trim().toLowerCase(Locale.ROOT)
-                : "admin";
+        String resolvedName = edgeStoreName.map(String::trim).filter(s -> !s.isBlank()).orElse("Unidade Balcão");
+        String resolvedSlug = edgeStoreSlug.map(String::trim).filter(s -> !s.isBlank())
+                .map(s -> s.toLowerCase(Locale.ROOT))
+                .orElseGet(() -> slugify(resolvedName));
+        String resolvedAddress = edgeStoreAddress.map(String::trim).filter(s -> !s.isBlank())
+                .orElse("Unidade Presencial / Balcão");
+        String resolvedAdminLogin = edgeAdminLogin.map(String::trim).filter(s -> !s.isBlank())
+                .map(s -> s.toLowerCase(Locale.ROOT))
+                .orElse("admin");
 
         bootstrapPort.bootstrapClientStoreAndCleanSeed(
                 edgeStoreId,
