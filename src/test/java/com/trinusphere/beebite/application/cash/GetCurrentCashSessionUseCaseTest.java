@@ -126,3 +126,4 @@ class GetCurrentCashSessionUseCaseTest {
         verify(sessionRepository, never()).findByStoreIdAndStatus(any(), any());
     }
 }
+

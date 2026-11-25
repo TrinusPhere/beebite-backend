@@ -42,6 +42,7 @@ import java.util.UUID;
 public class PanacheEdgeOutboxBackfillAdapter implements EdgeOutboxBackfillPort {
 
     private static final Logger LOG = Logger.getLogger(PanacheEdgeOutboxBackfillAdapter.class);
+    private static final int BACKFILL_ORDER_WINDOW_DAYS = 30;
 
     @Inject
     StoreRepository storeRepository;
@@ -112,7 +113,9 @@ public class PanacheEdgeOutboxBackfillAdapter implements EdgeOutboxBackfillPort 
             }
         }
 
-        for (Order order : orderRepository.findAllByStoreId(storeId, 0, 500).content()) {
+        java.time.LocalDateTime backfillStart = java.time.LocalDateTime.now().minusDays(BACKFILL_ORDER_WINDOW_DAYS);
+        java.time.LocalDateTime backfillEnd = java.time.LocalDateTime.now().plusDays(1);
+        for (Order order : orderRepository.findByStoreIdAndDateRange(storeId, backfillStart, backfillEnd)) {
             if (order.getId() == null) {
                 continue;
             }

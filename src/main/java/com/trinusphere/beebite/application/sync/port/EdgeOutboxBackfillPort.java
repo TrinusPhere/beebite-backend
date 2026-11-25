@@ -6,3 +6,4 @@ public interface EdgeOutboxBackfillPort {
 
     int backfillMissingEvents(UUID storeId);
 }
+
