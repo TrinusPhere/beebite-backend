@@ -66,7 +66,7 @@ public class ProductionAdminSeedGuard {
             } else {
                 admin.deactivate();
                 userRepository.save(admin);
-                LOG.warn("[SECURITY-GUARD] Usuário seed 'admin' estava com a senha padrão pública (admin123) em produção e foi DESATIVADO. Defina BITEFLOW_INITIAL_ADMIN_PASSWORD para ativá-lo com uma senha forte.");
+                LOG.warn("[SECURITY-GUARD] Usuário seed 'admin' estava com a senha padrão pública (admin123) em produção e foi DESATIVADO. Defina BEEBITE_INITIAL_ADMIN_PASSWORD para ativá-lo com uma senha forte.");
             }
         });
     }

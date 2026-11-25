@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════════
 # docker-compose.edge.yml — Unidade Local Offline-First (Balcão / PDV) — BeeBite
 # - Funciona 100% sem internet na rede local (http://localhost ou IP da máquina)
-# - Quando BITEFLOW_SYNC_MODE=EDGE, sincroniza automaticamente a cada 15s
+# - Quando BEEBITE_SYNC_MODE=EDGE, sincroniza automaticamente a cada 15s
 #   com a Nuvem Central (https://api.trinusphere.com)
 # - Atualiza sozinho de madrugada às 04:00 AM via Watchtower
 # ═══════════════════════════════════════════════════════════════════════════
@@ -38,17 +38,15 @@ services:
       DB_NAME: beebite_edge
       DB_USER: beebite
       DB_PASSWORD: ${EDGE_DB_PASSWORD}
-      BITEFLOW_COOKIE_SECURE: "false"
-      BITEFLOW_COOKIE_SAME_SITE: Lax
-      BITEFLOW_ENFORCE_PROD_GUARDS: "true"
-      BITEFLOW_SECURITY_INITIAL_ADMIN_PASSWORD: ${EDGE_INITIAL_ADMIN_PASSWORD:?Defina EDGE_INITIAL_ADMIN_PASSWORD no arquivo .env}
-      BITEFLOW_INITIAL_ADMIN_PASSWORD: ${EDGE_INITIAL_ADMIN_PASSWORD}
-      BEEBITE_INITIAL_ADMIN_PASSWORD: ${EDGE_INITIAL_ADMIN_PASSWORD}
-      BITEFLOW_IFOOD_ENABLED: "false"
-      BITEFLOW_SYNC_MODE: ${BITEFLOW_SYNC_MODE:-EDGE}
-      BITEFLOW_CLOUD_SYNC_URL: ${CLOUD_SYNC_URL:-https://api.trinusphere.com}
-      BITEFLOW_EDGE_DEVICE_TOKEN: ${EDGE_DEVICE_TOKEN:?Defina EDGE_DEVICE_TOKEN no arquivo .env}
-      BITEFLOW_EDGE_SYNC_INTERVAL: 15s
+      BEEBITE_COOKIE_SECURE: "false"
+      BEEBITE_COOKIE_SAME_SITE: Lax
+      BEEBITE_ENFORCE_PROD_GUARDS: "true"
+      BEEBITE_INITIAL_ADMIN_PASSWORD: ${EDGE_INITIAL_ADMIN_PASSWORD:?Defina EDGE_INITIAL_ADMIN_PASSWORD no arquivo .env}
+      BEEBITE_IFOOD_ENABLED: "false"
+      BEEBITE_SYNC_MODE: ${BEEBITE_SYNC_MODE:-EDGE}
+      BEEBITE_CLOUD_SYNC_URL: ${CLOUD_SYNC_URL:-https://api.trinusphere.com}
+      BEEBITE_EDGE_DEVICE_TOKEN: ${EDGE_DEVICE_TOKEN:?Defina EDGE_DEVICE_TOKEN no arquivo .env}
+      BEEBITE_EDGE_SYNC_INTERVAL: 15s
     ports:
       - "8080:8080"
 

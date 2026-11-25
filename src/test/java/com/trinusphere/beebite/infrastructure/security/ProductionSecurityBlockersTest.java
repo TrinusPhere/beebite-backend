@@ -13,6 +13,9 @@ import com.trinusphere.beebite.infrastructure.messaging.IfoodOrderSubscriber;
 import com.trinusphere.beebite.infrastructure.messaging.PubSubBiteflowEventPublisher;
 import com.trinusphere.beebite.infrastructure.messaging.PubSubCatalogEventPublisher;
 import com.trinusphere.beebite.presentation.rest.AuthResource;
+import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -25,6 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -145,6 +149,59 @@ class ProductionSecurityBlockersTest {
         assertEquals("$2a$10$newStrongHashValue", seededAdmin.getPasswordHash());
         assertTrue(seededAdmin.isActive());
         verify(userRepository).save(seededAdmin);
+    }
+
+    @Test
+    @DisplayName("Bloqueador #5: application.properties deve aceitar variáveis BEEBITE_* com fallback seguro para BITEFLOW_*")
+    void applicationPropertiesShouldSupportBeebiteEnvVarsWithLegacyBiteflowFallback() throws Exception {
+        URL propsUrl = Thread.currentThread().getContextClassLoader().getResource("application.properties");
+        assertNotNull(propsUrl, "application.properties deve existir no classpath");
+
+        SmallRyeConfig beebiteConfig = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(
+                        new PropertiesConfigSource(propsUrl),
+                        new PropertiesConfigSource(Map.of(
+                                "BEEBITE_SYNC_MODE", "EDGE",
+                                "BEEBITE_COOKIE_SECURE", "false",
+                                "BEEBITE_EDGE_DEVICE_TOKEN", "edge-tok-123",
+                                "BEEBITE_CLOUD_SYNC_URL", "https://api.trinusphere.com",
+                                "BEEBITE_INITIAL_ADMIN_PASSWORD", "SenhaForte2026!"
+                        ), "beebite-env", 500)
+                )
+                .build();
+
+        assertEquals("EDGE", beebiteConfig.getValue("biteflow.sync.mode", String.class));
+        assertFalse(beebiteConfig.getValue("biteflow.auth.cookie.secure", Boolean.class));
+        assertEquals("edge-tok-123", beebiteConfig.getValue("biteflow.sync.edge-device-token", String.class));
+        assertEquals("https://api.trinusphere.com", beebiteConfig.getValue("biteflow.sync.cloud-url", String.class));
+        assertEquals("SenhaForte2026!", beebiteConfig.getValue("biteflow.security.initial-admin-password", String.class));
+
+        SmallRyeConfig legacyConfig = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(
+                        new PropertiesConfigSource(propsUrl),
+                        new PropertiesConfigSource(Map.of(
+                                "BITEFLOW_SYNC_MODE", "EDGE",
+                                "BITEFLOW_COOKIE_SECURE", "false",
+                                "BITEFLOW_EDGE_DEVICE_TOKEN", "legacy-tok-999"
+                        ), "legacy-env", 500)
+                )
+                .build();
+
+        assertEquals("EDGE", legacyConfig.getValue("biteflow.sync.mode", String.class));
+        assertFalse(legacyConfig.getValue("biteflow.auth.cookie.secure", Boolean.class));
+        assertEquals("legacy-tok-999", legacyConfig.getValue("biteflow.sync.edge-device-token", String.class));
+
+        SmallRyeConfig defaultConfig = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .withSources(new PropertiesConfigSource(propsUrl))
+                .build();
+
+        assertEquals("CLOUD", defaultConfig.getValue("biteflow.sync.mode", String.class));
+        assertTrue(defaultConfig.getValue("biteflow.auth.cookie.secure", Boolean.class));
+        assertEquals("https://api.trinusphere.com", defaultConfig.getValue("biteflow.sync.cloud-url", String.class));
+        assertTrue(defaultConfig.getOptionalValue("biteflow.security.initial-admin-password", String.class).isEmpty());
     }
 }
 
