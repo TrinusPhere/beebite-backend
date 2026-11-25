@@ -26,7 +26,7 @@ public class HttpEdgeCloudSyncClient implements EdgeCloudSyncClient {
     @Inject
     public HttpEdgeCloudSyncClient(
             ObjectMapper objectMapper,
-            @ConfigProperty(name = "biteflow.sync.cloud-url", defaultValue = "https://api.chefsburguer.com.br") String cloudBaseUrl) {
+            @ConfigProperty(name = "biteflow.sync.cloud-url", defaultValue = "https://api.trinusphere.com") String cloudBaseUrl) {
         this.objectMapper = objectMapper;
         this.cloudBaseUrl = cloudBaseUrl != null ? cloudBaseUrl.replaceAll("/+$", "") : "";
         this.httpClient = HttpClient.newBuilder()

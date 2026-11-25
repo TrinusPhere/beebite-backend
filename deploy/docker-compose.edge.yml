@@ -1,32 +1,33 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# docker-compose.edge.yml — Unidade Local Offline-First (Balcão / PDV)
-# - Fase 1 (Só Loja Local): BITEFLOW_SYNC_MODE=STANDALONE (100% sem nuvem/internet)
-# - Fase 2 (Com Nuvem):     BITEFLOW_SYNC_MODE=EDGE (sincroniza Outbox a cada 15s)
+# docker-compose.edge.yml — Unidade Local Offline-First (Balcão / PDV) — BeeBite
+# - Funciona 100% sem internet na rede local (http://localhost ou IP da máquina)
+# - Quando BITEFLOW_SYNC_MODE=EDGE, sincroniza automaticamente a cada 15s
+#   com a Nuvem Central (https://api.trinusphere.com)
 # - Atualiza sozinho de madrugada às 04:00 AM via Watchtower
 # ═══════════════════════════════════════════════════════════════════════════
 services:
   postgres-local:
     image: postgres:17-alpine
-    container_name: biteflow-postgres-edge
+    container_name: beebite-postgres-edge
     restart: unless-stopped
     environment:
-      POSTGRES_DB: biteflow_edge
-      POSTGRES_USER: biteflow
+      POSTGRES_DB: beebite_edge
+      POSTGRES_USER: beebite
       POSTGRES_PASSWORD: ${EDGE_DB_PASSWORD:?Defina EDGE_DB_PASSWORD no arquivo .env}
     volumes:
       - pgdata_edge:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U biteflow -d biteflow_edge"]
+      test: ["CMD-SHELL", "pg_isready -U beebite -d beebite_edge"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  biteflow-edge-api:
-    image: ${GCP_REGION:-us-east1}-docker.pkg.dev/${GCP_PROJECT_ID:-beebite-prd}/beebite-repo/beebite-backend:${APP_VERSION:-latest}
+  beebite-edge-api:
+    image: ${GCP_REGION:-us-east1}-docker.pkg.dev/${GCP_PROJECT_ID:-trinusphere-beebite-prd}/beebite-repo/beebite-backend:${APP_VERSION:-latest}
     build:
       context: ./beebite-backend
       dockerfile: src/main/docker/Dockerfile.jvm
-    container_name: biteflow-edge-api
+    container_name: beebite-edge-api
     restart: unless-stopped
     depends_on:
       postgres-local:
@@ -34,36 +35,38 @@ services:
     environment:
       QUARKUS_PROFILE: prod
       DB_HOST: postgres-local
-      DB_NAME: biteflow_edge
-      DB_USER: biteflow
+      DB_NAME: beebite_edge
+      DB_USER: beebite
       DB_PASSWORD: ${EDGE_DB_PASSWORD}
       BITEFLOW_COOKIE_SECURE: "false"
       BITEFLOW_COOKIE_SAME_SITE: Lax
       BITEFLOW_ENFORCE_PROD_GUARDS: "true"
-      BITEFLOW_INITIAL_ADMIN_PASSWORD: ${EDGE_INITIAL_ADMIN_PASSWORD:?Defina EDGE_INITIAL_ADMIN_PASSWORD no arquivo .env}
+      BITEFLOW_SECURITY_INITIAL_ADMIN_PASSWORD: ${EDGE_INITIAL_ADMIN_PASSWORD:?Defina EDGE_INITIAL_ADMIN_PASSWORD no arquivo .env}
+      BITEFLOW_INITIAL_ADMIN_PASSWORD: ${EDGE_INITIAL_ADMIN_PASSWORD}
+      BEEBITE_INITIAL_ADMIN_PASSWORD: ${EDGE_INITIAL_ADMIN_PASSWORD}
       BITEFLOW_IFOOD_ENABLED: "false"
-      BITEFLOW_SYNC_MODE: ${BITEFLOW_SYNC_MODE:-STANDALONE}
-      BITEFLOW_CLOUD_SYNC_URL: ${CLOUD_SYNC_URL:-https://api.chefsburguer.com.br}
-      BITEFLOW_EDGE_DEVICE_TOKEN: ${EDGE_DEVICE_TOKEN:-}
+      BITEFLOW_SYNC_MODE: ${BITEFLOW_SYNC_MODE:-EDGE}
+      BITEFLOW_CLOUD_SYNC_URL: ${CLOUD_SYNC_URL:-https://api.trinusphere.com}
+      BITEFLOW_EDGE_DEVICE_TOKEN: ${EDGE_DEVICE_TOKEN:?Defina EDGE_DEVICE_TOKEN no arquivo .env}
       BITEFLOW_EDGE_SYNC_INTERVAL: 15s
     ports:
       - "8080:8080"
 
-  biteflow-edge-front:
-    image: ${GCP_REGION:-us-east1}-docker.pkg.dev/${GCP_PROJECT_ID:-beebite-prd}/beebite-repo/biteflow-front:${APP_VERSION:-latest}
+  beebite-edge-front:
+    image: ${GCP_REGION:-us-east1}-docker.pkg.dev/${GCP_PROJECT_ID:-trinusphere-beebite-prd}/beebite-repo/beebite-front:${APP_VERSION:-latest}
     build:
-      context: ./biteflow-front
+      context: ./beebite-front
       dockerfile: Dockerfile
-    container_name: biteflow-edge-front
+    container_name: beebite-edge-front
     restart: unless-stopped
     depends_on:
-      - biteflow-edge-api
+      - beebite-edge-api
     ports:
       - "80:80"
 
   watchtower:
     image: containrrr/watchtower:latest
-    container_name: biteflow-watchtower
+    container_name: beebite-watchtower
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

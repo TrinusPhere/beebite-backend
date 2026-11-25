@@ -33,7 +33,7 @@ services:
           memory: 300M
 
   beebite-backend:
-    image: ghcr.io/trinusphere/beebite-backend:${APP_VERSION:-latest}
+    image: us-east1-docker.pkg.dev/${GCP_PROJECT_ID:-trinusphere-beebite-prd}/beebite-repo/beebite-backend:${APP_VERSION:-latest}
     container_name: beebite-backend-cloud
     restart: unless-stopped
     depends_on:
@@ -51,9 +51,11 @@ services:
       BEEBITE_COOKIE_SAME_SITE: Lax
       BEEBITE_ENFORCE_PROD_GUARDS: "true"
       BEEBITE_INITIAL_ADMIN_PASSWORD: ${BEEBITE_INITIAL_ADMIN_PASSWORD}
+      BITEFLOW_INITIAL_ADMIN_PASSWORD: ${BEEBITE_INITIAL_ADMIN_PASSWORD}
+      BITEFLOW_SECURITY_INITIAL_ADMIN_PASSWORD: ${BEEBITE_INITIAL_ADMIN_PASSWORD}
       BEEBITE_SYNC_MODE: CLOUD
       BEEBITE_IFOOD_ENABLED: "true"
-      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-beebite-prd}
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-trinusphere-beebite-prd}
     volumes:
       - ./secrets:/secrets:ro
     deploy:
@@ -62,7 +64,7 @@ services:
           memory: 192M
 
   beebite-ifood:
-    image: ghcr.io/trinusphere/beebite-ifood-service:${APP_VERSION:-latest}
+    image: us-east1-docker.pkg.dev/${GCP_PROJECT_ID:-trinusphere-beebite-prd}/beebite-repo/beebite-ifood-service:${APP_VERSION:-latest}
     container_name: beebite-ifood-cloud
     restart: unless-stopped
     depends_on:
@@ -76,9 +78,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       IFOOD_ENCRYPTION_KEY: ${IFOOD_ENCRYPTION_KEY:?Defina IFOOD_ENCRYPTION_KEY no arquivo .env}
       BEEBITE_ENFORCE_PROD_KEY: "true"
-      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-beebite-prd}
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID:-trinusphere-beebite-prd}
       BEEBITE_IMAGE_STORAGE_DIR: /data/images/catalog
-      BEEBITE_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN:-api.trinusphere.com.br}/api/images
+      BEEBITE_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN:-api.trinusphere.com}/api/images
       BEEBITE_API_BASE_URL: http://beebite-backend:8080
     volumes:
       - ./uploads/images:/data/images/catalog
@@ -95,7 +97,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      API_DOMAIN: ${API_DOMAIN:-api.trinusphere.com.br}
+      API_DOMAIN: ${API_DOMAIN:-api.trinusphere.com}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
