@@ -166,7 +166,9 @@ class ProductionSecurityBlockersTest {
                                 "BEEBITE_COOKIE_SECURE", "false",
                                 "BEEBITE_EDGE_DEVICE_TOKEN", "edge-tok-123",
                                 "BEEBITE_CLOUD_SYNC_URL", "https://api.trinusphere.com",
-                                "BEEBITE_INITIAL_ADMIN_PASSWORD", "SenhaForte2026!"
+                                "BEEBITE_INITIAL_ADMIN_PASSWORD", "SenhaForte2026!",
+                                "BEEBITE_EDGE_STORE_ID", "11111111-2222-3333-4444-555555555555",
+                                "BEEBITE_EDGE_STORE_NAME", "Chefs Burguer - Balcão"
                         ), "beebite-env", 500)
                 )
                 .build();
@@ -176,6 +178,8 @@ class ProductionSecurityBlockersTest {
         assertEquals("edge-tok-123", beebiteConfig.getValue("biteflow.sync.edge-device-token", String.class));
         assertEquals("https://api.trinusphere.com", beebiteConfig.getValue("biteflow.sync.cloud-url", String.class));
         assertEquals("SenhaForte2026!", beebiteConfig.getValue("biteflow.security.initial-admin-password", String.class));
+        assertEquals("11111111-2222-3333-4444-555555555555", beebiteConfig.getValue("biteflow.edge.store-id", String.class));
+        assertEquals("Chefs Burguer - Balcão", beebiteConfig.getValue("biteflow.edge.store-name", String.class));
 
         SmallRyeConfig legacyConfig = new SmallRyeConfigBuilder()
                 .addDefaultInterceptors()
