@@ -31,7 +31,8 @@ public class BulkApplyCategoryModifiersUseCase {
 
     public void execute(UUID storeId, UUID categoryId) {
         tx.execute(() -> {
-            ProductCategory category = categoryRepository.findById(categoryId)
+            var inStore = categoryRepository.findByIdInStore(categoryId, storeId);
+            ProductCategory category = (inStore.isPresent() ? inStore : categoryRepository.findById(categoryId))
                     .orElseThrow(() -> new CategoryNotFoundException(categoryId.toString()));
             StoreGuard.enforce(category, storeId);
 

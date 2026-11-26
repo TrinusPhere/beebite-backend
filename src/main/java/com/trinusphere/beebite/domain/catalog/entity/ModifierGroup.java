@@ -1,12 +1,15 @@
 package com.trinusphere.beebite.domain.catalog.entity;
 
-import com.trinusphere.beebite.domain.shared.StoreGuard;
-import com.trinusphere.beebite.domain.catalog.valueobject.ModifierType;
 import com.trinusphere.beebite.domain.catalog.valueobject.ModifierGroupSemanticType;
+import com.trinusphere.beebite.domain.catalog.valueobject.ModifierType;
+import com.trinusphere.beebite.domain.shared.CatalogGuard;
+import com.trinusphere.beebite.domain.shared.StoreGuard;
+
 import java.util.*;
 
-public class ModifierGroup implements StoreGuard.StoreScoped {
+public class ModifierGroup implements StoreGuard.StoreScoped, CatalogGuard.CatalogScoped {
     private UUID id;
+    private UUID catalogId;
     private final UUID storeId;
     private String name;
     private ModifierType type;
@@ -19,10 +22,16 @@ public class ModifierGroup implements StoreGuard.StoreScoped {
 
     public ModifierGroup(UUID storeId, String name, ModifierType type, boolean required, int min, int max,
             String icon, ModifierGroupSemanticType semanticType) {
-        if (storeId == null)
+        this(storeId, storeId, name, type, required, min, max, icon, semanticType);
+    }
+
+    private ModifierGroup(UUID catalogId, UUID storeId, String name, ModifierType type, boolean required, int min, int max,
+            String icon, ModifierGroupSemanticType semanticType) {
+        if (storeId == null && catalogId == null)
             throw new IllegalArgumentException("storeId é obrigatório.");
         validate(name, min, max);
-        this.storeId = storeId;
+        this.catalogId = catalogId != null ? catalogId : storeId;
+        this.storeId = storeId != null ? storeId : catalogId;
         this.name = name;
         this.type = type != null ? type : ModifierType.RADIO;
         this.required = required;
@@ -35,10 +44,22 @@ public class ModifierGroup implements StoreGuard.StoreScoped {
 
     public static ModifierGroup reconstitute(UUID id, UUID storeId, String name, ModifierType type, boolean required,
             int min, int max, String icon, ModifierGroupSemanticType semanticType, List<ModifierOption> options) {
-        ModifierGroup g = new ModifierGroup(storeId, name, type, required, min, max, icon, semanticType);
+        return reconstituteForCatalog(id, storeId, storeId, name, type, required, min, max, icon, semanticType, options);
+    }
+
+    public static ModifierGroup reconstituteForCatalog(UUID id, UUID catalogId, UUID contextStoreId, String name,
+            ModifierType type, boolean required, int min, int max, String icon, ModifierGroupSemanticType semanticType,
+            List<ModifierOption> options) {
+        ModifierGroup g = new ModifierGroup(catalogId, contextStoreId, name, type, required, min, max, icon, semanticType);
         g.id = id;
         g.replaceOptions(options);
         return g;
+    }
+
+    public void assignCatalog(UUID catalogId) {
+        if (catalogId != null) {
+            this.catalogId = catalogId;
+        }
     }
 
     private static void validate(String name, int min, int max) {
@@ -48,7 +69,8 @@ public class ModifierGroup implements StoreGuard.StoreScoped {
             throw new IllegalArgumentException("minSelections não pode ser maior que maxSelections.");
     }
 
-    public void update(String name, ModifierType type, Boolean required, Integer min, Integer max, String icon, ModifierGroupSemanticType semanticType) {
+    public void update(String name, ModifierType type, Boolean required, Integer min, Integer max, String icon,
+            ModifierGroupSemanticType semanticType) {
         int nextMin = min != null ? min : minSelections, nextMax = max != null ? max : maxSelections;
         validate(name != null ? name : this.name, nextMin, nextMax);
         if (name != null && !name.isBlank())
@@ -73,6 +95,12 @@ public class ModifierGroup implements StoreGuard.StoreScoped {
         return id;
     }
 
+    @Override
+    public UUID getCatalogId() {
+        return catalogId;
+    }
+
+    @Override
     public UUID getStoreId() {
         return storeId;
     }

@@ -38,7 +38,8 @@ public class CalculateProductCmvUseCase {
     }
 
     public ProductCmvResponse execute(UUID storeId, UUID productId) {
-        Product product = productRepository.findById(productId)
+        var inStore = productRepository.findByIdInStore(productId, storeId);
+        Product product = (inStore.isPresent() ? inStore : productRepository.findById(productId))
                 .orElseThrow(() -> new ProductNotFoundException(productId.toString()));
         StoreGuard.enforce(product, storeId);
 

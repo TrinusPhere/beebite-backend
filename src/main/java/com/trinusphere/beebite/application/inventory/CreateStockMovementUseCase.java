@@ -31,7 +31,8 @@ public class CreateStockMovementUseCase {
     public StockMovementResponse execute(UUID storeId, StockMovementRequest request) {
         return tx.execute(() -> {
             UUID ingredientId = UUID.fromString(request.ingredientId());
-            var ingredient = ingredients.findById(ingredientId)
+            var inStore = ingredients.findByIdInStore(ingredientId, storeId);
+            var ingredient = (inStore.isPresent() ? inStore : ingredients.findById(ingredientId))
                     .orElseThrow(() -> new IngredientNotFoundException(request.ingredientId()));
             StoreGuard.enforce(ingredient, storeId);
             var type = StockMovementType.valueOf(request.type().toUpperCase());

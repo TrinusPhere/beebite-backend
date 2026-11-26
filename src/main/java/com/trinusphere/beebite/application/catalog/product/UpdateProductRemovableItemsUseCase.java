@@ -20,7 +20,9 @@ public class UpdateProductRemovableItemsUseCase {
     }
 
     public ProductResponse execute(UUID storeId, UUID id, List<String> ingredientIds) {
-        var p = repo.findById(id).orElseThrow(() -> new ProductNotFoundException(id.toString()));
+        var inStore = repo.findByIdInStore(id, storeId);
+        var p = (inStore.isPresent() ? inStore : repo.findById(id))
+                .orElseThrow(() -> new ProductNotFoundException(id.toString()));
         StoreGuard.enforce(p, storeId);
         p.replaceRemovableItems(ingredientIds != null
                 ? ingredientIds.stream().filter(x -> x != null && !x.isBlank()).map(UUID::fromString).toList()

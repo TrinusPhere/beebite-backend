@@ -5,13 +5,16 @@ import com.trinusphere.beebite.domain.catalog.valueobject.ChannelPrice;
 import com.trinusphere.beebite.domain.catalog.valueobject.ProductStatus;
 import com.trinusphere.beebite.domain.catalog.valueobject.ProductType;
 import com.trinusphere.beebite.domain.catalog.valueobject.Unit;
+import com.trinusphere.beebite.domain.shared.CatalogGuard;
 import com.trinusphere.beebite.domain.shared.StoreGuard;
+
 import java.math.BigDecimal;
 import java.util.*;
 
-public class Product implements StoreGuard.StoreScoped {
+public class Product implements StoreGuard.StoreScoped, CatalogGuard.CatalogScoped {
     private UUID id;
     private Long version;
+    private UUID catalogId;
     private final UUID storeId;
     private String name;
     private UUID categoryId;
@@ -21,12 +24,14 @@ public class Product implements StoreGuard.StoreScoped {
     private String imageUrl;
     private int stock;
     private ProductStatus status;
+    private ProductStatus localStatus;
     private String externalCode;
     private CatalogItemType catalogItemType;
     private List<ChannelPrice> channelPrices;
     private ProductType productType;
     private boolean trackStock;
     private UUID productionSectorId;
+    private String defaultSectorCode;
     private Unit saleUnit;
     private boolean availableDigitalMenu;
     private boolean availablePdv;
@@ -35,24 +40,38 @@ public class Product implements StoreGuard.StoreScoped {
     private List<UUID> modifierGroupIds;
 
     public Product(UUID storeId, String name, UUID categoryId, BigDecimal price) {
-        if (storeId == null)
+        this(storeId, storeId, name, categoryId, price);
+    }
+
+    private Product(UUID catalogId, UUID storeId, String name, UUID categoryId, BigDecimal price) {
+        if (storeId == null && catalogId == null)
             throw new IllegalArgumentException("storeId é obrigatório.");
         if (name == null || name.isBlank())
             throw new IllegalArgumentException("name é obrigatório.");
-        this.storeId = storeId;
+        this.catalogId = catalogId != null ? catalogId : storeId;
+        this.storeId = storeId != null ? storeId : catalogId;
         this.name = name;
         this.categoryId = categoryId;
         this.price = price != null ? price : BigDecimal.ZERO;
-        status = ProductStatus.AVAILABLE;
-        catalogItemType = CatalogItemType.DEFAULT;
-        channelPrices = new ArrayList<>();
-        productType = ProductType.PRODUCED;
-        saleUnit = Unit.UN;
-        availableDigitalMenu = true;
-        availablePdv = true;
-        technicalSheet = new ArrayList<>();
-        removableItemIds = new ArrayList<>();
-        modifierGroupIds = new ArrayList<>();
+        this.status = ProductStatus.AVAILABLE;
+        this.localStatus = ProductStatus.AVAILABLE;
+        this.catalogItemType = CatalogItemType.DEFAULT;
+        this.channelPrices = new ArrayList<>();
+        this.productType = ProductType.PRODUCED;
+        this.defaultSectorCode = "KITCHEN";
+        this.saleUnit = Unit.UN;
+        this.availableDigitalMenu = true;
+        this.availablePdv = true;
+        this.technicalSheet = new ArrayList<>();
+        this.removableItemIds = new ArrayList<>();
+        this.modifierGroupIds = new ArrayList<>();
+    }
+
+    public static Product forCatalog(UUID catalogId, UUID contextStoreId, String name, UUID categoryId, BigDecimal price) {
+        if (catalogId == null) {
+            throw new IllegalArgumentException("catalogId é obrigatório.");
+        }
+        return new Product(catalogId, contextStoreId != null ? contextStoreId : catalogId, name, categoryId, price);
     }
 
     public static Product reconstitute(UUID id, Long version, UUID storeId, String name, UUID categoryId,
@@ -61,20 +80,37 @@ public class Product implements StoreGuard.StoreScoped {
             boolean trackStock, UUID productionSectorId, Unit saleUnit, boolean availableDigitalMenu,
             boolean availablePdv, List<TechnicalSheetItem> technicalSheet, List<UUID> removableItemIds,
             List<UUID> modifierGroupIds) {
-        Product p = new Product(storeId, name, categoryId, price);
+        return reconstituteForCatalog(
+                id, version, storeId, storeId, name, categoryId, description, price, estimatedCost, imageUrl,
+                stock, status, ProductStatus.AVAILABLE, externalCode, catalogItemType, channelPrices, productType,
+                trackStock, productionSectorId, "KITCHEN", saleUnit, availableDigitalMenu, availablePdv,
+                technicalSheet, removableItemIds, modifierGroupIds
+        );
+    }
+
+    public static Product reconstituteForCatalog(UUID id, Long version, UUID catalogId, UUID contextStoreId,
+            String name, UUID categoryId, String description, BigDecimal price, BigDecimal estimatedCost,
+            String imageUrl, int stock, ProductStatus globalStatus, ProductStatus localStatus, String externalCode,
+            CatalogItemType catalogItemType, List<ChannelPrice> channelPrices, ProductType productType,
+            boolean trackStock, UUID productionSectorId, String defaultSectorCode, Unit saleUnit,
+            boolean availableDigitalMenu, boolean availablePdv, List<TechnicalSheetItem> technicalSheet,
+            List<UUID> removableItemIds, List<UUID> modifierGroupIds) {
+        Product p = new Product(catalogId, contextStoreId, name, categoryId, price);
         p.id = id;
         p.version = version;
         p.description = description;
         p.estimatedCost = estimatedCost;
         p.imageUrl = imageUrl;
-        p.initializeStock(stock);
-        p.status = status != null ? status : ProductStatus.AVAILABLE;
+        p.initializeStock(Math.max(0, stock));
+        p.status = globalStatus != null ? globalStatus : ProductStatus.AVAILABLE;
+        p.localStatus = localStatus != null ? localStatus : ProductStatus.AVAILABLE;
         p.externalCode = externalCode;
         p.catalogItemType = catalogItemType != null ? catalogItemType : CatalogItemType.DEFAULT;
         p.channelPrices = channelPrices != null ? new ArrayList<>(channelPrices) : new ArrayList<>();
         p.productType = productType != null ? productType : ProductType.PRODUCED;
         p.trackStock = trackStock;
         p.productionSectorId = productionSectorId;
+        p.defaultSectorCode = (defaultSectorCode != null && !defaultSectorCode.isBlank()) ? defaultSectorCode : "KITCHEN";
         p.saleUnit = saleUnit != null ? saleUnit : Unit.UN;
         p.availableDigitalMenu = availableDigitalMenu;
         p.availablePdv = availablePdv;
@@ -82,6 +118,18 @@ public class Product implements StoreGuard.StoreScoped {
         p.replaceRemovableItems(removableItemIds);
         p.replaceModifierGroups(modifierGroupIds);
         return p;
+    }
+
+    public void assignCatalog(UUID catalogId) {
+        if (catalogId != null) {
+            this.catalogId = catalogId;
+        }
+    }
+
+    public void defineDefaultSectorCode(String sectorCode) {
+        if (sectorCode != null && !sectorCode.isBlank()) {
+            this.defaultSectorCode = sectorCode.trim().toUpperCase(Locale.ROOT);
+        }
     }
 
     public void updateBasicInfo(String name, UUID categoryId, String description, BigDecimal price, BigDecimal estimatedCost, String imageUrl) {
@@ -106,7 +154,7 @@ public class Product implements StoreGuard.StoreScoped {
         this.externalCode = externalCode;
         this.catalogItemType = catalogItemType != null ? catalogItemType : CatalogItemType.DEFAULT;
     }
-    
+
     public void replaceChannelPrices(List<ChannelPrice> channelPrices) {
         this.channelPrices = channelPrices != null ? new ArrayList<>(channelPrices) : new ArrayList<>();
     }
@@ -115,6 +163,36 @@ public class Product implements StoreGuard.StoreScoped {
         this.status = status != null ? status : ProductStatus.AVAILABLE;
         this.availableDigitalMenu = digital;
         this.availablePdv = pdv;
+    }
+
+    public void configureLocalStoreStatus(ProductStatus localStatus) {
+        this.localStatus = localStatus != null ? localStatus : ProductStatus.AVAILABLE;
+    }
+
+    public ProductStatus getGlobalStatus() {
+        return status;
+    }
+
+    public ProductStatus getLocalStatus() {
+        return localStatus;
+    }
+
+    public ProductStatus getEffectiveStatus() {
+        if (status == ProductStatus.UNAVAILABLE || localStatus == ProductStatus.UNAVAILABLE) {
+            return ProductStatus.UNAVAILABLE;
+        }
+        return ProductStatus.AVAILABLE;
+    }
+
+    public BigDecimal resolveEffectiveIfoodPrice() {
+        if (channelPrices != null) {
+            for (ChannelPrice cp : channelPrices) {
+                if (cp != null && "IFOOD".equalsIgnoreCase(cp.getChannel()) && cp.getPrice() != null) {
+                    return cp.getPrice();
+                }
+            }
+        }
+        return price != null ? price : BigDecimal.ZERO;
     }
 
     public void initializeStock(int value) {
@@ -173,6 +251,12 @@ public class Product implements StoreGuard.StoreScoped {
         return version;
     }
 
+    @Override
+    public UUID getCatalogId() {
+        return catalogId;
+    }
+
+    @Override
     public UUID getStoreId() {
         return storeId;
     }
@@ -206,9 +290,9 @@ public class Product implements StoreGuard.StoreScoped {
     }
 
     public ProductStatus getStatus() {
-        return status;
+        return getEffectiveStatus();
     }
-    
+
     public String getExternalCode() {
         return externalCode;
     }
@@ -231,6 +315,10 @@ public class Product implements StoreGuard.StoreScoped {
 
     public UUID getProductionSectorId() {
         return productionSectorId;
+    }
+
+    public String getDefaultSectorCode() {
+        return defaultSectorCode;
     }
 
     public Unit getSaleUnit() {

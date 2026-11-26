@@ -1,6 +1,5 @@
 package com.trinusphere.beebite.infrastructure.persistence.panache.entity;
 
-import java.time.LocalDateTime;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,9 +7,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.UUID;
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "product")
@@ -24,8 +24,8 @@ public class ProductEntity extends PanacheEntityBase {
     @Version
     public Long version;
 
-    @Column(name = "store_id", nullable = false)
-    public UUID storeId;
+    @Column(name = "catalog_id", nullable = false)
+    public UUID catalogId;
 
     @Column(nullable = false)
     public String name;
@@ -45,8 +45,6 @@ public class ProductEntity extends PanacheEntityBase {
     @Column(name = "image_url")
     public String imageUrl;
 
-    public int stock;
-
     @Column(name = "status", nullable = false)
     public String status;
 
@@ -62,8 +60,8 @@ public class ProductEntity extends PanacheEntityBase {
     @Column(name = "track_stock", nullable = false)
     public boolean trackStock;
 
-    @Column(name = "production_sector_id")
-    public UUID productionSectorId;
+    @Column(name = "default_sector_code", length = 50)
+    public String defaultSectorCode = "KITCHEN";
 
     @Column(name = "sale_unit", nullable = false)
     public String saleUnit;

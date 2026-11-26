@@ -2,6 +2,7 @@ package com.trinusphere.beebite.infrastructure.sync;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trinusphere.beebite.application.catalog.port.CatalogEventPublisher;
 import com.trinusphere.beebite.application.sync.port.EdgeSnapshotApplier;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -9,9 +10,12 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -27,15 +31,24 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
 
     private final EntityManager em;
     private final ObjectMapper objectMapper;
+    private final CatalogEventPublisher catalogEventPublisher;
 
     public PanacheEdgeSnapshotApplier() {
-        this(null, new ObjectMapper());
+        this(null, new ObjectMapper(), null);
+    }
+
+    public PanacheEdgeSnapshotApplier(EntityManager em, ObjectMapper objectMapper) {
+        this(em, objectMapper, null);
     }
 
     @Inject
-    public PanacheEdgeSnapshotApplier(EntityManager em, ObjectMapper objectMapper) {
+    public PanacheEdgeSnapshotApplier(
+            EntityManager em,
+            ObjectMapper objectMapper,
+            CatalogEventPublisher catalogEventPublisher) {
         this.em = em;
         this.objectMapper = objectMapper;
+        this.catalogEventPublisher = catalogEventPublisher;
     }
 
     @Override
@@ -55,9 +68,421 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
             case "CASH_MOVEMENT_UPSERT" -> applyCashMovementUpsert(storeId, aggregateId, root);
             case "PAYMENT_UPSERT" -> applyPaymentUpsert(storeId, aggregateId, root);
             case "STORE_STATUS_UPSERT" -> applyStoreStatusUpsert(storeId, root);
+            case "CATALOG_CATEGORY_UPSERT" -> applyCatalogCategoryUpsert(storeId, aggregateId, root);
+            case "CATALOG_MODIFIER_GROUP_UPSERT" -> applyCatalogModifierGroupUpsert(storeId, aggregateId, root);
+            case "CATALOG_ADDITIONAL_UPSERT" -> applyCatalogAdditionalUpsert(storeId, aggregateId, root);
+            case "CATALOG_INGREDIENT_UPSERT" -> applyCatalogIngredientUpsert(storeId, aggregateId, root);
+            case "CATALOG_PRODUCT_UPSERT" -> applyCatalogProductUpsert(storeId, aggregateId, root);
             default -> {
                 // Eventos futuros desconhecidos são ignorados de forma segura
             }
+        }
+    }
+
+    private UUID resolveCloudCatalogId(UUID storeId, JsonNode root) {
+        UUID fromStore = querySingleUuid("SELECT catalog_id FROM store WHERE id = :storeId LIMIT 1", storeId);
+        if (fromStore != null) {
+            return fromStore;
+        }
+        UUID fromPayload = uuidOrNull(root, "catalogId");
+        return fromPayload != null ? fromPayload : storeId;
+    }
+
+    private void applyCatalogCategoryUpsert(UUID storeId, UUID aggregateId, JsonNode root) {
+        if (aggregateId == null) return;
+        UUID catalogId = resolveCloudCatalogId(storeId, root);
+        String name = textOrDefault(root, "name", "Categoria");
+        String status = textOrDefault(root, "status", "AVAILABLE");
+        int displayOrder = root.hasNonNull("displayOrder") ? root.get("displayOrder").asInt(0) : 0;
+
+        List<String> modIds = new ArrayList<>();
+        JsonNode modsNode = root.get("defaultModifierGroupIds");
+        if (modsNode != null && modsNode.isArray()) {
+            for (JsonNode n : modsNode) {
+                if (n != null && !n.asText().isBlank()) modIds.add(n.asText().trim());
+            }
+        }
+        String modCsv = modIds.isEmpty() ? null : String.join(",", modIds);
+        Timestamp updatedTs = parseTimestamp(textOrNull(root, "updatedAt"));
+        String deletedAt = textOrNull(root, "deletedAt");
+
+        em.createNativeQuery("""
+                INSERT INTO product_category (
+                    id, catalog_id, name, status, display_order, default_modifier_group_ids, created_at, updated_at, deleted_at
+                ) VALUES (
+                    :id, :catalogId, :name, :status, :displayOrder, NULLIF(:modCsv, ''), :updatedAt, :updatedAt, NULLIF(:deletedAt, '')::timestamp
+                )
+                ON CONFLICT (id) DO UPDATE SET
+                    catalog_id = EXCLUDED.catalog_id,
+                    name = EXCLUDED.name,
+                    status = EXCLUDED.status,
+                    display_order = EXCLUDED.display_order,
+                    default_modifier_group_ids = EXCLUDED.default_modifier_group_ids,
+                    updated_at = EXCLUDED.updated_at,
+                    deleted_at = EXCLUDED.deleted_at
+                WHERE product_category.updated_at <= EXCLUDED.updated_at
+                """)
+                .setParameter("id", aggregateId)
+                .setParameter("catalogId", catalogId)
+                .setParameter("name", name)
+                .setParameter("status", status)
+                .setParameter("displayOrder", displayOrder)
+                .setParameter("modCsv", emptyIfNull(modCsv))
+                .setParameter("updatedAt", updatedTs)
+                .setParameter("deletedAt", emptyIfNull(deletedAt))
+                .executeUpdate();
+    }
+
+    private void applyCatalogModifierGroupUpsert(UUID storeId, UUID aggregateId, JsonNode root) {
+        if (aggregateId == null) return;
+        UUID catalogId = resolveCloudCatalogId(storeId, root);
+        String name = textOrDefault(root, "name", "Complementos");
+        String type = textOrDefault(root, "type", "RADIO");
+        String semanticType = textOrNull(root, "semanticType");
+        boolean required = root.hasNonNull("required") && root.get("required").asBoolean(false);
+        int minSel = root.hasNonNull("minSelections") ? root.get("minSelections").asInt(0) : 0;
+        int maxSel = root.hasNonNull("maxSelections") ? root.get("maxSelections").asInt(1) : 1;
+        String icon = textOrNull(root, "icon");
+        Timestamp updatedTs = parseTimestamp(textOrNull(root, "updatedAt"));
+        String deletedAt = textOrNull(root, "deletedAt");
+
+        int updatedRows = em.createNativeQuery("""
+                INSERT INTO modifier_group (
+                    id, catalog_id, name, type, semantic_type, required, min_selections, max_selections, icon,
+                    created_at, updated_at, deleted_at
+                ) VALUES (
+                    :id, :catalogId, :name, :type, NULLIF(:semanticType, ''), :required, :minSel, :maxSel, NULLIF(:icon, ''),
+                    :updatedAt, :updatedAt, NULLIF(:deletedAt, '')::timestamp
+                )
+                ON CONFLICT (id) DO UPDATE SET
+                    catalog_id = EXCLUDED.catalog_id,
+                    name = EXCLUDED.name,
+                    type = EXCLUDED.type,
+                    semantic_type = EXCLUDED.semantic_type,
+                    required = EXCLUDED.required,
+                    min_selections = EXCLUDED.min_selections,
+                    max_selections = EXCLUDED.max_selections,
+                    icon = EXCLUDED.icon,
+                    updated_at = EXCLUDED.updated_at,
+                    deleted_at = EXCLUDED.deleted_at
+                WHERE modifier_group.updated_at <= EXCLUDED.updated_at
+                """)
+                .setParameter("id", aggregateId)
+                .setParameter("catalogId", catalogId)
+                .setParameter("name", name)
+                .setParameter("type", type)
+                .setParameter("semanticType", emptyIfNull(semanticType))
+                .setParameter("required", required)
+                .setParameter("minSel", minSel)
+                .setParameter("maxSel", maxSel)
+                .setParameter("icon", emptyIfNull(icon))
+                .setParameter("updatedAt", updatedTs)
+                .setParameter("deletedAt", emptyIfNull(deletedAt))
+                .executeUpdate();
+
+        JsonNode optsNode = root.get("options");
+        if (updatedRows > 0 && optsNode != null && optsNode.isArray()) {
+            em.createNativeQuery("DELETE FROM modifier_option WHERE modifier_group_id = :groupId")
+                    .setParameter("groupId", aggregateId)
+                    .executeUpdate();
+            for (JsonNode o : optsNode) {
+                UUID optId = uuidOrNull(o, "id");
+                if (optId == null) optId = UUID.randomUUID();
+                BigDecimal price = decimalOrDefault(o, "price", BigDecimal.ZERO);
+                int sortOrder = o.hasNonNull("sortOrder") ? o.get("sortOrder").asInt(0) : 0;
+                em.createNativeQuery("""
+                        INSERT INTO modifier_option (id, modifier_group_id, name, price, sort_order)
+                        VALUES (:id, :groupId, :name, :price::numeric, :sortOrder)
+                        ON CONFLICT (id) DO UPDATE SET
+                            name = EXCLUDED.name,
+                            price = EXCLUDED.price,
+                            sort_order = EXCLUDED.sort_order
+                        """)
+                        .setParameter("id", optId)
+                        .setParameter("groupId", aggregateId)
+                        .setParameter("name", textOrDefault(o, "name", "Opção"))
+                        .setParameter("price", price.toPlainString())
+                        .setParameter("sortOrder", sortOrder)
+                        .executeUpdate();
+            }
+        }
+    }
+
+    private void applyCatalogAdditionalUpsert(UUID storeId, UUID aggregateId, JsonNode root) {
+        if (aggregateId == null) return;
+        UUID catalogId = resolveCloudCatalogId(storeId, root);
+        BigDecimal price = decimalOrDefault(root, "price", BigDecimal.ZERO);
+        boolean active = !root.hasNonNull("active") || root.get("active").asBoolean(true);
+        Timestamp updatedTs = parseTimestamp(textOrNull(root, "updatedAt"));
+        String deletedAt = textOrNull(root, "deletedAt");
+
+        em.createNativeQuery("""
+                INSERT INTO additional (
+                    id, catalog_id, name, price, category, active, created_at, updated_at, deleted_at
+                ) VALUES (
+                    :id, :catalogId, :name, :price::numeric, NULLIF(:category, ''), :active, :updatedAt, :updatedAt, NULLIF(:deletedAt, '')::timestamp
+                )
+                ON CONFLICT (id) DO UPDATE SET
+                    catalog_id = EXCLUDED.catalog_id,
+                    name = EXCLUDED.name,
+                    price = EXCLUDED.price,
+                    category = EXCLUDED.category,
+                    active = EXCLUDED.active,
+                    updated_at = EXCLUDED.updated_at,
+                    deleted_at = EXCLUDED.deleted_at
+                WHERE additional.updated_at <= EXCLUDED.updated_at
+                """)
+                .setParameter("id", aggregateId)
+                .setParameter("catalogId", catalogId)
+                .setParameter("name", textOrDefault(root, "name", "Adicional"))
+                .setParameter("price", price.toPlainString())
+                .setParameter("category", emptyIfNull(textOrNull(root, "category")))
+                .setParameter("active", active)
+                .setParameter("updatedAt", updatedTs)
+                .setParameter("deletedAt", emptyIfNull(deletedAt))
+                .executeUpdate();
+    }
+
+    private void applyCatalogIngredientUpsert(UUID storeId, UUID aggregateId, JsonNode root) {
+        if (aggregateId == null) return;
+        UUID catalogId = resolveCloudCatalogId(storeId, root);
+        BigDecimal costPrice = decimalOrDefault(root, "costPrice", BigDecimal.ZERO);
+        BigDecimal stock = decimalOrDefault(root, "stock", BigDecimal.ZERO);
+        BigDecimal minStock = decimalOrDefault(root, "minStock", BigDecimal.ZERO);
+        boolean active = !root.hasNonNull("active") || root.get("active").asBoolean(true);
+        Timestamp updatedTs = parseTimestamp(textOrNull(root, "updatedAt"));
+        String deletedAt = textOrNull(root, "deletedAt");
+
+        em.createNativeQuery("""
+                INSERT INTO ingredient (
+                    id, catalog_id, name, unit, cost_price, active, created_at, updated_at, deleted_at
+                ) VALUES (
+                    :id, :catalogId, :name, :unit, :costPrice::numeric, :active, :updatedAt, :updatedAt, NULLIF(:deletedAt, '')::timestamp
+                )
+                ON CONFLICT (id) DO UPDATE SET
+                    catalog_id = EXCLUDED.catalog_id,
+                    name = EXCLUDED.name,
+                    unit = EXCLUDED.unit,
+                    cost_price = EXCLUDED.cost_price,
+                    active = EXCLUDED.active,
+                    updated_at = EXCLUDED.updated_at,
+                    deleted_at = EXCLUDED.deleted_at
+                WHERE ingredient.updated_at <= EXCLUDED.updated_at
+                """)
+                .setParameter("id", aggregateId)
+                .setParameter("catalogId", catalogId)
+                .setParameter("name", textOrDefault(root, "name", "Insumo"))
+                .setParameter("unit", textOrDefault(root, "unit", "UN"))
+                .setParameter("costPrice", costPrice.toPlainString())
+                .setParameter("active", active)
+                .setParameter("updatedAt", updatedTs)
+                .setParameter("deletedAt", emptyIfNull(deletedAt))
+                .executeUpdate();
+
+        em.createNativeQuery("""
+                INSERT INTO store_ingredient_stock (store_id, ingredient_id, stock, min_stock, updated_at)
+                VALUES (:storeId, :ingredientId, :stock::numeric, :minStock::numeric, now())
+                ON CONFLICT (store_id, ingredient_id) DO UPDATE SET
+                    stock = EXCLUDED.stock,
+                    min_stock = EXCLUDED.min_stock,
+                    updated_at = now()
+                """)
+                .setParameter("storeId", storeId)
+                .setParameter("ingredientId", aggregateId)
+                .setParameter("stock", stock.toPlainString())
+                .setParameter("minStock", minStock.toPlainString())
+                .executeUpdate();
+    }
+
+    private void applyCatalogProductUpsert(UUID storeId, UUID aggregateId, JsonNode root) {
+        if (aggregateId == null) return;
+        UUID catalogId = resolveCloudCatalogId(storeId, root);
+        String name = textOrDefault(root, "name", "Produto");
+        UUID categoryId = uuidOrNull(root, "categoryId");
+        BigDecimal price = decimalOrDefault(root, "price", BigDecimal.ZERO);
+        BigDecimal estimatedCost = decimalOrNull(root, "estimatedCost");
+        String status = textOrDefault(root, "status", "AVAILABLE");
+        String localStatus = textOrDefault(root, "localStatus", "AVAILABLE");
+        int stock = root.hasNonNull("stock") ? Math.max(0, root.get("stock").asInt(0)) : 0;
+        String defaultSectorCode = textOrDefault(root, "defaultSectorCode", "KITCHEN");
+        boolean trackStock = root.hasNonNull("trackStock") && root.get("trackStock").asBoolean(false);
+        boolean availDigital = !root.hasNonNull("availableDigitalMenu") || root.get("availableDigitalMenu").asBoolean(true);
+        boolean availPdv = !root.hasNonNull("availablePdv") || root.get("availablePdv").asBoolean(true);
+        Timestamp updatedTs = parseTimestamp(textOrNull(root, "updatedAt"));
+        String deletedAt = textOrNull(root, "deletedAt");
+
+        int updatedRows = em.createNativeQuery("""
+                INSERT INTO product (
+                    id, version, catalog_id, name, category_id, description, price, estimated_cost, image_url,
+                    status, external_code, catalog_item_type, product_type, track_stock, default_sector_code,
+                    sale_unit, available_digital_menu, available_pdv, created_at, updated_at, deleted_at
+                ) VALUES (
+                    :id, 0, :catalogId, :name, NULLIF(:categoryId, '')::uuid, NULLIF(:description, ''), :price::numeric,
+                    NULLIF(:estimatedCost, '')::numeric, NULLIF(:imageUrl, ''),
+                    :status, NULLIF(:externalCode, ''), :catalogItemType, :productType, :trackStock, :defaultSectorCode,
+                    :saleUnit, :availDigital, :availPdv, :updatedAt, :updatedAt, NULLIF(:deletedAt, '')::timestamp
+                )
+                ON CONFLICT (id) DO UPDATE SET
+                    catalog_id = EXCLUDED.catalog_id,
+                    name = EXCLUDED.name,
+                    category_id = EXCLUDED.category_id,
+                    description = EXCLUDED.description,
+                    price = EXCLUDED.price,
+                    estimated_cost = EXCLUDED.estimated_cost,
+                    image_url = EXCLUDED.image_url,
+                    status = EXCLUDED.status,
+                    external_code = EXCLUDED.external_code,
+                    catalog_item_type = EXCLUDED.catalog_item_type,
+                    product_type = EXCLUDED.product_type,
+                    track_stock = EXCLUDED.track_stock,
+                    default_sector_code = EXCLUDED.default_sector_code,
+                    sale_unit = EXCLUDED.sale_unit,
+                    available_digital_menu = EXCLUDED.available_digital_menu,
+                    available_pdv = EXCLUDED.available_pdv,
+                    updated_at = EXCLUDED.updated_at,
+                    deleted_at = EXCLUDED.deleted_at,
+                    version = product.version + 1
+                WHERE product.updated_at <= EXCLUDED.updated_at
+                """)
+                .setParameter("id", aggregateId)
+                .setParameter("catalogId", catalogId)
+                .setParameter("name", name)
+                .setParameter("categoryId", uuidStr(categoryId))
+                .setParameter("description", emptyIfNull(textOrNull(root, "description")))
+                .setParameter("price", price.toPlainString())
+                .setParameter("estimatedCost", decStr(estimatedCost))
+                .setParameter("imageUrl", emptyIfNull(textOrNull(root, "imageUrl")))
+                .setParameter("status", status)
+                .setParameter("externalCode", emptyIfNull(textOrNull(root, "externalCode")))
+                .setParameter("catalogItemType", textOrDefault(root, "catalogItemType", "DEFAULT"))
+                .setParameter("productType", textOrDefault(root, "productType", "PRODUCED"))
+                .setParameter("trackStock", trackStock)
+                .setParameter("defaultSectorCode", defaultSectorCode)
+                .setParameter("saleUnit", textOrDefault(root, "saleUnit", "UN"))
+                .setParameter("availDigital", availDigital)
+                .setParameter("availPdv", availPdv)
+                .setParameter("updatedAt", updatedTs)
+                .setParameter("deletedAt", emptyIfNull(deletedAt))
+                .executeUpdate();
+
+        em.createNativeQuery("""
+                INSERT INTO store_product_setting (store_id, product_id, stock, local_status, updated_at)
+                VALUES (:storeId, :productId, :stock, :localStatus, now())
+                ON CONFLICT (store_id, product_id) DO UPDATE SET
+                    stock = EXCLUDED.stock,
+                    local_status = EXCLUDED.local_status,
+                    updated_at = now()
+                """)
+                .setParameter("storeId", storeId)
+                .setParameter("productId", aggregateId)
+                .setParameter("stock", stock)
+                .setParameter("localStatus", localStatus)
+                .executeUpdate();
+
+        BigDecimal effectiveIfoodPrice = price;
+        JsonNode cpNode = root.get("channelPrices");
+        if (updatedRows > 0 && cpNode != null && cpNode.isArray()) {
+            em.createNativeQuery("DELETE FROM product_channel_price WHERE product_id = :pid")
+                    .setParameter("pid", aggregateId).executeUpdate();
+            for (JsonNode cp : cpNode) {
+                String ch = textOrDefault(cp, "channel", "IFOOD");
+                BigDecimal chPrice = decimalOrDefault(cp, "price", price);
+                if ("IFOOD".equalsIgnoreCase(ch)) {
+                    effectiveIfoodPrice = chPrice;
+                }
+                em.createNativeQuery("""
+                        INSERT INTO product_channel_price (product_id, channel, price)
+                        VALUES (:pid, :channel, :price::numeric)
+                        ON CONFLICT (product_id, channel) DO UPDATE SET price = EXCLUDED.price
+                        """)
+                        .setParameter("pid", aggregateId)
+                        .setParameter("channel", ch)
+                        .setParameter("price", chPrice.toPlainString())
+                        .executeUpdate();
+            }
+        }
+
+        JsonNode tsNode = root.get("technicalSheet");
+        if (updatedRows > 0 && tsNode != null && tsNode.isArray()) {
+            em.createNativeQuery("DELETE FROM technical_sheet_item WHERE product_id = :pid")
+                    .setParameter("pid", aggregateId).executeUpdate();
+            for (JsonNode ts : tsNode) {
+                UUID ingId = uuidOrNull(ts, "ingredientId");
+                if (ingId == null || !existsInTable("ingredient", ingId)) continue;
+                em.createNativeQuery("""
+                        INSERT INTO technical_sheet_item (product_id, ingredient_id, quantity, cost_snapshot)
+                        VALUES (:pid, :ingId, :qty::numeric, :cost::numeric)
+                        ON CONFLICT (product_id, ingredient_id) DO UPDATE SET
+                            quantity = EXCLUDED.quantity,
+                            cost_snapshot = EXCLUDED.cost_snapshot
+                        """)
+                        .setParameter("pid", aggregateId)
+                        .setParameter("ingId", ingId)
+                        .setParameter("qty", decimalOrDefault(ts, "quantity", BigDecimal.ONE).toPlainString())
+                        .setParameter("cost", decimalOrDefault(ts, "costSnapshot", BigDecimal.ZERO).toPlainString())
+                        .executeUpdate();
+            }
+        }
+
+        JsonNode remNode = root.get("removableItemIds");
+        if (updatedRows > 0 && remNode != null && remNode.isArray()) {
+            em.createNativeQuery("DELETE FROM product_removable_item WHERE product_id = :pid")
+                    .setParameter("pid", aggregateId).executeUpdate();
+            for (JsonNode rem : remNode) {
+                try {
+                    UUID remId = UUID.fromString(rem.asText().trim());
+                    em.createNativeQuery("""
+                            INSERT INTO product_removable_item (product_id, ingredient_id)
+                            VALUES (:pid, :ingId) ON CONFLICT DO NOTHING
+                            """)
+                            .setParameter("pid", aggregateId)
+                            .setParameter("ingId", remId)
+                            .executeUpdate();
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        JsonNode modNode = root.get("modifierGroupIds");
+        if (updatedRows > 0 && modNode != null && modNode.isArray()) {
+            em.createNativeQuery("DELETE FROM product_modifier_group WHERE product_id = :pid")
+                    .setParameter("pid", aggregateId).executeUpdate();
+            for (JsonNode mod : modNode) {
+                try {
+                    UUID modId = UUID.fromString(mod.asText().trim());
+                    em.createNativeQuery("""
+                            INSERT INTO product_modifier_group (product_id, modifier_group_id)
+                            VALUES (:pid, :gid) ON CONFLICT DO NOTHING
+                            """)
+                            .setParameter("pid", aggregateId)
+                            .setParameter("gid", modId)
+                            .executeUpdate();
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        if (updatedRows > 0 && catalogEventPublisher != null) {
+            String changeType = (deletedAt != null && !deletedAt.isBlank()) ? "PRODUCT_DELETED" : "PRODUCT_UPDATED";
+            catalogEventPublisher.publishCatalogChanged(
+                    catalogId,
+                    storeId,
+                    aggregateId,
+                    changeType,
+                    effectiveIfoodPrice,
+                    deletedAt != null ? "UNAVAILABLE" : status
+            );
+        }
+    }
+
+    private Timestamp parseTimestamp(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Timestamp.from(Instant.now());
+        }
+        try {
+            return Timestamp.from(Instant.parse(raw.trim()));
+        } catch (Exception ignored) {
+            return Timestamp.valueOf(LocalDateTime.parse(raw.trim()));
         }
     }
 
@@ -263,7 +688,6 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
         String recordTime = textOrDefault(root, "recordTime", LocalTime.now().withNano(0).toString());
         String createdAt = textOrDefault(root, "createdAt", LocalDateTime.now().toString());
 
-        // Garante integridade referencial caso o registro financeiro chegue antes do pedido
         if (!existsInTable("orders", orderId)) {
             em.createNativeQuery("""
                     INSERT INTO orders (
@@ -421,7 +845,6 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
         BigDecimal countedAmount = decimalOrNull(root, "countedAmount");
         BigDecimal differenceAmount = decimalOrNull(root, "differenceAmount");
 
-        // Respeita o índice parcial único idx_unique_open_session_per_user (store_id, user_id) WHERE status = 'OPEN'
         if ("OPEN".equalsIgnoreCase(status)) {
             em.createNativeQuery("""
                     UPDATE cash_session

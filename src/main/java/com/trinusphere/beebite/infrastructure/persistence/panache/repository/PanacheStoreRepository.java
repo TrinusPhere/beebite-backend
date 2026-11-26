@@ -8,17 +8,18 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Implementação do port StoreRepository (domínio). Usa StorePanacheRepo internamente — padrão Repository do Panache.
- */
 @ApplicationScoped
 public class PanacheStoreRepository implements StoreRepository {
 
     @Inject
     StorePanacheRepo repo;
+
+    @Inject
+    StoreCatalogContextSupport catalogContextSupport;
 
     @Inject
     com.trinusphere.beebite.application.sync.EnqueueEdgeOutboxUseCase enqueueEdgeOutboxUseCase;
@@ -40,7 +41,7 @@ public class PanacheStoreRepository implements StoreRepository {
     }
 
     @Override
-    public java.util.List<Store> findAll() {
+    public List<Store> findAll() {
         return repo.findAll().stream().map(StoreMapper::toDomain).toList();
     }
 
@@ -48,6 +49,18 @@ public class PanacheStoreRepository implements StoreRepository {
     @Transactional
     public Store save(Store store) {
         StoreEntity entity = StoreMapper.toEntity(store);
+        if (entity.catalogId == null) {
+            if (entity.id != null) {
+                StoreEntity existing = repo.findById(entity.id);
+                if (existing != null && existing.catalogId != null) {
+                    entity.catalogId = existing.catalogId;
+                }
+            }
+            if (entity.catalogId == null && catalogContextSupport != null) {
+                entity.catalogId = catalogContextSupport.ensureCatalogIdForNewStore(
+                        entity.tenantId, entity.name, null);
+            }
+        }
         if (entity.id == null) {
             repo.persist(entity);
         } else {

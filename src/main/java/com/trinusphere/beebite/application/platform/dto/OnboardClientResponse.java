@@ -15,8 +15,9 @@ public record OnboardClientResponse(
             String storeName,
             String cnpj,
             String syncMode,
-            String generatedEdgeDeviceToken
+            String generatedEdgeDeviceToken,
+            String catalogId,
+            String catalogName
     ) {
     }
 }
-

@@ -48,7 +48,8 @@ public class DeductOrderInventoryUseCase {
                     // Itens de pedidos externos (ex: iFood) criados sem vínculo prévio com o catálogo local
                     continue;
                 }
-                Product product = productRepository.findById(snapshot.productId())
+                var inStoreProd = productRepository.findByIdInStore(snapshot.productId(), event.getStoreId());
+                Product product = (inStoreProd.isPresent() ? inStoreProd : productRepository.findById(snapshot.productId()))
                         .orElseThrow(() -> new ProductNotFoundException(snapshot.productId().toString()));
                 StoreGuard.enforce(product, event.getStoreId());
 
@@ -77,7 +78,8 @@ public class DeductOrderInventoryUseCase {
             return;
 
         for (var sheetItem : product.getTechnicalSheet()) {
-            var ingredient = ingredientRepository.findById(sheetItem.getIngredientId())
+            var inStoreIng = ingredientRepository.findByIdInStore(sheetItem.getIngredientId(), event.getStoreId());
+            var ingredient = (inStoreIng.isPresent() ? inStoreIng : ingredientRepository.findById(sheetItem.getIngredientId()))
                     .orElseThrow(() -> new IngredientNotFoundException(sheetItem.getIngredientId().toString()));
             StoreGuard.enforce(ingredient, event.getStoreId());
 

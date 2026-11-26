@@ -24,6 +24,7 @@ $ErrorActionPreference = "Continue"
 
 # ── Dados pre-configurados pelo Painel Trinusphere ───────────────────────
 $PresetStoreId      = ''
+$PresetCatalogId    = ''
 $PresetStoreName    = ''
 $PresetStoreSlug    = ''
 $PresetStoreAddress = ''
@@ -134,6 +135,7 @@ Write-Ok "Docker Desktop pronto e em execucao."
 # ── PASSO 2: Conferir dados da loja e senhas locais ──────────────────────
 Write-Step "2/6 - Configurando dados da unidade Edge"
 $StoreId      = $PresetStoreId
+$CatalogId    = $PresetCatalogId
 $StoreName    = $PresetStoreName
 $StoreSlug    = $PresetStoreSlug
 $StoreAddress = if ([string]::IsNullOrWhiteSpace($PresetStoreAddress)) { 'Unidade Presencial / Balcao' } else { $PresetStoreAddress }
@@ -146,6 +148,9 @@ while ([string]::IsNullOrWhiteSpace($StoreId) -or -not ([Guid]::TryParse($StoreI
 }
 while ([string]::IsNullOrWhiteSpace($StoreName)) {
     $StoreName = (Read-Host "Informe o Nome da Loja (ex: Chefs Burguer - Balcao)").Trim()
+}
+if ([string]::IsNullOrWhiteSpace($CatalogId)) {
+    $CatalogId = $StoreId
 }
 if ([string]::IsNullOrWhiteSpace($StoreSlug)) {
     $StoreSlug = ConvertTo-Slug $StoreName
@@ -322,6 +327,7 @@ services:
       BEEBITE_EDGE_DEVICE_TOKEN: ${EDGE_DEVICE_TOKEN:?Defina EDGE_DEVICE_TOKEN no arquivo .env}
       BEEBITE_EDGE_SYNC_INTERVAL: 15s
       BEEBITE_EDGE_STORE_ID: ${BEEBITE_EDGE_STORE_ID:-}
+      BEEBITE_EDGE_CATALOG_ID: ${BEEBITE_EDGE_CATALOG_ID:-}
       BEEBITE_EDGE_STORE_NAME: ${BEEBITE_EDGE_STORE_NAME:-}
       BEEBITE_EDGE_STORE_SLUG: ${BEEBITE_EDGE_STORE_SLUG:-}
       BEEBITE_EDGE_STORE_ADDRESS: ${BEEBITE_EDGE_STORE_ADDRESS:-}
@@ -349,6 +355,7 @@ $EnvLines = @(
     "EDGE_DB_PASSWORD=$EdgeDbPassword",
     "EDGE_INITIAL_ADMIN_PASSWORD=$EdgeAdminPassword",
     "BEEBITE_EDGE_STORE_ID=$StoreId",
+    "BEEBITE_EDGE_CATALOG_ID=$CatalogId",
     "BEEBITE_EDGE_STORE_NAME=$StoreName",
     "BEEBITE_EDGE_STORE_SLUG=$StoreSlug",
     "BEEBITE_EDGE_STORE_ADDRESS=$StoreAddress",

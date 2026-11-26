@@ -1,12 +1,12 @@
 package com.trinusphere.beebite.infrastructure.persistence.panache.entity;
 
-import java.time.LocalDateTime;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -21,6 +21,9 @@ public class StoreEntity extends PanacheEntityBase {
 
     @Column(name = "tenant_id")
     public UUID tenantId;
+
+    @Column(name = "catalog_id", nullable = false)
+    public UUID catalogId;
 
     @Column(name = "name", nullable = false)
     public String name;
@@ -54,6 +57,9 @@ public class StoreEntity extends PanacheEntityBase {
 
     @Column(name = "last_edge_sync_at")
     public Instant lastEdgeSyncAt;
+
+    @Column(name = "last_catalog_pull_at")
+    public Instant lastCatalogPullAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

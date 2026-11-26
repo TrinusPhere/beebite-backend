@@ -44,7 +44,9 @@ public class UpdateProductUseCase {
     }
 
     public ProductResponse execute(UUID storeId, UUID id, ProductRequest request) {
-        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id.toString()));
+        var inStore = productRepository.findByIdInStore(id, storeId);
+        Product product = (inStore.isPresent() ? inStore : productRepository.findById(id))
+                .orElseThrow(() -> new ProductNotFoundException(id.toString()));
         StoreGuard.enforce(product, storeId);
 
         product.updateBasicInfo(request.name(), product.getCategoryId(), product.getDescription(), product.getPrice(),
@@ -122,10 +124,17 @@ public class UpdateProductUseCase {
             product.replaceModifierGroups(request.modifierGroupIds().stream().map(UUID::fromString).toList());
         }
 
-        ProductResponse response = productResponseAssembler.toResponse(productRepository.save(product), ingredientCache, null);
-        
-        catalogEventPublisher.publishCatalogChanged(storeId, id, "PRODUCT_UPDATED");
-        
+        Product saved = productRepository.save(product);
+        ProductResponse response = productResponseAssembler.toResponse(saved, ingredientCache, null);
+
+        catalogEventPublisher.publishCatalogChanged(
+                saved.getCatalogId(),
+                storeId,
+                id,
+                "PRODUCT_UPDATED",
+                saved.resolveEffectiveIfoodPrice(),
+                saved.getGlobalStatus().name());
+
         return response;
     }
 }

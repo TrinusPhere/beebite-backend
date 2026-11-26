@@ -49,6 +49,7 @@ public class ListAccessibleStoresUseCase {
                             store.getId().toString(),
                             store.getName(),
                             store.getTenantId() != null ? store.getTenantId().toString() : null,
+                            store.getCatalogId() != null ? store.getCatalogId().toString() : null,
                             Role.SUPER_ADMIN.name(),
                             allPerms,
                             store.getSyncMode(),
@@ -70,6 +71,7 @@ public class ListAccessibleStoresUseCase {
             }
             String storeName = primaryStore.map(Store::getName).orElse("Loja Principal");
             String tenantId = primaryStore.map(Store::getTenantId).map(UUID::toString).orElse(null);
+            String catalogId = primaryStore.map(Store::getCatalogId).map(UUID::toString).orElse(null);
             String syncMode = primaryStore.map(Store::getSyncMode).orElse("CLOUD");
             var lastSync = primaryStore.map(Store::getLastEdgeSyncAt).orElse(null);
 
@@ -77,6 +79,7 @@ public class ListAccessibleStoresUseCase {
                     user.getStoreId().toString(),
                     storeName,
                     tenantId,
+                    catalogId,
                     user.getRole().name(),
                     user.getPermissions().stream().map(Permission::getValue).toList(),
                     syncMode,
@@ -95,6 +98,7 @@ public class ListAccessibleStoresUseCase {
             }
             String storeName = storeOpt.map(Store::getName).orElse("Loja " + access.getStoreId());
             String tenantId = storeOpt.map(Store::getTenantId).map(UUID::toString).orElse(null);
+            String catalogId = storeOpt.map(Store::getCatalogId).map(UUID::toString).orElse(null);
             String syncMode = storeOpt.map(Store::getSyncMode).orElse("CLOUD");
             var lastSync = storeOpt.map(Store::getLastEdgeSyncAt).orElse(null);
 
@@ -102,6 +106,7 @@ public class ListAccessibleStoresUseCase {
                     access.getStoreId().toString(),
                     storeName,
                     tenantId,
+                    catalogId,
                     access.getRole().name(),
                     access.getPermissions().stream().map(Permission::getValue).toList(),
                     syncMode,

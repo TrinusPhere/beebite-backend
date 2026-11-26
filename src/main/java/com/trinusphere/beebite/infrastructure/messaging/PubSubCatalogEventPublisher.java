@@ -11,6 +11,8 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -79,22 +81,34 @@ public class PubSubCatalogEventPublisher implements CatalogEventPublisher {
     }
 
     @Override
-    public void publishCatalogChanged(UUID storeId, UUID productId, String changeType) {
+    public void publishCatalogChanged(UUID catalogId, UUID storeId, UUID productId, String changeType,
+            BigDecimal effectiveIfoodPrice, String globalStatus) {
         if (catalogChangedPublisher == null) {
             LOG.debug("[PUBSUB-CATALOG] Publisher não disponível.");
             return;
         }
 
         try {
-            Map<String, Object> event = Map.of(
-                    "storeId", storeId.toString(),
-                    "productId", productId.toString(),
-                    "changeType", changeType
-            );
+            Map<String, Object> event = new LinkedHashMap<>();
+            if (catalogId != null) {
+                event.put("catalogId", catalogId.toString());
+            }
+            if (storeId != null) {
+                event.put("storeId", storeId.toString());
+            }
+            event.put("productId", productId.toString());
+            event.put("changeType", changeType);
+            if (effectiveIfoodPrice != null) {
+                event.put("effectiveIfoodPrice", effectiveIfoodPrice);
+            }
+            if (globalStatus != null) {
+                event.put("globalStatus", globalStatus);
+            }
+
             String json = objectMapper.writeValueAsString(event);
             PubsubMessage message = PubsubMessage.newBuilder().setData(ByteString.copyFromUtf8(json)).build();
             catalogChangedPublisher.publish(message).get(10, TimeUnit.SECONDS);
-            LOG.debugf("[PUBSUB-CATALOG] Publicado evento %s para %s", changeType, productId);
+            LOG.debugf("[PUBSUB-CATALOG] Publicado evento %s para catalog=%s product=%s", changeType, catalogId, productId);
         } catch (Exception e) {
             LOG.errorf(e, "[PUBSUB-CATALOG] Falha ao publicar alteração de catálogo: %s", e.getMessage());
         }

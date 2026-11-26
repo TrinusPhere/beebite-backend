@@ -29,6 +29,8 @@ public class PlatformBackofficeResource extends BaseResource {
     @Inject
     AddStoreToTenantUseCase addStoreToTenantUseCase;
     @Inject
+    ListTenantCatalogsUseCase listTenantCatalogsUseCase;
+    @Inject
     UpdatePlatformStoreUseCase updatePlatformStoreUseCase;
     @Inject
     RegenerateEdgeTokenUseCase regenerateEdgeTokenUseCase;
@@ -86,6 +88,13 @@ public class PlatformBackofficeResource extends BaseResource {
             @Valid CreateStoreForTenantRequest request) {
         OnboardClientResponse.ProvisionedStoreDto created = addStoreToTenantUseCase.execute(tenantId, request);
         return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+
+    @GET
+    @Path("/tenants/{tenantId}/catalogs")
+    public Response listTenantCatalogs(@PathParam("tenantId") UUID tenantId) {
+        List<CatalogSummaryDto> catalogs = listTenantCatalogsUseCase.execute(tenantId);
+        return Response.ok(catalogs).build();
     }
 
     @PUT

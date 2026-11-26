@@ -29,5 +29,17 @@ class NativeReflectionConfigTest {
         assertTrue(Arrays.asList(annotation.targets()).contains(
                 com.trinusphere.beebite.application.platform.dto.PlatformOverviewResponse.class),
                 "PlatformOverviewResponse deve estar registrado para serializacao Jackson em imagem nativa");
+        assertTrue(Arrays.asList(annotation.targets()).contains(
+                com.trinusphere.beebite.application.platform.dto.CatalogSummaryDto.class),
+                "CatalogSummaryDto deve estar registrado para serializacao Jackson em imagem nativa");
+        assertTrue(Arrays.asList(annotation.targets()).contains(
+                com.trinusphere.beebite.application.sync.dto.InternalStoreCatalogContextResponse.class),
+                "InternalStoreCatalogContextResponse deve estar registrado para serializacao Jackson em imagem nativa");
+        assertTrue(Arrays.asList(annotation.targets()).contains(
+                com.trinusphere.beebite.application.sync.dto.EdgeCatalogDeltaResponse.class),
+                "EdgeCatalogDeltaResponse deve estar registrado para serializacao Jackson em imagem nativa");
+        assertTrue(Arrays.asList(annotation.targets()).contains(
+                com.trinusphere.beebite.application.sync.dto.EdgeCatalogDeltaResponse.ProductSyncDto.class),
+                "ProductSyncDto deve estar registrado para serializacao Jackson em imagem nativa");
     }
 }

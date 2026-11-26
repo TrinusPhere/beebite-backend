@@ -29,7 +29,8 @@ public record TenantAccountResponse(
             String syncMode,
             boolean active,
             String edgeDeviceToken,
-            Instant lastEdgeSyncAt
+            Instant lastEdgeSyncAt,
+            String catalogId
     ) {
     }
 }

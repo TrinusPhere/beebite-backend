@@ -68,8 +68,8 @@ public class UpdatePlatformStoreUseCase {
                 s.getSyncMode(),
                 s.isActive(),
                 s.getEdgeApiKeyHash(),
-                s.getLastEdgeSyncAt()
+                s.getLastEdgeSyncAt(),
+                s.getCatalogId() != null ? s.getCatalogId().toString() : null
         );
     }
 }
-

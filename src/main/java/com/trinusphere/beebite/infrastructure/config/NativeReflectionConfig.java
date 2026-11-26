@@ -118,13 +118,16 @@ import com.trinusphere.beebite.application.integration.dto.IntegrationsResponse;
 import com.trinusphere.beebite.application.integration.dto.WhatsappIntegrationRequest;
 
 // Sync / Edge
+import com.trinusphere.beebite.application.sync.dto.EdgeCatalogDeltaResponse;
 import com.trinusphere.beebite.application.sync.dto.EdgeSyncBatchRequest;
 import com.trinusphere.beebite.application.sync.dto.EdgeSyncBatchResponse;
 import com.trinusphere.beebite.application.sync.dto.EdgeSyncEventDto;
+import com.trinusphere.beebite.application.sync.dto.InternalStoreCatalogContextResponse;
 import com.trinusphere.beebite.domain.printing.valueobject.ReceiptSections;
 
 // Platform / Trinusphere Backoffice
 import com.trinusphere.beebite.application.platform.dto.CancelSaasInvoiceRequest;
+import com.trinusphere.beebite.application.platform.dto.CatalogSummaryDto;
 import com.trinusphere.beebite.application.platform.dto.ChangeTenantStatusRequest;
 import com.trinusphere.beebite.application.platform.dto.CreateSaasInvoiceRequest;
 import com.trinusphere.beebite.application.platform.dto.CreateStoreForTenantRequest;
@@ -288,8 +291,19 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
         EdgeSyncBatchRequest.class,
         EdgeSyncBatchResponse.class,
         EdgeSyncEventDto.class,
+        EdgeCatalogDeltaResponse.class,
+        EdgeCatalogDeltaResponse.CategorySyncDto.class,
+        EdgeCatalogDeltaResponse.ModifierGroupSyncDto.class,
+        EdgeCatalogDeltaResponse.ModifierOptionSyncDto.class,
+        EdgeCatalogDeltaResponse.AdditionalSyncDto.class,
+        EdgeCatalogDeltaResponse.IngredientSyncDto.class,
+        EdgeCatalogDeltaResponse.ProductSyncDto.class,
+        EdgeCatalogDeltaResponse.ChannelPriceSyncDto.class,
+        EdgeCatalogDeltaResponse.TechnicalSheetSyncDto.class,
+        InternalStoreCatalogContextResponse.class,
 
         // Platform / Trinusphere Backoffice
+        CatalogSummaryDto.class,
         OnboardClientRequest.class,
         OnboardClientRequest.StoreSetupDto.class,
         OnboardClientRequest.ContractSetupDto.class,

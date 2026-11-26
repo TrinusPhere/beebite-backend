@@ -2,19 +2,23 @@ package com.trinusphere.beebite.infrastructure.persistence.panache.mapper;
 
 import com.trinusphere.beebite.domain.catalog.entity.ModifierGroup;
 import com.trinusphere.beebite.domain.catalog.entity.ModifierOption;
-import com.trinusphere.beebite.domain.catalog.valueobject.ModifierType;
 import com.trinusphere.beebite.domain.catalog.valueobject.ModifierGroupSemanticType;
+import com.trinusphere.beebite.domain.catalog.valueobject.ModifierType;
 import com.trinusphere.beebite.infrastructure.persistence.panache.entity.ModifierGroupEntity;
 import com.trinusphere.beebite.infrastructure.persistence.panache.entity.ModifierOptionEntity;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public final class ModifierGroupMapper {
     private ModifierGroupMapper() {
     }
 
     public static ModifierGroup toDomain(ModifierGroupEntity e) {
+        return toDomain(e, null);
+    }
+
+    public static ModifierGroup toDomain(ModifierGroupEntity e, UUID contextStoreId) {
         if (e == null)
             return null;
         List<ModifierOption> opts = e.options != null ? e.options.stream().map(o -> {
@@ -23,16 +27,29 @@ public final class ModifierGroupMapper {
             opt.setLinkedProductId(o.linkedProductId);
             return opt;
         }).toList() : List.of();
-        return ModifierGroup.reconstitute(e.id, e.storeId, e.name, ModifierType.valueOf(e.type), e.required,
-                e.minSelections, e.maxSelections, e.icon, 
+        return ModifierGroup.reconstituteForCatalog(
+                e.id,
+                e.catalogId,
+                contextStoreId != null ? contextStoreId : e.catalogId,
+                e.name,
+                ModifierType.valueOf(e.type),
+                e.required,
+                e.minSelections,
+                e.maxSelections,
+                e.icon,
                 e.semanticType != null ? ModifierGroupSemanticType.valueOf(e.semanticType) : null,
-                opts);
+                opts
+        );
     }
 
     public static ModifierGroupEntity toEntity(ModifierGroup g) {
+        return toEntity(g, g != null ? g.getCatalogId() : null);
+    }
+
+    public static ModifierGroupEntity toEntity(ModifierGroup g, UUID resolvedCatalogId) {
         ModifierGroupEntity e = new ModifierGroupEntity();
         e.id = g.getId();
-        e.storeId = g.getStoreId();
+        e.catalogId = resolvedCatalogId != null ? resolvedCatalogId : g.getCatalogId();
         e.name = g.getName();
         e.type = g.getType().name();
         e.required = g.isRequired();

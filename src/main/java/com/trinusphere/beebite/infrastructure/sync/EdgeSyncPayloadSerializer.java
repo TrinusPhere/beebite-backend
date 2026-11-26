@@ -7,6 +7,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.trinusphere.beebite.domain.cash.entity.CashMovement;
 import com.trinusphere.beebite.domain.cash.entity.CashRegister;
 import com.trinusphere.beebite.domain.cash.entity.CashSession;
+import com.trinusphere.beebite.domain.catalog.entity.Additional;
+import com.trinusphere.beebite.domain.catalog.entity.Ingredient;
+import com.trinusphere.beebite.domain.catalog.entity.ModifierGroup;
+import com.trinusphere.beebite.domain.catalog.entity.ModifierOption;
+import com.trinusphere.beebite.domain.catalog.entity.Product;
+import com.trinusphere.beebite.domain.catalog.entity.ProductCategory;
+import com.trinusphere.beebite.domain.catalog.entity.TechnicalSheetItem;
+import com.trinusphere.beebite.domain.catalog.valueobject.ChannelPrice;
 import com.trinusphere.beebite.domain.financial.entity.FinancialRecord;
 import com.trinusphere.beebite.domain.financial.valueobject.FinancialRecordProduct;
 import com.trinusphere.beebite.domain.order.entity.Order;
@@ -17,6 +25,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -169,6 +178,141 @@ public class EdgeSyncPayloadSerializer {
         return toJson(node);
     }
 
+    public String serializeCatalogCategory(ProductCategory category, Instant updatedAt, LocalDateTime deletedAt) {
+        ObjectNode node = objectMapper.createObjectNode();
+        putUuid(node, "catalogId", category.getCatalogId());
+        putText(node, "name", category.getName());
+        putText(node, "status", category.getStatus() != null ? category.getStatus().name() : "AVAILABLE");
+        node.put("displayOrder", category.getDisplayOrder());
+        ArrayNode modIds = node.putArray("defaultModifierGroupIds");
+        if (category.getDefaultModifierGroupIds() != null) {
+            for (UUID id : category.getDefaultModifierGroupIds()) {
+                if (id != null) {
+                    modIds.add(id.toString());
+                }
+            }
+        }
+        putInstant(node, "updatedAt", updatedAt != null ? updatedAt : Instant.now());
+        putDateTime(node, "deletedAt", deletedAt);
+        return toJson(node);
+    }
+
+    public String serializeCatalogModifierGroup(ModifierGroup group, Instant updatedAt, LocalDateTime deletedAt) {
+        ObjectNode node = objectMapper.createObjectNode();
+        putUuid(node, "catalogId", group.getCatalogId());
+        putText(node, "name", group.getName());
+        putText(node, "type", group.getType() != null ? group.getType().name() : "RADIO");
+        putText(node, "semanticType", group.getSemanticType() != null ? group.getSemanticType().name() : null);
+        node.put("required", group.isRequired());
+        node.put("minSelections", group.getMinSelections());
+        node.put("maxSelections", group.getMaxSelections());
+        putText(node, "icon", group.getIcon());
+        ArrayNode optionsArr = node.putArray("options");
+        if (group.getOptions() != null) {
+            for (ModifierOption opt : group.getOptions()) {
+                ObjectNode oNode = optionsArr.addObject();
+                putUuid(oNode, "id", opt.getId() != null ? opt.getId() : UUID.randomUUID());
+                putText(oNode, "name", opt.getName());
+                putDecimal(oNode, "price", defaultZero(opt.getPrice()));
+                oNode.put("sortOrder", opt.getSortOrder());
+                putUuid(oNode, "linkedProductId", opt.getLinkedProductId());
+            }
+        }
+        putInstant(node, "updatedAt", updatedAt != null ? updatedAt : Instant.now());
+        putDateTime(node, "deletedAt", deletedAt);
+        return toJson(node);
+    }
+
+    public String serializeCatalogAdditional(Additional additional, Instant updatedAt, LocalDateTime deletedAt) {
+        ObjectNode node = objectMapper.createObjectNode();
+        putUuid(node, "catalogId", additional.getCatalogId());
+        putText(node, "name", additional.getName());
+        putDecimal(node, "price", defaultZero(additional.getPrice()));
+        putText(node, "category", additional.getCategory());
+        node.put("active", additional.isActive());
+        putInstant(node, "updatedAt", updatedAt != null ? updatedAt : Instant.now());
+        putDateTime(node, "deletedAt", deletedAt);
+        return toJson(node);
+    }
+
+    public String serializeCatalogIngredient(Ingredient ingredient, Instant updatedAt, LocalDateTime deletedAt) {
+        ObjectNode node = objectMapper.createObjectNode();
+        putUuid(node, "catalogId", ingredient.getCatalogId());
+        putText(node, "name", ingredient.getName());
+        putText(node, "unit", ingredient.getUnit() != null ? ingredient.getUnit().name() : "UN");
+        putDecimal(node, "costPrice", defaultZero(ingredient.getCostPrice()));
+        node.put("active", ingredient.isActive());
+        putDecimal(node, "stock", defaultZero(ingredient.getStock()));
+        putDecimal(node, "minStock", defaultZero(ingredient.getMinStock()));
+        putInstant(node, "updatedAt", updatedAt != null ? updatedAt : Instant.now());
+        putDateTime(node, "deletedAt", deletedAt);
+        return toJson(node);
+    }
+
+    public String serializeCatalogProduct(Product product, Instant updatedAt, LocalDateTime deletedAt) {
+        ObjectNode node = objectMapper.createObjectNode();
+        putUuid(node, "catalogId", product.getCatalogId());
+        putText(node, "name", product.getName());
+        putUuid(node, "categoryId", product.getCategoryId());
+        putText(node, "description", product.getDescription());
+        putDecimal(node, "price", defaultZero(product.getPrice()));
+        putDecimal(node, "estimatedCost", product.getEstimatedCost());
+        putText(node, "imageUrl", product.getImageUrl());
+        putText(node, "status", product.getGlobalStatus() != null ? product.getGlobalStatus().name() : "AVAILABLE");
+        putText(node, "localStatus", product.getLocalStatus() != null ? product.getLocalStatus().name() : "AVAILABLE");
+        node.put("stock", product.getStock());
+        putUuid(node, "productionSectorId", product.getProductionSectorId());
+        putText(node, "defaultSectorCode", product.getDefaultSectorCode());
+        putText(node, "externalCode", product.getExternalCode());
+        putText(node, "catalogItemType", product.getCatalogItemType() != null ? product.getCatalogItemType().name() : "DEFAULT");
+        putText(node, "productType", product.getProductType() != null ? product.getProductType().name() : "PRODUCED");
+        node.put("trackStock", product.isTrackStock());
+        putText(node, "saleUnit", product.getSaleUnit() != null ? product.getSaleUnit().name() : "UN");
+        node.put("availableDigitalMenu", product.isAvailableDigitalMenu());
+        node.put("availablePdv", product.isAvailablePdv());
+
+        ArrayNode cpArray = node.putArray("channelPrices");
+        if (product.getChannelPrices() != null) {
+            for (ChannelPrice cp : product.getChannelPrices()) {
+                ObjectNode cpNode = cpArray.addObject();
+                putText(cpNode, "channel", cp.getChannel());
+                putDecimal(cpNode, "price", defaultZero(cp.getPrice()));
+            }
+        }
+
+        ArrayNode tsArray = node.putArray("technicalSheet");
+        if (product.getTechnicalSheet() != null) {
+            for (TechnicalSheetItem ts : product.getTechnicalSheet()) {
+                ObjectNode tsNode = tsArray.addObject();
+                putUuid(tsNode, "ingredientId", ts.getIngredientId());
+                putDecimal(tsNode, "quantity", defaultZero(ts.getQuantity()));
+                putDecimal(tsNode, "costSnapshot", defaultZero(ts.getCostSnapshot()));
+            }
+        }
+
+        ArrayNode remArray = node.putArray("removableItemIds");
+        if (product.getRemovableItemIds() != null) {
+            for (UUID remId : product.getRemovableItemIds()) {
+                if (remId != null) {
+                    remArray.add(remId.toString());
+                }
+            }
+        }
+
+        ArrayNode modArray = node.putArray("modifierGroupIds");
+        if (product.getModifierGroupIds() != null) {
+            for (UUID modId : product.getModifierGroupIds()) {
+                if (modId != null) {
+                    modArray.add(modId.toString());
+                }
+            }
+        }
+
+        putInstant(node, "updatedAt", updatedAt != null ? updatedAt : Instant.now());
+        putDateTime(node, "deletedAt", deletedAt);
+        return toJson(node);
+    }
+
     private BigDecimal defaultZero(BigDecimal val) {
         return val != null ? val : BigDecimal.ZERO;
     }
@@ -205,6 +349,14 @@ public class EdgeSyncPayloadSerializer {
         }
     }
 
+    private void putInstant(ObjectNode node, String field, Instant value) {
+        if (value != null) {
+            node.put(field, value.toString());
+        } else {
+            node.putNull(field);
+        }
+    }
+
     private void putDate(ObjectNode node, String field, LocalDate value) {
         if (value != null) {
             node.put(field, value.toString());
@@ -229,4 +381,3 @@ public class EdgeSyncPayloadSerializer {
         }
     }
 }
-

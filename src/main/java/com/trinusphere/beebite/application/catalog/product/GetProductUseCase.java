@@ -34,7 +34,9 @@ public class GetProductUseCase {
     }
 
     public ProductResponse execute(UUID storeId, UUID id) {
-        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException(id.toString()));
+        var inStore = productRepository.findByIdInStore(id, storeId);
+        Product product = (inStore.isPresent() ? inStore : productRepository.findById(id))
+                .orElseThrow(() -> new ProductNotFoundException(id.toString()));
         StoreGuard.enforce(product, storeId);
 
         List<UUID> ingredientIds = new ArrayList<>();

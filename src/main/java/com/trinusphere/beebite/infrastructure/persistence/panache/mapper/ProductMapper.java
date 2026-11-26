@@ -2,59 +2,103 @@ package com.trinusphere.beebite.infrastructure.persistence.panache.mapper;
 
 import com.trinusphere.beebite.domain.catalog.entity.Product;
 import com.trinusphere.beebite.domain.catalog.entity.TechnicalSheetItem;
-import com.trinusphere.beebite.domain.catalog.valueobject.ProductType;
-import com.trinusphere.beebite.domain.catalog.valueobject.Unit;
-import com.trinusphere.beebite.domain.catalog.valueobject.ProductStatus;
 import com.trinusphere.beebite.domain.catalog.valueobject.CatalogItemType;
 import com.trinusphere.beebite.domain.catalog.valueobject.ChannelPrice;
-import com.trinusphere.beebite.infrastructure.persistence.panache.entity.ProductEntity;
-import com.trinusphere.beebite.infrastructure.persistence.panache.entity.TechnicalSheetItemEntity;
+import com.trinusphere.beebite.domain.catalog.valueobject.ProductStatus;
+import com.trinusphere.beebite.domain.catalog.valueobject.ProductType;
+import com.trinusphere.beebite.domain.catalog.valueobject.Unit;
 import com.trinusphere.beebite.infrastructure.persistence.panache.entity.ProductChannelPriceEntity;
+import com.trinusphere.beebite.infrastructure.persistence.panache.entity.ProductEntity;
+import com.trinusphere.beebite.infrastructure.persistence.panache.entity.StoreProductSettingEntity;
+import com.trinusphere.beebite.infrastructure.persistence.panache.entity.TechnicalSheetItemEntity;
+
+import java.util.List;
+import java.util.UUID;
 
 public final class ProductMapper {
     private ProductMapper() {
     }
 
     public static Product toDomain(ProductEntity e) {
+        return toDomain(e, null, null, null);
+    }
+
+    public static Product toDomain(
+            ProductEntity e,
+            UUID contextStoreId,
+            StoreProductSettingEntity setting,
+            UUID fallbackSectorId) {
         if (e == null)
             return null;
         var sheet = e.technicalSheet != null ? e.technicalSheet.stream().map(se -> {
             TechnicalSheetItem item = new TechnicalSheetItem(e.id, se.ingredientId, se.quantity, se.costSnapshot);
             item.setId(se.id);
             return item;
-        }).toList() : java.util.List.<TechnicalSheetItem> of();
+        }).toList() : List.<TechnicalSheetItem>of();
         var prices = e.channelPrices != null ? e.channelPrices.stream()
                 .map(pe -> new ChannelPrice(pe.channel, pe.price)).toList()
-                : java.util.List.<ChannelPrice> of();
-        return Product.reconstitute(e.id, e.version, e.storeId, e.name, e.categoryId, e.description, e.price, e.estimatedCost,
-                e.imageUrl, e.stock, 
-                e.status != null ? ProductStatus.valueOf(e.status) : ProductStatus.AVAILABLE, 
+                : List.<ChannelPrice>of();
+
+        int resolvedStock = setting != null ? setting.stock : 0;
+        ProductStatus globalStatus = e.status != null ? ProductStatus.valueOf(e.status) : ProductStatus.AVAILABLE;
+        ProductStatus localStatus = (setting != null && setting.localStatus != null)
+                ? ProductStatus.valueOf(setting.localStatus)
+                : ProductStatus.AVAILABLE;
+        UUID resolvedSectorId = (setting != null && setting.productionSectorId != null)
+                ? setting.productionSectorId
+                : fallbackSectorId;
+
+        return Product.reconstituteForCatalog(
+                e.id,
+                e.version,
+                e.catalogId,
+                contextStoreId != null ? contextStoreId : e.catalogId,
+                e.name,
+                e.categoryId,
+                e.description,
+                e.price,
+                e.estimatedCost,
+                e.imageUrl,
+                resolvedStock,
+                globalStatus,
+                localStatus,
                 e.externalCode,
                 e.catalogItemType != null ? CatalogItemType.valueOf(e.catalogItemType) : CatalogItemType.DEFAULT,
                 prices,
-                e.productType != null ? ProductType.valueOf(e.productType) : ProductType.PRODUCED, e.trackStock,
-                e.productionSectorId, e.saleUnit != null ? Unit.valueOf(e.saleUnit) : Unit.UN, e.availableDigitalMenu,
-                e.availablePdv, sheet, e.removableItemIds, e.modifierGroupIds);
+                e.productType != null ? ProductType.valueOf(e.productType) : ProductType.PRODUCED,
+                e.trackStock,
+                resolvedSectorId,
+                e.defaultSectorCode,
+                e.saleUnit != null ? Unit.valueOf(e.saleUnit) : Unit.UN,
+                e.availableDigitalMenu,
+                e.availablePdv,
+                sheet,
+                e.removableItemIds,
+                e.modifierGroupIds
+        );
     }
 
     public static ProductEntity toEntity(Product p) {
+        return toEntity(p, p.getCatalogId());
+    }
+
+    public static ProductEntity toEntity(Product p, UUID resolvedCatalogId) {
         ProductEntity e = new ProductEntity();
         e.id = p.getId();
         e.version = p.getVersion();
-        e.storeId = p.getStoreId();
+        e.catalogId = resolvedCatalogId != null ? resolvedCatalogId : p.getCatalogId();
         e.name = p.getName();
         e.categoryId = p.getCategoryId();
         e.description = p.getDescription();
         e.price = p.getPrice();
         e.estimatedCost = p.getEstimatedCost();
         e.imageUrl = p.getImageUrl();
-        e.stock = p.getStock();
-        e.status = p.getStatus().name();
+        e.status = p.getGlobalStatus().name();
         e.externalCode = p.getExternalCode();
         e.catalogItemType = p.getCatalogItemType().name();
         e.productType = p.getProductType().name();
         e.trackStock = p.isTrackStock();
-        e.productionSectorId = p.getProductionSectorId();
+        e.defaultSectorCode = p.getDefaultSectorCode() != null ? p.getDefaultSectorCode() : "KITCHEN";
         e.saleUnit = p.getSaleUnit().name();
         e.availableDigitalMenu = p.isAvailableDigitalMenu();
         e.availablePdv = p.isAvailablePdv();

@@ -6,6 +6,14 @@ import com.trinusphere.beebite.domain.cash.entity.CashMovement;
 import com.trinusphere.beebite.domain.cash.entity.CashRegister;
 import com.trinusphere.beebite.domain.cash.entity.CashSession;
 import com.trinusphere.beebite.domain.cash.repository.CashRegisterRepository;
+import com.trinusphere.beebite.domain.catalog.entity.Ingredient;
+import com.trinusphere.beebite.domain.catalog.entity.ModifierGroup;
+import com.trinusphere.beebite.domain.catalog.entity.Product;
+import com.trinusphere.beebite.domain.catalog.entity.ProductCategory;
+import com.trinusphere.beebite.domain.catalog.repository.IngredientRepository;
+import com.trinusphere.beebite.domain.catalog.repository.ModifierGroupRepository;
+import com.trinusphere.beebite.domain.catalog.repository.ProductCategoryRepository;
+import com.trinusphere.beebite.domain.catalog.repository.ProductRepository;
 import com.trinusphere.beebite.domain.financial.entity.FinancialRecord;
 import com.trinusphere.beebite.domain.order.entity.Order;
 import com.trinusphere.beebite.domain.order.repository.OrderRepository;
@@ -30,14 +38,10 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Garante que operações já gravadas localmente (abertura de caixa, movimentações, pedidos com itens,
- * pagamentos e registros financeiros) sejam enfileiradas em ordem topológica na Outbox caso ainda não
- * constem nela (ex.: bancada atualizada após já ter operado).
- */
 @ApplicationScoped
 public class PanacheEdgeOutboxBackfillAdapter implements EdgeOutboxBackfillPort {
 
@@ -46,6 +50,18 @@ public class PanacheEdgeOutboxBackfillAdapter implements EdgeOutboxBackfillPort 
 
     @Inject
     StoreRepository storeRepository;
+
+    @Inject
+    ProductCategoryRepository categoryRepository;
+
+    @Inject
+    IngredientRepository ingredientRepository;
+
+    @Inject
+    ModifierGroupRepository modifierGroupRepository;
+
+    @Inject
+    ProductRepository productRepository;
 
     @Inject
     CashRegisterRepository cashRegisterRepository;
@@ -86,6 +102,37 @@ public class PanacheEdgeOutboxBackfillAdapter implements EdgeOutboxBackfillPort 
         if (storeOpt.isPresent() && !existsOutboxEvent(storeId, "STORE_STATUS_UPSERT", storeId)) {
             enqueueUseCase.execute(storeId, "STORE_STATUS_UPSERT", storeId, serializer.serializeStoreStatus(storeOpt.get()));
             enqueued++;
+        }
+
+        // Backfill topológico do catálogo criado localmente (caso a loja tenha começado só no Balcão Edge)
+        Instant now = Instant.now();
+        for (ProductCategory cat : categoryRepository.findAllByStoreId(storeId)) {
+            if (cat.getId() != null && !existsOutboxEvent(storeId, "CATALOG_CATEGORY_UPSERT", cat.getId())) {
+                enqueueUseCase.execute(storeId, "CATALOG_CATEGORY_UPSERT", cat.getId(),
+                        serializer.serializeCatalogCategory(cat, now, null));
+                enqueued++;
+            }
+        }
+        for (Ingredient ing : ingredientRepository.findAllByStoreId(storeId)) {
+            if (ing.getId() != null && !existsOutboxEvent(storeId, "CATALOG_INGREDIENT_UPSERT", ing.getId())) {
+                enqueueUseCase.execute(storeId, "CATALOG_INGREDIENT_UPSERT", ing.getId(),
+                        serializer.serializeCatalogIngredient(ing, now, null));
+                enqueued++;
+            }
+        }
+        for (ModifierGroup group : modifierGroupRepository.findAllByStoreId(storeId)) {
+            if (group.getId() != null && !existsOutboxEvent(storeId, "CATALOG_MODIFIER_GROUP_UPSERT", group.getId())) {
+                enqueueUseCase.execute(storeId, "CATALOG_MODIFIER_GROUP_UPSERT", group.getId(),
+                        serializer.serializeCatalogModifierGroup(group, now, null));
+                enqueued++;
+            }
+        }
+        for (Product prod : productRepository.findAllByStoreId(storeId)) {
+            if (prod.getId() != null && !existsOutboxEvent(storeId, "CATALOG_PRODUCT_UPSERT", prod.getId())) {
+                enqueueUseCase.execute(storeId, "CATALOG_PRODUCT_UPSERT", prod.getId(),
+                        serializer.serializeCatalogProduct(prod, now, null));
+                enqueued++;
+            }
         }
 
         for (CashRegister register : cashRegisterRepository.findAllByStoreId(storeId)) {
@@ -156,7 +203,7 @@ public class PanacheEdgeOutboxBackfillAdapter implements EdgeOutboxBackfillPort 
         }
 
         if (enqueued > 0) {
-            LOG.infof("[EDGE-BACKFILL] %d evento(s) operacional(is) preparados na fila de sincronização para a loja %s.",
+            LOG.infof("[EDGE-BACKFILL] %d evento(s) preparados na fila de sincronização para a loja %s.",
                     enqueued, storeId);
         }
         return enqueued;

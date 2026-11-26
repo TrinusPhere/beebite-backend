@@ -1,11 +1,12 @@
 package com.trinusphere.beebite.infrastructure.persistence.panache.entity;
 
-import java.time.LocalDateTime;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -16,8 +17,8 @@ public class ProductCategoryEntity extends PanacheEntityBase {
     @Id
     public UUID id;
 
-    @Column(name = "store_id", nullable = false)
-    public UUID storeId;
+    @Column(name = "catalog_id", nullable = false)
+    public UUID catalogId;
 
     @Column(nullable = false)
     public String name;
@@ -34,6 +35,10 @@ public class ProductCategoryEntity extends PanacheEntityBase {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     public Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    public Instant updatedAt;
 
     @Column(name = "deleted_at")
     public LocalDateTime deletedAt;

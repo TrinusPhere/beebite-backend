@@ -9,6 +9,10 @@ import java.util.UUID;
 public interface ModifierGroupRepository {
     Optional<ModifierGroup> findById(UUID id);
 
+    default Optional<ModifierGroup> findByIdInStore(UUID id, UUID storeId) {
+        return findById(id);
+    }
+
     com.trinusphere.beebite.domain.shared.PageResult<ModifierGroup> findAllByStoreId(UUID storeId, int page, int size);
 
     List<ModifierGroup> findAllByStoreId(UUID storeId);

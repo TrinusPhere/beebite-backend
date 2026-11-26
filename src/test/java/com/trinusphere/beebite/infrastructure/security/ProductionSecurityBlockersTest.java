@@ -212,6 +212,7 @@ class ProductionSecurityBlockersTest {
         for (Class<?> beanClass : java.util.List.of(
                 com.trinusphere.beebite.application.sync.BootstrapEdgeStoreUseCase.class,
                 com.trinusphere.beebite.application.sync.BackfillEdgeOutboxUseCase.class,
+                com.trinusphere.beebite.application.sync.PullEdgeCatalogDeltaUseCase.class,
                 com.trinusphere.beebite.application.cash.GetCurrentCashSessionUseCase.class)) {
             for (var ctor : beanClass.getConstructors()) {
                 for (var param : ctor.getParameters()) {

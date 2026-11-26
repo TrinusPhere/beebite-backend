@@ -9,6 +9,7 @@ public interface EdgeStoreBootstrapPort {
 
     void bootstrapClientStoreAndCleanSeed(
             UUID edgeStoreId,
+            UUID edgeCatalogId,
             String storeName,
             String publicSlug,
             String address,
@@ -22,4 +23,3 @@ public interface EdgeStoreBootstrapPort {
             String adminDisplayName
     );
 }
-

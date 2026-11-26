@@ -20,7 +20,9 @@ public class GetIngredientUseCase {
     }
 
     public IngredientResponse execute(UUID storeId, UUID id) {
-        var ingredient = repository.findById(id).orElseThrow(() -> new IngredientNotFoundException(id.toString()));
+        var inStore = repository.findByIdInStore(id, storeId);
+        var ingredient = (inStore.isPresent() ? inStore : repository.findById(id))
+                .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
         StoreGuard.enforce(ingredient, storeId);
         return CreateIngredientUseCase.toResponse(ingredient);
     }

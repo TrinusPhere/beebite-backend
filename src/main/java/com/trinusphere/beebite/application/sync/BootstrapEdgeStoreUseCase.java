@@ -13,8 +13,9 @@ import java.util.UUID;
 
 /**
  * Inicializa automaticamente o banco local de uma unidade {@code EDGE} com a loja real do cliente,
- * remove a loja/tenant seed padrão ({@code 00000000-0000-0000-0000-000000000001}) e garante que o
- * usuário inicial local seja {@code ADMIN} da loja (jamais {@code SUPER_ADMIN}).
+ * associa seu {@code catalog_id} compartilhado, remove a loja/tenant seed padrão
+ * ({@code 00000000-0000-0000-0000-000000000001}) e garante que o usuário inicial local seja
+ * {@code ADMIN} da loja (jamais {@code SUPER_ADMIN}).
  */
 @ApplicationScoped
 public class BootstrapEdgeStoreUseCase {
@@ -25,6 +26,7 @@ public class BootstrapEdgeStoreUseCase {
     private final EdgeStoreBootstrapPort bootstrapPort;
     private final String syncMode;
     private final Optional<String> edgeStoreIdRaw;
+    private final Optional<String> edgeCatalogIdRaw;
     private final Optional<String> edgeStoreName;
     private final Optional<String> edgeStoreSlug;
     private final Optional<String> edgeStoreAddress;
@@ -35,6 +37,7 @@ public class BootstrapEdgeStoreUseCase {
             EdgeStoreBootstrapPort bootstrapPort,
             @ConfigProperty(name = "biteflow.sync.mode", defaultValue = "CLOUD") String syncMode,
             @ConfigProperty(name = "biteflow.edge.store-id") Optional<String> edgeStoreIdRaw,
+            @ConfigProperty(name = "biteflow.edge.catalog-id") Optional<String> edgeCatalogIdRaw,
             @ConfigProperty(name = "biteflow.edge.store-name") Optional<String> edgeStoreName,
             @ConfigProperty(name = "biteflow.edge.store-slug") Optional<String> edgeStoreSlug,
             @ConfigProperty(name = "biteflow.edge.store-address") Optional<String> edgeStoreAddress,
@@ -42,6 +45,7 @@ public class BootstrapEdgeStoreUseCase {
         this.bootstrapPort = bootstrapPort;
         this.syncMode = syncMode != null ? syncMode.trim().toUpperCase(Locale.ROOT) : "CLOUD";
         this.edgeStoreIdRaw = edgeStoreIdRaw != null ? edgeStoreIdRaw : Optional.empty();
+        this.edgeCatalogIdRaw = edgeCatalogIdRaw != null ? edgeCatalogIdRaw : Optional.empty();
         this.edgeStoreName = edgeStoreName != null ? edgeStoreName : Optional.empty();
         this.edgeStoreSlug = edgeStoreSlug != null ? edgeStoreSlug : Optional.empty();
         this.edgeStoreAddress = edgeStoreAddress != null ? edgeStoreAddress : Optional.empty();
@@ -67,6 +71,7 @@ public class BootstrapEdgeStoreUseCase {
             return false;
         }
 
+        UUID resolvedCatalogId = resolveCatalogId(edgeStoreId);
         String resolvedName = edgeStoreName.map(String::trim).filter(s -> !s.isBlank()).orElse("Unidade Balcão");
         String resolvedSlug = edgeStoreSlug.map(String::trim).filter(s -> !s.isBlank())
                 .map(s -> s.toLowerCase(Locale.ROOT))
@@ -79,6 +84,7 @@ public class BootstrapEdgeStoreUseCase {
 
         bootstrapPort.bootstrapClientStoreAndCleanSeed(
                 edgeStoreId,
+                resolvedCatalogId,
                 resolvedName,
                 resolvedSlug,
                 resolvedAddress,
@@ -92,9 +98,23 @@ public class BootstrapEdgeStoreUseCase {
                 "Administrador - " + resolvedName
         );
 
-        LOG.infof("[EDGE-BOOTSTRAP] Unidade Edge '%s' (%s) inicializada com sucesso como loja única local (admin=%s).",
-                resolvedName, edgeStoreId, resolvedAdminLogin);
+        LOG.infof("[EDGE-BOOTSTRAP] Unidade Edge '%s' (store=%s, catalog=%s) inicializada com sucesso (admin=%s).",
+                resolvedName, edgeStoreId, resolvedCatalogId, resolvedAdminLogin);
         return true;
+    }
+
+    private UUID resolveCatalogId(UUID fallbackStoreId) {
+        String rawCatalog = edgeCatalogIdRaw.map(String::trim).orElse("");
+        if (rawCatalog.isBlank()) {
+            return fallbackStoreId;
+        }
+        try {
+            return UUID.fromString(rawCatalog);
+        } catch (IllegalArgumentException ex) {
+            LOG.warnf("[EDGE-BOOTSTRAP] BEEBITE_EDGE_CATALOG_ID inválido ('%s'); utilizando storeId (%s) como fallback.",
+                    rawCatalog, fallbackStoreId);
+            return fallbackStoreId;
+        }
     }
 
     static String slugify(String text) {

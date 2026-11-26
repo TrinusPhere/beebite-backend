@@ -22,7 +22,8 @@ public class GetCategoryUseCase {
     }
 
     public CategoryResponse execute(UUID storeId, UUID id) {
-        ProductCategory category = categoryRepository.findById(id)
+        var inStore = categoryRepository.findByIdInStore(id, storeId);
+        ProductCategory category = (inStore.isPresent() ? inStore : categoryRepository.findById(id))
                 .orElseThrow(() -> new CategoryNotFoundException(id.toString()));
         StoreGuard.enforce(category, storeId);
         return CategoryDtoMapper.toResponse(category);

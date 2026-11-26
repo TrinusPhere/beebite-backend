@@ -20,7 +20,8 @@ public class DeleteModifierGroupUseCase {
     }
 
     public void execute(UUID storeId, UUID id) {
-        ModifierGroup group = repository.findById(id)
+        var inStore = repository.findByIdInStore(id, storeId);
+        ModifierGroup group = (inStore.isPresent() ? inStore : repository.findById(id))
                 .orElseThrow(() -> new ModifierGroupNotFoundException(id.toString()));
         StoreGuard.enforce(group, storeId);
         repository.deleteById(id);

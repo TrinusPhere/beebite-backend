@@ -21,7 +21,8 @@ public class DeleteCategoryUseCase {
     }
 
     public void execute(UUID storeId, UUID id) {
-        ProductCategory category = categoryRepository.findById(id)
+        var inStore = categoryRepository.findByIdInStore(id, storeId);
+        ProductCategory category = (inStore.isPresent() ? inStore : categoryRepository.findById(id))
                 .orElseThrow(() -> new CategoryNotFoundException(id.toString()));
         StoreGuard.enforce(category, storeId);
         categoryRepository.deleteById(id);

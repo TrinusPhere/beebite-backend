@@ -53,6 +53,7 @@ services:
       BEEBITE_INITIAL_ADMIN_PASSWORD: ${BEEBITE_INITIAL_ADMIN_PASSWORD}
       BEEBITE_SYNC_MODE: CLOUD
       BEEBITE_IFOOD_ENABLED: "true"
+      BEEBITE_INTERNAL_SERVICE_TOKEN: ${BEEBITE_INTERNAL_SERVICE_TOKEN:?Defina BEEBITE_INTERNAL_SERVICE_TOKEN no arquivo .env}
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-trinusphere-beebite-prd}
     volumes:
       - ./secrets:/secrets:ro
@@ -80,6 +81,7 @@ services:
       BEEBITE_IMAGE_STORAGE_DIR: /data/images/catalog
       BEEBITE_IMAGE_PUBLIC_BASE_URL: https://${API_DOMAIN:-api.trinusphere.com}/api/images
       BEEBITE_API_BASE_URL: http://beebite-backend:8080
+      BEEBITE_INTERNAL_SERVICE_TOKEN: ${BEEBITE_INTERNAL_SERVICE_TOKEN:?Defina BEEBITE_INTERNAL_SERVICE_TOKEN no arquivo .env}
     volumes:
       - ./uploads/images:/data/images/catalog
     deploy:

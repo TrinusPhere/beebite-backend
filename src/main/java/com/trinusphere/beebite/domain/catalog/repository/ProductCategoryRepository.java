@@ -9,6 +9,10 @@ import java.util.UUID;
 public interface ProductCategoryRepository {
     Optional<ProductCategory> findById(UUID id);
 
+    default Optional<ProductCategory> findByIdInStore(UUID id, UUID storeId) {
+        return findById(id);
+    }
+
     List<ProductCategory> findAllByStoreId(UUID storeId);
 
     ProductCategory save(ProductCategory category);

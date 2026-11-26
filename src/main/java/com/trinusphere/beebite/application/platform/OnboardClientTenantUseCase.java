@@ -10,6 +10,8 @@ import com.trinusphere.beebite.domain.auth.repository.UserRepository;
 import com.trinusphere.beebite.domain.auth.repository.UserStoreAccessRepository;
 import com.trinusphere.beebite.domain.auth.valueobject.Permission;
 import com.trinusphere.beebite.domain.auth.valueobject.Role;
+import com.trinusphere.beebite.domain.catalog.entity.Catalog;
+import com.trinusphere.beebite.domain.catalog.repository.CatalogRepository;
 import com.trinusphere.beebite.domain.platform.entity.SaasContract;
 import com.trinusphere.beebite.domain.platform.entity.SaasInvoice;
 import com.trinusphere.beebite.domain.platform.entity.TenantAccount;
@@ -36,6 +38,7 @@ import java.util.UUID;
 public class OnboardClientTenantUseCase {
 
     private final TenantAccountRepository tenantAccountRepository;
+    private final CatalogRepository catalogRepository;
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
     private final UserStoreAccessRepository userStoreAccessRepository;
@@ -43,7 +46,6 @@ public class OnboardClientTenantUseCase {
     private final SaasInvoiceRepository saasInvoiceRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Inject
     public OnboardClientTenantUseCase(
             TenantAccountRepository tenantAccountRepository,
             StoreRepository storeRepository,
@@ -52,7 +54,22 @@ public class OnboardClientTenantUseCase {
             SaasContractRepository saasContractRepository,
             SaasInvoiceRepository saasInvoiceRepository,
             PasswordEncoder passwordEncoder) {
+        this(tenantAccountRepository, null, storeRepository, userRepository, userStoreAccessRepository,
+                saasContractRepository, saasInvoiceRepository, passwordEncoder);
+    }
+
+    @Inject
+    public OnboardClientTenantUseCase(
+            TenantAccountRepository tenantAccountRepository,
+            CatalogRepository catalogRepository,
+            StoreRepository storeRepository,
+            UserRepository userRepository,
+            UserStoreAccessRepository userStoreAccessRepository,
+            SaasContractRepository saasContractRepository,
+            SaasInvoiceRepository saasInvoiceRepository,
+            PasswordEncoder passwordEncoder) {
         this.tenantAccountRepository = tenantAccountRepository;
+        this.catalogRepository = catalogRepository;
         this.storeRepository = storeRepository;
         this.userRepository = userRepository;
         this.userStoreAccessRepository = userStoreAccessRepository;
@@ -78,6 +95,14 @@ public class OnboardClientTenantUseCase {
         );
         TenantAccount savedTenant = tenantAccountRepository.save(tenant);
 
+        String defaultCatalogName = "Cardápio Principal - " + savedTenant.getTradeName();
+        Catalog defaultCatalog = new Catalog(savedTenant.getId(), defaultCatalogName, true);
+        if (catalogRepository != null) {
+            defaultCatalog = catalogRepository.save(defaultCatalog);
+        } else {
+            defaultCatalog.setId(UUID.randomUUID());
+        }
+
         List<Store> createdStores = new ArrayList<>();
         List<OnboardClientResponse.ProvisionedStoreDto> provisionedDtos = new ArrayList<>();
 
@@ -90,6 +115,7 @@ public class OnboardClientTenantUseCase {
                 store.definePublicSlug(slugify(storeSetup.name()));
             }
             store.assignToTenant(savedTenant.getId(), storeSetup.cnpj());
+            store.assignCatalog(defaultCatalog.getId());
 
             String mode = storeSetup.syncMode() != null ? storeSetup.syncMode().trim().toUpperCase() : "CLOUD";
             String generatedEdgeToken = null;
@@ -108,7 +134,9 @@ public class OnboardClientTenantUseCase {
                     savedStore.getName(),
                     savedStore.getCnpj(),
                     savedStore.getSyncMode(),
-                    generatedEdgeToken
+                    generatedEdgeToken,
+                    defaultCatalog.getId() != null ? defaultCatalog.getId().toString() : null,
+                    defaultCatalog.getName()
             ));
         }
 
@@ -215,4 +243,3 @@ public class OnboardClientTenantUseCase {
                 .replaceAll("(^-|-$)", "");
     }
 }
-

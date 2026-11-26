@@ -1,6 +1,5 @@
 package com.trinusphere.beebite.infrastructure.persistence.panache.entity;
 
-import java.time.LocalDateTime;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -19,8 +19,8 @@ public class AdditionalEntity extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.UUID)
     public UUID id;
 
-    @Column(name = "store_id", nullable = false)
-    public UUID storeId;
+    @Column(name = "catalog_id", nullable = false)
+    public UUID catalogId;
 
     @Column(nullable = false)
     public String name;

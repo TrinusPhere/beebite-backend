@@ -21,7 +21,8 @@ public class ToggleAdditionalStatusUseCase {
     }
 
     public AdditionalResponse execute(UUID storeId, UUID id) {
-        Additional additional = repository.findById(id)
+        var inStore = repository.findByIdInStore(id, storeId);
+        Additional additional = (inStore.isPresent() ? inStore : repository.findById(id))
                 .orElseThrow(() -> new AdditionalNotFoundException(id.toString()));
         StoreGuard.enforce(additional, storeId);
         additional.toggleActive();

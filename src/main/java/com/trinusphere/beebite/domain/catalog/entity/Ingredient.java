@@ -1,12 +1,15 @@
 package com.trinusphere.beebite.domain.catalog.entity;
 
 import com.trinusphere.beebite.domain.catalog.valueobject.Unit;
+import com.trinusphere.beebite.domain.shared.CatalogGuard;
 import com.trinusphere.beebite.domain.shared.StoreGuard;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public class Ingredient implements StoreGuard.StoreScoped {
+public class Ingredient implements StoreGuard.StoreScoped, CatalogGuard.CatalogScoped {
     private UUID id;
+    private UUID catalogId;
     private final UUID storeId;
     private String name;
     private BigDecimal stock;
@@ -17,11 +20,17 @@ public class Ingredient implements StoreGuard.StoreScoped {
 
     public Ingredient(UUID storeId, String name, BigDecimal stock, Unit unit, BigDecimal costPrice,
             BigDecimal minStock) {
-        if (storeId == null)
+        this(storeId, storeId, name, stock, unit, costPrice, minStock);
+    }
+
+    private Ingredient(UUID catalogId, UUID storeId, String name, BigDecimal stock, Unit unit, BigDecimal costPrice,
+            BigDecimal minStock) {
+        if (storeId == null && catalogId == null)
             throw new IllegalArgumentException("storeId é obrigatório.");
         if (name == null || name.isBlank())
             throw new IllegalArgumentException("name é obrigatório.");
-        this.storeId = storeId;
+        this.catalogId = catalogId != null ? catalogId : storeId;
+        this.storeId = storeId != null ? storeId : catalogId;
         this.name = name;
         this.stock = nz(stock);
         this.unit = unit != null ? unit : Unit.UN;
@@ -32,10 +41,21 @@ public class Ingredient implements StoreGuard.StoreScoped {
 
     public static Ingredient reconstitute(UUID id, UUID storeId, String name, BigDecimal stock, Unit unit,
             BigDecimal costPrice, BigDecimal minStock, boolean active) {
-        Ingredient i = new Ingredient(storeId, name, stock, unit, costPrice, minStock);
+        return reconstituteForCatalog(id, storeId, storeId, name, stock, unit, costPrice, minStock, active);
+    }
+
+    public static Ingredient reconstituteForCatalog(UUID id, UUID catalogId, UUID contextStoreId, String name,
+            BigDecimal stock, Unit unit, BigDecimal costPrice, BigDecimal minStock, boolean active) {
+        Ingredient i = new Ingredient(catalogId, contextStoreId, name, stock, unit, costPrice, minStock);
         i.id = id;
         i.active = active;
         return i;
+    }
+
+    public void assignCatalog(UUID catalogId) {
+        if (catalogId != null) {
+            this.catalogId = catalogId;
+        }
     }
 
     private static BigDecimal nz(BigDecimal v) {
@@ -95,6 +115,12 @@ public class Ingredient implements StoreGuard.StoreScoped {
         return id;
     }
 
+    @Override
+    public UUID getCatalogId() {
+        return catalogId;
+    }
+
+    @Override
     public UUID getStoreId() {
         return storeId;
     }

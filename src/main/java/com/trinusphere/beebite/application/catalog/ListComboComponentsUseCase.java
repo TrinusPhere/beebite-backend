@@ -30,7 +30,8 @@ public class ListComboComponentsUseCase {
     }
 
     public List<ProductComboComponentResponse> execute(UUID storeId, UUID comboProductId) {
-        Product comboProduct = productRepository.findById(comboProductId)
+        var inStore = productRepository.findByIdInStore(comboProductId, storeId);
+        Product comboProduct = (inStore.isPresent() ? inStore : productRepository.findById(comboProductId))
                 .orElseThrow(() -> new ProductNotFoundException(comboProductId.toString()));
         StoreGuard.enforce(comboProduct, storeId);
 

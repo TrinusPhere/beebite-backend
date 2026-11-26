@@ -59,7 +59,11 @@ public class DispatchOrderToKdsUseCase {
                 .map(OrderItem::getProductId)
                 .collect(Collectors.toList());
 
-        Map<UUID, Product> productMap = productRepository.findAllById(productIds).stream()
+        List<Product> contextualProducts = productRepository.findAllByIdInStore(productIds, storeId);
+        List<Product> resolvedProducts = !contextualProducts.isEmpty()
+                ? contextualProducts
+                : productRepository.findAllById(productIds);
+        Map<UUID, Product> productMap = resolvedProducts.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
         List<ProductionTask> newTasks = new ArrayList<>();

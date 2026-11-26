@@ -7,6 +7,7 @@ public record AccessibleStoreResponse(
         String storeId,
         String storeName,
         String tenantId,
+        String catalogId,
         String role,
         List<String> permissions,
         String syncMode,
@@ -18,11 +19,25 @@ public record AccessibleStoreResponse(
     public AccessibleStoreResponse(
             String storeId,
             String storeName,
+            String tenantId,
+            String role,
+            List<String> permissions,
+            String syncMode,
+            Instant lastEdgeSyncAt,
+            boolean activeContext,
+            boolean sandboxBeta,
+            boolean storeActive) {
+        this(storeId, storeName, tenantId, null, role, permissions, syncMode, lastEdgeSyncAt, activeContext, sandboxBeta, storeActive);
+    }
+
+    public AccessibleStoreResponse(
+            String storeId,
+            String storeName,
             String role,
             List<String> permissions,
             String syncMode,
             Instant lastEdgeSyncAt,
             boolean activeContext) {
-        this(storeId, storeName, null, role, permissions, syncMode, lastEdgeSyncAt, activeContext, false, true);
+        this(storeId, storeName, null, null, role, permissions, syncMode, lastEdgeSyncAt, activeContext, false, true);
     }
 }

@@ -42,6 +42,7 @@ public final class ProductDtoMapper {
                 p.getCatalogItemType().name(), channelPricesDto, p.getProductType().name(), p.isTrackStock(),
                 p.getProductionSectorId() != null ? p.getProductionSectorId().toString() : null, p.getSaleUnit().name(),
                 p.isAvailableDigitalMenu(), p.isAvailablePdv(), sheet, removable, modIds, p.calculateTotalCost(),
-                p.calculateProfit(), null);
+                p.calculateProfit(), null, p.getGlobalStatus().name(), p.getLocalStatus().name(),
+                p.getCatalogId() != null ? p.getCatalogId().toString() : null);
     }
 }

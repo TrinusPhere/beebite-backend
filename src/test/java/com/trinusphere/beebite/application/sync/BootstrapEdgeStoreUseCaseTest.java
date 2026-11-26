@@ -20,6 +20,7 @@ class BootstrapEdgeStoreUseCaseTest {
 
     private static final UUID SEED_STORE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID CLIENT_STORE_ID = UUID.fromString("11111111-2222-3333-4444-555555555555");
+    private static final UUID SHARED_CATALOG_ID = UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
 
     @Test
     void shouldDoNothingWhenSyncModeIsCloud() {
@@ -27,6 +28,7 @@ class BootstrapEdgeStoreUseCaseTest {
                 bootstrapPort,
                 "CLOUD",
                 Optional.of(CLIENT_STORE_ID.toString()),
+                Optional.of(SHARED_CATALOG_ID.toString()),
                 Optional.of("Chefs Burguer - Balcão"),
                 Optional.of("chefs-burguer-balcao"),
                 Optional.of("Rua Central, 100"),
@@ -45,6 +47,7 @@ class BootstrapEdgeStoreUseCaseTest {
                 bootstrapPort,
                 "EDGE",
                 Optional.empty(),
+                Optional.empty(),
                 Optional.of("Chefs Burguer - Balcão"),
                 Optional.empty(),
                 Optional.empty(),
@@ -58,11 +61,12 @@ class BootstrapEdgeStoreUseCaseTest {
     }
 
     @Test
-    void shouldBootstrapClientStoreAndDemoteSeedAdminWhenSyncModeIsEdge() {
+    void shouldBootstrapClientStoreDefaultingCatalogIdToStoreIdWhenCatalogEnvMissing() {
         BootstrapEdgeStoreUseCase useCase = new BootstrapEdgeStoreUseCase(
                 bootstrapPort,
                 "EDGE",
                 Optional.of(CLIENT_STORE_ID.toString()),
+                Optional.empty(),
                 Optional.of("Chef's Burguer - Balcão"),
                 Optional.empty(),
                 Optional.empty(),
@@ -73,6 +77,7 @@ class BootstrapEdgeStoreUseCaseTest {
 
         assertTrue(ran);
         verify(bootstrapPort).bootstrapClientStoreAndCleanSeed(
+                CLIENT_STORE_ID,
                 CLIENT_STORE_ID,
                 "Chef's Burguer - Balcão",
                 "chef-s-burguer-balcao",
@@ -88,11 +93,12 @@ class BootstrapEdgeStoreUseCaseTest {
     }
 
     @Test
-    void shouldUseExplicitSlugAddressAndAdminLoginWhenProvided() {
+    void shouldUseExplicitSharedCatalogIdSlugAddressAndAdminLoginWhenProvided() {
         BootstrapEdgeStoreUseCase useCase = new BootstrapEdgeStoreUseCase(
                 bootstrapPort,
                 "EDGE",
                 Optional.of(CLIENT_STORE_ID.toString()),
+                Optional.of(SHARED_CATALOG_ID.toString()),
                 Optional.of("Chefs Burguer - Loja 2"),
                 Optional.of("chefs-loja-2"),
                 Optional.of("Av Brasil, 500"),
@@ -104,6 +110,7 @@ class BootstrapEdgeStoreUseCaseTest {
         assertTrue(ran);
         verify(bootstrapPort).bootstrapClientStoreAndCleanSeed(
                 CLIENT_STORE_ID,
+                SHARED_CATALOG_ID,
                 "Chefs Burguer - Loja 2",
                 "chefs-loja-2",
                 "Av Brasil, 500",
@@ -123,6 +130,7 @@ class BootstrapEdgeStoreUseCaseTest {
                 bootstrapPort,
                 "EDGE",
                 Optional.of("not-a-uuid"),
+                Optional.empty(),
                 Optional.of("Loja Teste"),
                 Optional.empty(),
                 Optional.empty(),

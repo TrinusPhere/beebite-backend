@@ -21,7 +21,8 @@ public class UpdateIngredientUseCase {
     }
 
     public IngredientResponse execute(UUID storeId, UUID id, IngredientRequest request) {
-        Ingredient ingredient = repository.findById(id)
+        var inStore = repository.findByIdInStore(id, storeId);
+        Ingredient ingredient = (inStore.isPresent() ? inStore : repository.findById(id))
                 .orElseThrow(() -> new IngredientNotFoundException(id.toString()));
         StoreGuard.enforce(ingredient, storeId);
         ingredient.updateDetails(request.name(), request.unit() != null ? Unit.valueOf(request.unit()) : null,

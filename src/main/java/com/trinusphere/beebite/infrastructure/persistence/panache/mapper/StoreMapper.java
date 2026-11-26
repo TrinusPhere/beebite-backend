@@ -24,7 +24,9 @@ public final class StoreMapper {
                 e.lastEdgeSyncAt,
                 e.tenantId,
                 e.cnpj,
-                e.active
+                e.active,
+                e.catalogId,
+                e.lastCatalogPullAt
         );
     }
 
@@ -32,6 +34,7 @@ public final class StoreMapper {
         StoreEntity e = new StoreEntity();
         e.id = s.getId();
         e.tenantId = s.getTenantId();
+        e.catalogId = s.getCatalogId();
         e.name = s.getName();
         e.cnpj = s.getCnpj();
         e.logoUrl = s.getLogoUrl();
@@ -43,6 +46,7 @@ public final class StoreMapper {
         e.syncMode = s.getSyncMode() != null ? s.getSyncMode() : "CLOUD";
         e.edgeApiKeyHash = s.getEdgeApiKeyHash();
         e.lastEdgeSyncAt = s.getLastEdgeSyncAt();
+        e.lastCatalogPullAt = s.getLastCatalogPullAt();
         return e;
     }
 }

@@ -6,6 +6,7 @@ import java.util.UUID;
 public class Store {
     private UUID id;
     private UUID tenantId;
+    private UUID catalogId;
     private String name;
     private String cnpj;
     private String logoUrl;
@@ -17,6 +18,7 @@ public class Store {
     private String syncMode;
     private String edgeApiKeyHash;
     private Instant lastEdgeSyncAt;
+    private Instant lastCatalogPullAt;
 
     public Store(String name) {
         validate(name);
@@ -27,18 +29,25 @@ public class Store {
 
     public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
             String slug) {
-        return reconstitute(id, name, logoUrl, open, hours, address, slug, "CLOUD", null, null, null, null, true);
+        return reconstitute(id, name, logoUrl, open, hours, address, slug, "CLOUD", null, null, null, null, true, null, null);
     }
 
     public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
             String slug, String syncMode, String edgeApiKeyHash, Instant lastEdgeSyncAt) {
         return reconstitute(id, name, logoUrl, open, hours, address, slug, syncMode, edgeApiKeyHash, lastEdgeSyncAt,
-                null, null, true);
+                null, null, true, null, null);
     }
 
     public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
             String slug, String syncMode, String edgeApiKeyHash, Instant lastEdgeSyncAt, UUID tenantId, String cnpj,
             boolean active) {
+        return reconstitute(id, name, logoUrl, open, hours, address, slug, syncMode, edgeApiKeyHash, lastEdgeSyncAt,
+                tenantId, cnpj, active, null, null);
+    }
+
+    public static Store reconstitute(UUID id, String name, String logoUrl, boolean open, String hours, String address,
+            String slug, String syncMode, String edgeApiKeyHash, Instant lastEdgeSyncAt, UUID tenantId, String cnpj,
+            boolean active, UUID catalogId, Instant lastCatalogPullAt) {
         Store s = new Store(name);
         s.id = id;
         s.logoUrl = logoUrl;
@@ -52,6 +61,8 @@ public class Store {
         s.tenantId = tenantId;
         s.cnpj = cnpj;
         s.active = active;
+        s.catalogId = catalogId;
+        s.lastCatalogPullAt = lastCatalogPullAt;
         return s;
     }
 
@@ -76,6 +87,14 @@ public class Store {
     public void assignToTenant(UUID tenantId, String cnpj) {
         this.tenantId = tenantId;
         this.cnpj = cnpj;
+    }
+
+    public void assignCatalog(UUID catalogId) {
+        this.catalogId = catalogId;
+    }
+
+    public void markCatalogPulled(Instant pulledAt) {
+        this.lastCatalogPullAt = pulledAt != null ? pulledAt : Instant.now();
     }
 
     public void activateStore() {
@@ -113,6 +132,10 @@ public class Store {
 
     public UUID getTenantId() {
         return tenantId;
+    }
+
+    public UUID getCatalogId() {
+        return catalogId;
     }
 
     public String getName() {
@@ -157,6 +180,10 @@ public class Store {
 
     public Instant getLastEdgeSyncAt() {
         return lastEdgeSyncAt;
+    }
+
+    public Instant getLastCatalogPullAt() {
+        return lastCatalogPullAt;
     }
 
     public void setId(UUID id) {

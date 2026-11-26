@@ -20,7 +20,9 @@ public class UpdateProductModifierGroupsUseCase {
     }
 
     public ProductResponse execute(UUID storeId, UUID id, List<String> groupIds) {
-        var p = repo.findById(id).orElseThrow(() -> new ProductNotFoundException(id.toString()));
+        var inStore = repo.findByIdInStore(id, storeId);
+        var p = (inStore.isPresent() ? inStore : repo.findById(id))
+                .orElseThrow(() -> new ProductNotFoundException(id.toString()));
         StoreGuard.enforce(p, storeId);
         p.replaceModifierGroups(groupIds != null
                 ? groupIds.stream().filter(x -> x != null && !x.isBlank()).map(UUID::fromString).toList() : List.of());
