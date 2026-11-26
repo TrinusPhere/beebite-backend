@@ -34,7 +34,7 @@ SELECT
         ELSE gen_random_uuid()
     END,
     t.id,
-    'Cardápio Principal - ' || t.trade_name,
+    left('Cardápio Principal - ' || t.trade_name, 150),
     true,
     now(),
     now()
@@ -73,7 +73,7 @@ CREATE INDEX idx_store_product_setting_product ON store_product_setting(product_
 
 -- Backfill do estado operacional atual de cada produto em sua loja original
 INSERT INTO store_product_setting (store_id, product_id, stock, local_status, production_sector_id, updated_at)
-SELECT p.store_id, p.id, p.stock, 'AVAILABLE', p.production_sector_id, now()
+SELECT p.store_id, p.id, COALESCE(p.stock, 0), 'AVAILABLE', p.production_sector_id, now()
 FROM product p
 ON CONFLICT (store_id, product_id) DO NOTHING;
 
@@ -91,7 +91,7 @@ CREATE INDEX idx_store_ingredient_stock_store ON store_ingredient_stock(store_id
 
 -- Backfill do saldo de insumos atual em sua loja original
 INSERT INTO store_ingredient_stock (store_id, ingredient_id, stock, min_stock, updated_at)
-SELECT i.store_id, i.id, i.stock, i.min_stock, now()
+SELECT i.store_id, i.id, COALESCE(i.stock, 0), COALESCE(i.min_stock, 0), now()
 FROM ingredient i
 ON CONFLICT (store_id, ingredient_id) DO NOTHING;
 
@@ -106,6 +106,9 @@ UPDATE product_category pc
 SET catalog_id = s.catalog_id
 FROM store s
 WHERE pc.store_id = s.id;
+
+-- Remove eventuais categorias órfãs de lojas já excluídas fisicamente (V5 não possuía FK para store)
+DELETE FROM product_category WHERE catalog_id IS NULL;
 
 ALTER TABLE product_category
     ALTER COLUMN catalog_id SET NOT NULL,
@@ -169,10 +172,31 @@ ALTER TABLE product
 
 UPDATE product p
 SET catalog_id = s.catalog_id,
-    default_sector_code = COALESCE(ps.code, 'KITCHEN')
+    default_sector_code = COALESCE(
+        (SELECT ps.code FROM production_sector ps WHERE ps.id = p.production_sector_id),
+        'KITCHEN'
+    )
 FROM store s
-LEFT JOIN production_sector ps ON ps.id = p.production_sector_id
 WHERE p.store_id = s.id;
+
+-- Normaliza external_code em branco e resolve eventuais colisões ao unificar lojas no mesmo catálogo
+UPDATE product
+SET external_code = NULL
+WHERE external_code IS NOT NULL AND btrim(external_code) = '';
+
+WITH ranked_codes AS (
+    SELECT id,
+           row_number() OVER (
+               PARTITION BY catalog_id, external_code
+               ORDER BY updated_at DESC, created_at DESC, id
+           ) AS rn
+    FROM product
+    WHERE external_code IS NOT NULL AND deleted_at IS NULL
+)
+UPDATE product p
+SET external_code = NULL
+FROM ranked_codes r
+WHERE p.id = r.id AND r.rn > 1;
 
 ALTER TABLE product
     ALTER COLUMN catalog_id SET NOT NULL,
@@ -186,4 +210,3 @@ CREATE UNIQUE INDEX idx_product_external_code_catalog
     WHERE external_code IS NOT NULL AND deleted_at IS NULL;
 
 CREATE INDEX idx_product_catalog_updated ON product(catalog_id, updated_at);
-
