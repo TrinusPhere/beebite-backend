@@ -1,14 +1,26 @@
 package com.trinusphere.beebite.presentation.rest;
 
+import com.trinusphere.beebite.application.sync.CompareEdgeReconciliationBucketsUseCase;
+import com.trinusphere.beebite.application.sync.CompareEdgeReconciliationItemsUseCase;
 import com.trinusphere.beebite.application.sync.GetEdgeCatalogDeltaUseCase;
 import com.trinusphere.beebite.application.sync.IngestEdgeSyncBatchUseCase;
 import com.trinusphere.beebite.application.sync.dto.EdgeCatalogDeltaResponse;
+import com.trinusphere.beebite.application.sync.dto.EdgeReconcileBucketsRequest;
+import com.trinusphere.beebite.application.sync.dto.EdgeReconcileBucketsResponse;
+import com.trinusphere.beebite.application.sync.dto.EdgeReconcileItemsRequest;
+import com.trinusphere.beebite.application.sync.dto.EdgeReconcileItemsResponse;
 import com.trinusphere.beebite.application.sync.dto.EdgeSyncBatchRequest;
 import com.trinusphere.beebite.application.sync.dto.EdgeSyncBatchResponse;
 import com.trinusphere.beebite.domain.sync.exception.InvalidSyncRequestException;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -26,6 +38,12 @@ public class EdgeSyncResource extends BaseResource {
 
     @Inject
     GetEdgeCatalogDeltaUseCase getEdgeCatalogDeltaUseCase;
+
+    @Inject
+    CompareEdgeReconciliationBucketsUseCase compareBucketsUseCase;
+
+    @Inject
+    CompareEdgeReconciliationItemsUseCase compareItemsUseCase;
 
     @POST
     @PermitAll
@@ -45,6 +63,26 @@ public class EdgeSyncResource extends BaseResource {
             @QueryParam("since") String sinceRaw) {
         Instant since = parseSince(sinceRaw);
         EdgeCatalogDeltaResponse response = getEdgeCatalogDeltaUseCase.execute(deviceToken, storeId, since);
+        return Response.ok(response).build();
+    }
+
+    @POST
+    @Path("/reconcile/buckets")
+    @PermitAll
+    public Response compareBuckets(
+            @HeaderParam("X-Edge-Device-Token") String deviceToken,
+            EdgeReconcileBucketsRequest request) {
+        EdgeReconcileBucketsResponse response = compareBucketsUseCase.execute(deviceToken, request);
+        return Response.ok(response).build();
+    }
+
+    @POST
+    @Path("/reconcile/items")
+    @PermitAll
+    public Response compareItems(
+            @HeaderParam("X-Edge-Device-Token") String deviceToken,
+            EdgeReconcileItemsRequest request) {
+        EdgeReconcileItemsResponse response = compareItemsUseCase.execute(deviceToken, request);
         return Response.ok(response).build();
     }
 

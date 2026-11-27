@@ -20,11 +20,20 @@ public class EdgeSyncedEventLogEntity extends PanacheEntityBase {
     @Column(name = "store_id", nullable = false)
     public UUID storeId;
 
+    @Column(name = "sequence")
+    public Long sequence;
+
     @Column(name = "event_type", nullable = false, length = 60)
     public String eventType;
 
     @Column(name = "aggregate_id", nullable = false)
     public UUID aggregateId;
+
+    @Column(name = "outcome", nullable = false, length = 20)
+    public String outcome;
+
+    @Column(name = "rejected_reason", columnDefinition = "TEXT")
+    public String rejectedReason;
 
     @Column(name = "received_at", nullable = false)
     public Instant receivedAt;

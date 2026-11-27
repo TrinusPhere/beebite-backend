@@ -17,6 +17,8 @@ public class EdgeOutboxEvent implements StoreGuard.StoreScoped {
     private String lastError;
     private final Instant createdAt;
     private Instant syncedAt;
+    private Long sequence;
+    private String rejectedReason;
 
     public EdgeOutboxEvent(UUID storeId, String eventType, UUID aggregateId, String payloadJson) {
         validate(storeId, eventType, aggregateId, payloadJson);
@@ -30,7 +32,8 @@ public class EdgeOutboxEvent implements StoreGuard.StoreScoped {
     }
 
     private EdgeOutboxEvent(UUID id, UUID storeId, String eventType, UUID aggregateId, String payloadJson,
-            EdgeOutboxStatus status, int attempts, String lastError, Instant createdAt, Instant syncedAt) {
+            EdgeOutboxStatus status, int attempts, String lastError, Instant createdAt, Instant syncedAt,
+            Long sequence, String rejectedReason) {
         validate(storeId, eventType, aggregateId, payloadJson);
         this.id = id;
         this.storeId = storeId;
@@ -42,13 +45,22 @@ public class EdgeOutboxEvent implements StoreGuard.StoreScoped {
         this.lastError = lastError;
         this.createdAt = createdAt != null ? createdAt : Instant.now();
         this.syncedAt = syncedAt;
+        this.sequence = sequence;
+        this.rejectedReason = rejectedReason;
     }
 
     public static EdgeOutboxEvent reconstitute(UUID id, UUID storeId, String eventType, UUID aggregateId,
             String payloadJson, EdgeOutboxStatus status, int attempts, String lastError, Instant createdAt,
             Instant syncedAt) {
         return new EdgeOutboxEvent(id, storeId, eventType, aggregateId, payloadJson, status, attempts, lastError,
-                createdAt, syncedAt);
+                createdAt, syncedAt, null, null);
+    }
+
+    public static EdgeOutboxEvent reconstitute(UUID id, UUID storeId, String eventType, UUID aggregateId,
+            String payloadJson, EdgeOutboxStatus status, int attempts, String lastError, Instant createdAt,
+            Instant syncedAt, Long sequence, String rejectedReason) {
+        return new EdgeOutboxEvent(id, storeId, eventType, aggregateId, payloadJson, status, attempts, lastError,
+                createdAt, syncedAt, sequence, rejectedReason);
     }
 
     private static void validate(UUID storeId, String eventType, UUID aggregateId, String payloadJson) {
@@ -70,6 +82,13 @@ public class EdgeOutboxEvent implements StoreGuard.StoreScoped {
         this.status = EdgeOutboxStatus.SYNCED;
         this.syncedAt = syncedAt != null ? syncedAt : Instant.now();
         this.lastError = null;
+        this.rejectedReason = null;
+    }
+
+    public void markRejected(String reason) {
+        this.status = EdgeOutboxStatus.FAILED;
+        this.rejectedReason = (reason == null || reason.isBlank()) ? "Rejeitado pela nuvem" : reason.trim();
+        this.syncedAt = null;
     }
 
     public void recordAttemptFailure(String errorMessage) {
@@ -121,5 +140,17 @@ public class EdgeOutboxEvent implements StoreGuard.StoreScoped {
 
     public Instant getSyncedAt() {
         return syncedAt;
+    }
+
+    public Long getSequence() {
+        return sequence;
+    }
+
+    public void setSequence(Long sequence) {
+        this.sequence = sequence;
+    }
+
+    public String getRejectedReason() {
+        return rejectedReason;
     }
 }

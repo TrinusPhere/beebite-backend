@@ -8,6 +8,15 @@ public record EdgeSyncEventDto(
         String eventType,
         UUID aggregateId,
         String payloadJson,
-        Instant occurredAt
+        Instant occurredAt,
+        Long sequence
 ) {
+    public EdgeSyncEventDto(
+            UUID eventId,
+            String eventType,
+            UUID aggregateId,
+            String payloadJson,
+            Instant occurredAt) {
+        this(eventId, eventType, aggregateId, payloadJson, occurredAt, null);
+    }
 }

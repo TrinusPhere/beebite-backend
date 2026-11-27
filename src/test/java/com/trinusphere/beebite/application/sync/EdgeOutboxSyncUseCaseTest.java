@@ -5,18 +5,23 @@ import com.trinusphere.beebite.application.sync.dto.EdgeSyncBatchRequest;
 import com.trinusphere.beebite.application.sync.dto.EdgeSyncBatchResponse;
 import com.trinusphere.beebite.application.sync.dto.EdgeSyncEventDto;
 import com.trinusphere.beebite.application.sync.port.EdgeCloudSyncClient;
-import com.trinusphere.beebite.application.sync.port.EdgeSnapshotApplier;
+import com.trinusphere.beebite.application.sync.port.EdgeEventInbox;
+import com.trinusphere.beebite.application.sync.port.EdgeEventOutcome;
 import com.trinusphere.beebite.domain.shared.exception.UnauthorizedException;
 import com.trinusphere.beebite.domain.store.entity.Store;
 import com.trinusphere.beebite.domain.store.repository.StoreRepository;
 import com.trinusphere.beebite.domain.sync.entity.EdgeOutboxEvent;
+import com.trinusphere.beebite.domain.sync.entity.EdgeSyncStreamState;
 import com.trinusphere.beebite.domain.sync.repository.EdgeOutboxRepository;
+import com.trinusphere.beebite.domain.sync.repository.EdgeSyncCursorRepository;
+import com.trinusphere.beebite.domain.sync.repository.EdgeSyncStreamStateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -33,13 +38,17 @@ class EdgeOutboxSyncUseCaseTest {
     @Mock
     EdgeOutboxRepository edgeOutboxRepository;
     @Mock
+    EdgeSyncStreamStateRepository streamStateRepository;
+    @Mock
     EdgeCloudSyncClient edgeCloudSyncClient;
     @Mock
     StoreRepository storeRepository;
     @Mock
     PasswordEncoder passwordEncoder;
     @Mock
-    EdgeSnapshotApplier edgeSnapshotApplier;
+    EdgeEventInbox edgeEventInbox;
+    @Mock
+    EdgeSyncCursorRepository cursorRepository;
 
     private static final UUID STORE_BALCAO_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
@@ -97,19 +106,25 @@ class EdgeOutboxSyncUseCaseTest {
 
     @Test
     void shouldFlushPendingEventsAndMarkSyncedWhenOnline() {
+        EdgeSyncAckHandler ackHandler = new EdgeSyncAckHandler(edgeOutboxRepository, streamStateRepository);
         FlushEdgeOutboxUseCase useCase = new FlushEdgeOutboxUseCase(
-                edgeOutboxRepository, edgeCloudSyncClient, "EDGE", "edge-secret-token");
+                edgeOutboxRepository, streamStateRepository, edgeCloudSyncClient, ackHandler,
+                "EDGE", "edge-secret-token", Duration.ofSeconds(15));
 
         UUID eventId1 = UUID.randomUUID();
         UUID eventId2 = UUID.randomUUID();
         EdgeOutboxEvent ev1 = EdgeOutboxEvent.reconstitute(
                 eventId1, STORE_BALCAO_ID, "ORDER_UPSERT", UUID.randomUUID(), "{\"id\":1}",
-                null, 0, null, Instant.now(), null);
+                null, 0, null, Instant.now(), null, 1L, null);
         EdgeOutboxEvent ev2 = EdgeOutboxEvent.reconstitute(
                 eventId2, STORE_BALCAO_ID, "CASH_SESSION_UPSERT", UUID.randomUUID(), "{\"id\":2}",
-                null, 0, null, Instant.now(), null);
+                null, 0, null, Instant.now(), null, 2L, null);
 
-        when(edgeOutboxRepository.findPendingBatch(50)).thenReturn(List.of(ev1, ev2));
+        when(edgeOutboxRepository.findStoreIdsWithPending()).thenReturn(List.of(STORE_BALCAO_ID));
+        when(streamStateRepository.findOrInitialize(STORE_BALCAO_ID))
+                .thenReturn(EdgeSyncStreamState.initial(STORE_BALCAO_ID));
+        when(edgeOutboxRepository.findPendingBatch(STORE_BALCAO_ID, 50)).thenReturn(List.of(ev1, ev2));
+        when(edgeOutboxRepository.findMinRetainedSequence(STORE_BALCAO_ID)).thenReturn(Optional.of(1L));
         when(edgeCloudSyncClient.sendBatch(any(EdgeSyncBatchRequest.class), eq("edge-secret-token")))
                 .thenReturn(new EdgeSyncBatchResponse(2, List.of(eventId1, eventId2), Instant.now()));
 
@@ -121,15 +136,21 @@ class EdgeOutboxSyncUseCaseTest {
 
     @Test
     void shouldKeepEventsPendingAndRecordFailureWhenInternetIsOffline() {
+        EdgeSyncAckHandler ackHandler = new EdgeSyncAckHandler(edgeOutboxRepository, streamStateRepository);
         FlushEdgeOutboxUseCase useCase = new FlushEdgeOutboxUseCase(
-                edgeOutboxRepository, edgeCloudSyncClient, "EDGE", "edge-secret-token");
+                edgeOutboxRepository, streamStateRepository, edgeCloudSyncClient, ackHandler,
+                "EDGE", "edge-secret-token", Duration.ofSeconds(15));
 
         UUID eventId = UUID.randomUUID();
         EdgeOutboxEvent ev = EdgeOutboxEvent.reconstitute(
                 eventId, STORE_BALCAO_ID, "ORDER_UPSERT", UUID.randomUUID(), "{\"id\":1}",
-                null, 0, null, Instant.now(), null);
+                null, 0, null, Instant.now(), null, 1L, null);
 
-        when(edgeOutboxRepository.findPendingBatch(50)).thenReturn(List.of(ev));
+        when(edgeOutboxRepository.findStoreIdsWithPending()).thenReturn(List.of(STORE_BALCAO_ID));
+        when(streamStateRepository.findOrInitialize(STORE_BALCAO_ID))
+                .thenReturn(EdgeSyncStreamState.initial(STORE_BALCAO_ID));
+        when(edgeOutboxRepository.findPendingBatch(STORE_BALCAO_ID, 50)).thenReturn(List.of(ev));
+        when(edgeOutboxRepository.findMinRetainedSequence(STORE_BALCAO_ID)).thenReturn(Optional.of(1L));
         when(edgeCloudSyncClient.sendBatch(any(), any()))
                 .thenThrow(new RuntimeException("No route to host (Internet Offline)"));
 
@@ -137,47 +158,40 @@ class EdgeOutboxSyncUseCaseTest {
 
         assertEquals(0, syncedCount);
         verify(edgeOutboxRepository, never()).markSynced(any(), any());
-        verify(edgeOutboxRepository).markFailed(eq(eventId), contains("Internet Offline"));
+        verify(edgeOutboxRepository).recordTransientFailure(eq(List.of(eventId)), contains("Internet Offline"));
     }
 
     @Test
     void shouldIngestBatchIdempotentlyOnCloudAndUpdateStoreLastSyncTimestamp() {
+        EdgeDeviceTokenValidator validator = new EdgeDeviceTokenValidator(passwordEncoder);
         IngestEdgeSyncBatchUseCase useCase = new IngestEdgeSyncBatchUseCase(
-                storeRepository, edgeOutboxRepository, passwordEncoder, edgeSnapshotApplier);
+                storeRepository, validator, edgeEventInbox, cursorRepository);
 
         UUID newEventId = UUID.randomUUID();
         UUID duplicateEventId = UUID.randomUUID();
-        UUID orderId1 = UUID.randomUUID();
-        UUID orderId2 = UUID.randomUUID();
+        EdgeSyncEventDto ev1 = new EdgeSyncEventDto(newEventId, "ORDER_UPSERT", UUID.randomUUID(), "{\"displayId\":10}", Instant.now());
+        EdgeSyncEventDto ev2 = new EdgeSyncEventDto(duplicateEventId, "ORDER_UPSERT", UUID.randomUUID(), "{\"displayId\":11}", Instant.now());
 
-        EdgeSyncBatchRequest request = new EdgeSyncBatchRequest(
-                STORE_BALCAO_ID,
-                List.of(
-                        new EdgeSyncEventDto(newEventId, "ORDER_UPSERT", orderId1, "{\"displayId\":10}", Instant.now()),
-                        new EdgeSyncEventDto(duplicateEventId, "ORDER_UPSERT", orderId2, "{\"displayId\":11}", Instant.now())
-                )
-        );
+        EdgeSyncBatchRequest request = new EdgeSyncBatchRequest(STORE_BALCAO_ID, List.of(ev1, ev2));
 
         when(storeRepository.findById(STORE_BALCAO_ID)).thenReturn(Optional.of(balcaoStore));
         when(passwordEncoder.matches("valid-edge-token", "$2a$10$hashedEdgeToken")).thenReturn(true);
-        when(edgeOutboxRepository.isEventAlreadyProcessed(newEventId)).thenReturn(false);
-        when(edgeOutboxRepository.isEventAlreadyProcessed(duplicateEventId)).thenReturn(true);
+        when(edgeEventInbox.applyLegacy(STORE_BALCAO_ID, ev1)).thenReturn(EdgeEventOutcome.applied(newEventId));
+        when(edgeEventInbox.applyLegacy(STORE_BALCAO_ID, ev2)).thenReturn(EdgeEventOutcome.duplicate(duplicateEventId));
 
         EdgeSyncBatchResponse response = useCase.execute("valid-edge-token", request);
 
         assertEquals(1, response.processedCount());
         assertEquals(2, response.ackedEventIds().size());
-        verify(edgeSnapshotApplier, times(1)).apply(STORE_BALCAO_ID, "ORDER_UPSERT", orderId1, "{\"displayId\":10}");
-        verify(edgeSnapshotApplier, never()).apply(eq(STORE_BALCAO_ID), any(), eq(orderId2), any());
-        verify(edgeOutboxRepository, times(1)).recordProcessedEvent(newEventId, STORE_BALCAO_ID, "ORDER_UPSERT", orderId1);
         verify(storeRepository).save(balcaoStore);
         assertNotNull(balcaoStore.getLastEdgeSyncAt());
     }
 
     @Test
     void shouldRejectIngestBatchWhenEdgeTokenIsInvalid() {
+        EdgeDeviceTokenValidator validator = new EdgeDeviceTokenValidator(passwordEncoder);
         IngestEdgeSyncBatchUseCase useCase = new IngestEdgeSyncBatchUseCase(
-                storeRepository, edgeOutboxRepository, passwordEncoder, edgeSnapshotApplier);
+                storeRepository, validator, edgeEventInbox, cursorRepository);
 
         EdgeSyncBatchRequest request = new EdgeSyncBatchRequest(STORE_BALCAO_ID, List.of());
 
@@ -186,6 +200,6 @@ class EdgeOutboxSyncUseCaseTest {
 
         assertThrows(UnauthorizedException.class,
                 () -> useCase.execute("wrong-token", request));
-        verify(edgeSnapshotApplier, never()).apply(any(), any(), any(), any());
+        verifyNoInteractions(edgeEventInbox);
     }
 }

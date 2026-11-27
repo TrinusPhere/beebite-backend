@@ -5,6 +5,10 @@ import java.util.UUID;
 
 public record EdgeSyncBatchRequest(
         UUID storeId,
-        List<EdgeSyncEventDto> events
+        List<EdgeSyncEventDto> events,
+        Long firstAvailableSequence
 ) {
+    public EdgeSyncBatchRequest(UUID storeId, List<EdgeSyncEventDto> events) {
+        this(storeId, events, null);
+    }
 }

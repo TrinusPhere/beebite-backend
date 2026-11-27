@@ -18,6 +18,8 @@ import com.trinusphere.beebite.domain.order.valueobject.OrderType;
 import com.trinusphere.beebite.domain.order.valueobject.PaymentMethod;
 import com.trinusphere.beebite.domain.payment.entity.Payment;
 import com.trinusphere.beebite.domain.store.entity.Store;
+import com.trinusphere.beebite.domain.sync.exception.InvalidEdgeEventPayloadException;
+import com.trinusphere.beebite.domain.sync.exception.UnsupportedEdgeEventTypeException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import org.junit.jupiter.api.BeforeEach;
@@ -136,8 +138,36 @@ class EdgeOperationalSyncTest {
 
     @Test
     void shouldThrowExceptionInsteadOfSwallowingWhenPayloadJsonIsCorrupted() {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(InvalidEdgeEventPayloadException.class, () ->
                 applier.apply(STORE_ID, "ORDER_UPSERT", UUID.randomUUID(), "{corrupted-json"));
+    }
+
+    @Test
+    void shouldRejectUnknownEventTypeNullAggregateIdAndMalformedUuidInProductLinks() {
+        assertThrows(UnsupportedEdgeEventTypeException.class, () ->
+                applier.apply(STORE_ID, "UNKNOWN_FUTURE_UPSERT", UUID.randomUUID(), "{}"));
+
+        assertThrows(InvalidEdgeEventPayloadException.class, () ->
+                applier.apply(STORE_ID, "ORDER_UPSERT", null, "{}"));
+
+        when(entityManager.createNativeQuery(anyString())).thenReturn(nativeQuery);
+        when(nativeQuery.setParameter(anyString(), any())).thenReturn(nativeQuery);
+        when(nativeQuery.getResultList()).thenReturn(List.of(STORE_ID));
+        when(nativeQuery.executeUpdate()).thenReturn(1);
+
+        String badProductJson = """
+                {"name":"X-Salada","price":"25.00","removableItemIds":["not-a-uuid"]}
+                """;
+        assertThrows(InvalidEdgeEventPayloadException.class, () ->
+                applier.apply(STORE_ID, "CATALOG_PRODUCT_UPSERT", UUID.randomUUID(), badProductJson));
+
+        // Ingrediente ausente na nuvem (executeUpdate = 0 no vínculo) NÃO aborta o applier
+        UUID missingIngId = UUID.randomUUID();
+        String missingFkProductJson = """
+                {"name":"X-Salada","price":"25.00","removableItemIds":["%s"]}
+                """.formatted(missingIngId);
+        assertDoesNotThrow(() ->
+                applier.apply(STORE_ID, "CATALOG_PRODUCT_UPSERT", UUID.randomUUID(), missingFkProductJson));
     }
 
     @Test

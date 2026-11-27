@@ -1,21 +1,37 @@
 package com.trinusphere.beebite.domain.sync.repository;
 
 import com.trinusphere.beebite.domain.sync.entity.EdgeOutboxEvent;
+import com.trinusphere.beebite.domain.sync.valueobject.EdgeOutboxStatus;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface EdgeOutboxRepository {
     EdgeOutboxEvent save(EdgeOutboxEvent event);
 
-    List<EdgeOutboxEvent> findPendingBatch(int limit);
+    List<UUID> findStoreIdsWithPending();
+
+    List<EdgeOutboxEvent> findPendingBatch(UUID storeId, int limit);
 
     void markSynced(List<UUID> eventIds, Instant syncedAt);
 
-    void markFailed(UUID eventId, String errorMessage);
+    void recordTransientFailure(List<UUID> eventIds, String errorMessage);
 
-    boolean isEventAlreadyProcessed(UUID eventId);
+    void markRejected(UUID eventId, String reason);
 
-    void recordProcessedEvent(UUID eventId, UUID storeId, String eventType, UUID aggregateId);
+    int reopenSyncedAfter(UUID storeId, long lastContiguousSequence);
+
+    Optional<Long> findMinRetainedSequence(UUID storeId);
+
+    int purgeSyncedBefore(Instant cutoff);
+
+    long countByStatus(UUID storeId, EdgeOutboxStatus status);
+
+    Optional<Instant> findOldestPendingCreatedAt(UUID storeId);
+
+    Optional<EdgeOutboxEvent> findById(UUID id);
+
+    List<EdgeOutboxEvent> findFailed(UUID storeId, int page, int size);
 }

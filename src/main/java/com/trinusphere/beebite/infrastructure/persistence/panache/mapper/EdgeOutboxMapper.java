@@ -23,7 +23,9 @@ public final class EdgeOutboxMapper {
                 entity.attempts,
                 entity.lastError,
                 entity.createdAt,
-                entity.syncedAt
+                entity.syncedAt,
+                entity.sequence,
+                entity.rejectedReason
         );
     }
 
@@ -34,12 +36,14 @@ public final class EdgeOutboxMapper {
         EdgeOutboxEntity entity = new EdgeOutboxEntity();
         entity.id = domain.getId();
         entity.storeId = domain.getStoreId();
+        entity.sequence = domain.getSequence();
         entity.eventType = domain.getEventType();
         entity.aggregateId = domain.getAggregateId();
         entity.payload = domain.getPayloadJson();
         entity.status = domain.getStatus().name();
         entity.attempts = domain.getAttempts();
         entity.lastError = domain.getLastError();
+        entity.rejectedReason = domain.getRejectedReason();
         entity.createdAt = domain.getCreatedAt();
         entity.syncedAt = domain.getSyncedAt();
         return entity;

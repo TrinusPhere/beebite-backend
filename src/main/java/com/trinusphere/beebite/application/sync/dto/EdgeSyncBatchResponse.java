@@ -7,6 +7,15 @@ import java.util.UUID;
 public record EdgeSyncBatchResponse(
         int processedCount,
         List<UUID> ackedEventIds,
+        List<EdgeSyncRejectedEventDto> rejectedEvents,
+        Long lastContiguousSequence,
+        boolean requiresFullResync,
         Instant serverTimestamp
 ) {
+    public EdgeSyncBatchResponse(
+            int processedCount,
+            List<UUID> ackedEventIds,
+            Instant serverTimestamp) {
+        this(processedCount, ackedEventIds, List.of(), null, false, serverTimestamp);
+    }
 }

@@ -1,7 +1,12 @@
 package com.trinusphere.beebite.infrastructure.persistence.panache.entity;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -19,6 +24,9 @@ public class EdgeOutboxEntity extends PanacheEntityBase {
 
     @Column(name = "store_id", nullable = false)
     public UUID storeId;
+
+    @Column(name = "sequence", nullable = false)
+    public Long sequence;
 
     @Column(name = "event_type", nullable = false, length = 60)
     public String eventType;
@@ -38,6 +46,9 @@ public class EdgeOutboxEntity extends PanacheEntityBase {
 
     @Column(name = "last_error", columnDefinition = "TEXT")
     public String lastError;
+
+    @Column(name = "rejected_reason", columnDefinition = "TEXT")
+    public String rejectedReason;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     public Instant createdAt;

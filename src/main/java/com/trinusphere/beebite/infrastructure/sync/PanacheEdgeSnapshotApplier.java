@@ -4,10 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trinusphere.beebite.application.catalog.port.CatalogEventPublisher;
 import com.trinusphere.beebite.application.sync.port.EdgeSnapshotApplier;
+import com.trinusphere.beebite.domain.sync.exception.InvalidEdgeEventPayloadException;
+import com.trinusphere.beebite.domain.sync.exception.UnsupportedEdgeEventTypeException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.jboss.logging.Logger;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -22,6 +25,8 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
+
+    private static final Logger LOG = Logger.getLogger(PanacheEdgeSnapshotApplier.class);
 
     private static final Set<String> VALID_ORDER_TYPES = Set.of("BALCAO", "DELIVERY");
     private static final Set<String> VALID_ORDER_STATUSES = Set.of(
@@ -54,13 +59,20 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
     @Override
     @Transactional
     public void apply(UUID storeId, String eventType, UUID aggregateId, String payloadJson) {
-        if (storeId == null || eventType == null) {
-            return;
+        if (storeId == null) {
+            throw new InvalidEdgeEventPayloadException("storeId ausente");
+        }
+        if (eventType == null || eventType.isBlank()) {
+            throw new InvalidEdgeEventPayloadException("eventType ausente");
+        }
+        String normalizedType = eventType.trim();
+        if (aggregateId == null && !"STORE_STATUS_UPSERT".equals(normalizedType)) {
+            throw new InvalidEdgeEventPayloadException("aggregateId ausente para " + normalizedType);
         }
 
         JsonNode root = parseJsonStrict(payloadJson);
 
-        switch (eventType) {
+        switch (normalizedType) {
             case "ORDER_UPSERT" -> applyOrderUpsert(storeId, aggregateId, root);
             case "FINANCIAL_RECORD_UPSERT" -> applyFinancialRecordUpsert(storeId, aggregateId, root);
             case "CASH_REGISTER_UPSERT" -> applyCashRegisterUpsert(storeId, aggregateId, root);
@@ -73,9 +85,7 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
             case "CATALOG_ADDITIONAL_UPSERT" -> applyCatalogAdditionalUpsert(storeId, aggregateId, root);
             case "CATALOG_INGREDIENT_UPSERT" -> applyCatalogIngredientUpsert(storeId, aggregateId, root);
             case "CATALOG_PRODUCT_UPSERT" -> applyCatalogProductUpsert(storeId, aggregateId, root);
-            default -> {
-                // Eventos futuros desconhecidos são ignorados de forma segura
-            }
+            default -> throw new UnsupportedEdgeEventTypeException(normalizedType);
         }
     }
 
@@ -429,16 +439,18 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
             em.createNativeQuery("DELETE FROM product_removable_item WHERE product_id = :pid")
                     .setParameter("pid", aggregateId).executeUpdate();
             for (JsonNode rem : remNode) {
-                try {
-                    UUID remId = UUID.fromString(rem.asText().trim());
-                    em.createNativeQuery("""
-                            INSERT INTO product_removable_item (product_id, ingredient_id)
-                            VALUES (:pid, :ingId) ON CONFLICT DO NOTHING
-                            """)
-                            .setParameter("pid", aggregateId)
-                            .setParameter("ingId", remId)
-                            .executeUpdate();
-                } catch (Exception ignored) {
+                UUID remId = parseUuidOrReject(rem != null ? rem.asText() : null, "removableItemIds");
+                int inserted = em.createNativeQuery("""
+                        INSERT INTO product_removable_item (product_id, ingredient_id)
+                        SELECT :pid, :ingId
+                        WHERE EXISTS (SELECT 1 FROM ingredient WHERE id = :ingId)
+                        ON CONFLICT DO NOTHING
+                        """)
+                        .setParameter("pid", aggregateId)
+                        .setParameter("ingId", remId)
+                        .executeUpdate();
+                if (inserted == 0) {
+                    LOG.warnf("Ingrediente %s inexistente na nuvem; vínculo ignorado (produto %s).", remId, aggregateId);
                 }
             }
         }
@@ -448,16 +460,18 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
             em.createNativeQuery("DELETE FROM product_modifier_group WHERE product_id = :pid")
                     .setParameter("pid", aggregateId).executeUpdate();
             for (JsonNode mod : modNode) {
-                try {
-                    UUID modId = UUID.fromString(mod.asText().trim());
-                    em.createNativeQuery("""
-                            INSERT INTO product_modifier_group (product_id, modifier_group_id)
-                            VALUES (:pid, :gid) ON CONFLICT DO NOTHING
-                            """)
-                            .setParameter("pid", aggregateId)
-                            .setParameter("gid", modId)
-                            .executeUpdate();
-                } catch (Exception ignored) {
+                UUID modId = parseUuidOrReject(mod != null ? mod.asText() : null, "modifierGroupIds");
+                int inserted = em.createNativeQuery("""
+                        INSERT INTO product_modifier_group (product_id, modifier_group_id)
+                        SELECT :pid, :gid
+                        WHERE EXISTS (SELECT 1 FROM modifier_group WHERE id = :gid)
+                        ON CONFLICT DO NOTHING
+                        """)
+                        .setParameter("pid", aggregateId)
+                        .setParameter("gid", modId)
+                        .executeUpdate();
+                if (inserted == 0) {
+                    LOG.warnf("Grupo modificador %s inexistente na nuvem; vínculo ignorado (produto %s).", modId, aggregateId);
                 }
             }
         }
@@ -475,6 +489,17 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
         }
     }
 
+    private UUID parseUuidOrReject(String raw, String fieldName) {
+        if (raw == null || raw.isBlank()) {
+            throw new InvalidEdgeEventPayloadException("UUID vazio em " + fieldName);
+        }
+        try {
+            return UUID.fromString(raw.trim());
+        } catch (IllegalArgumentException ex) {
+            throw new InvalidEdgeEventPayloadException("UUID inválido em " + fieldName + ": " + raw);
+        }
+    }
+
     private Timestamp parseTimestamp(String raw) {
         if (raw == null || raw.isBlank()) {
             return Timestamp.from(Instant.now());
@@ -482,22 +507,28 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
         try {
             return Timestamp.from(Instant.parse(raw.trim()));
         } catch (Exception ignored) {
-            return Timestamp.valueOf(LocalDateTime.parse(raw.trim()));
+            try {
+                return Timestamp.valueOf(LocalDateTime.parse(raw.trim()));
+            } catch (Exception ex) {
+                throw new InvalidEdgeEventPayloadException("timestamp inválido: " + raw);
+            }
         }
     }
 
     private JsonNode parseJsonStrict(String payloadJson) {
         if (payloadJson == null || payloadJson.isBlank()) {
-            throw new IllegalStateException("Payload JSON vazio no evento de sincronização Edge.");
+            throw new InvalidEdgeEventPayloadException("Payload JSON vazio no evento de sincronização Edge.");
         }
         try {
             JsonNode root = objectMapper.readTree(payloadJson);
             if (root == null || !root.isObject()) {
-                throw new IllegalStateException("Payload JSON inválido (esperado objeto JSON).");
+                throw new InvalidEdgeEventPayloadException("Payload JSON inválido (esperado objeto JSON).");
             }
             return root;
+        } catch (InvalidEdgeEventPayloadException ex) {
+            throw ex;
         } catch (Exception ex) {
-            throw new IllegalStateException("Falha ao interpretar payload JSON de sincronização Edge: " + ex.getMessage(), ex);
+            throw new InvalidEdgeEventPayloadException("Falha ao interpretar payload JSON: " + ex.getMessage());
         }
     }
 
@@ -673,12 +704,9 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
     }
 
     private void applyFinancialRecordUpsert(UUID storeId, UUID aggregateId, JsonNode root) {
-        if (aggregateId == null) {
-            return;
-        }
         UUID orderId = uuidOrNull(root, "orderId");
         if (orderId == null) {
-            return;
+            throw new InvalidEdgeEventPayloadException("orderId ausente em FINANCIAL_RECORD_UPSERT");
         }
 
         BigDecimal totalValue = decimalOrDefault(root, "totalValue", BigDecimal.ZERO);
@@ -809,12 +837,9 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
     }
 
     private void applyCashSessionUpsert(UUID storeId, UUID aggregateId, JsonNode root) {
-        if (aggregateId == null) {
-            return;
-        }
         UUID cashRegisterId = uuidOrNull(root, "cashRegisterId");
         if (cashRegisterId == null) {
-            return;
+            throw new InvalidEdgeEventPayloadException("cashRegisterId ausente em CASH_SESSION_UPSERT");
         }
 
         if (!existsInTable("cash_register", cashRegisterId)) {
@@ -903,16 +928,16 @@ public class PanacheEdgeSnapshotApplier implements EdgeSnapshotApplier {
     }
 
     private void applyCashMovementUpsert(UUID storeId, UUID aggregateId, JsonNode root) {
-        if (aggregateId == null) {
-            return;
-        }
         UUID cashSessionId = uuidOrNull(root, "cashSessionId");
-        if (cashSessionId == null || !existsInTable("cash_session", cashSessionId)) {
-            return;
+        if (cashSessionId == null) {
+            throw new InvalidEdgeEventPayloadException("cashSessionId ausente em CASH_MOVEMENT_UPSERT");
+        }
+        if (!existsInTable("cash_session", cashSessionId)) {
+            throw new IllegalStateException("Sessão de caixa " + cashSessionId + " ainda não existe na nuvem.");
         }
         UUID resolvedUserId = resolveCloudUserId(storeId, uuidOrNull(root, "userId"));
         if (resolvedUserId == null) {
-            return;
+            throw new IllegalStateException("Nenhum usuário válido encontrado na nuvem para vincular movimentação de caixa da loja " + storeId);
         }
 
         String type = textOrDefault(root, "type", "SUPRIMENTO");
